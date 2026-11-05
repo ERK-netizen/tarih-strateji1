@@ -152,7 +152,7 @@ export const projeIdx = (kod: string): number => PROJE.findIndex((p) => p.kod ==
 
 // ---------- Dönem kataloğu ----------
 /** Etkin dönem: senaryo paketine göre katalog dizileri yerinde değiştirilir (Worker'da tek dünya vardır). */
-export const AKTIF = { donem: 'buyuk' as DonemKod };
+export const AKTIF = { donem: 'buyuk' as DonemKod, surum: 0 };
 export function donemYukle(kod: DonemKod | undefined): void {
   const d = DONEMLER[kod ?? 'buyuk'];
   if (AKTIF.donem === d.kod && EKIPMAN[0]?.ad === d.ekipman[0]!.ad) return;
@@ -164,6 +164,7 @@ export function donemYukle(kod: DonemKod | undefined): void {
   MAL.splice(0, MAL.length, ...d.mal);
   aileKur();
   AKTIF.donem = d.kod;
+  AKTIF.surum++;
 }
 
 // ---------- Bayraklar (5.8) ----------

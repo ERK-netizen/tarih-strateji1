@@ -45,6 +45,22 @@ export function yonetimKapasitesi(w: World, c: number): { kapasite: number; kull
   }
   return { kapasite, kullanim };
 }
+/** Bütün ülkelerin kapasite aşımı tek geçişte (maliye için). */
+export function kapasiteAsimiHepsi(w: World): number[] {
+  const kul = new Array<number>(w.nC).fill(0);
+  for (let r = 0; r < w.nR; r++) {
+    const s = w.R.c.sahip[r]!, k = w.R.c.kontrolEden[r]!;
+    const ana = w.pkg.bolgeler[r]!.anaYurt.includes(s);
+    if (s === k) kul[s]! += ana ? 1000 : 2000;
+    else { kul[s]! += 500; kul[k]! += 1500; }
+  }
+  return kul.map((kullanim, c) => {
+    const y = YONETIM[w.pkg.ulkeler[c]!.yonetim]!;
+    const tekIdare = w.tekBitti[c * NTEK + tekIdx('idare')] ? 10_000 : 0;
+    const kapasite = 30_000 + mulDiv(y.idari, 50_000, S).q + tekIdare;
+    return Math.max(0, mulDiv(kullanim, S, Math.max(1, kapasite)).q - S);
+  });
+}
 export function kapasiteAsimi(w: World, c: number): number {
   const { kapasite, kullanim } = yonetimKapasitesi(w, c);
   return Math.max(0, mulDiv(kullanim, S, Math.max(1, kapasite)).q - S);

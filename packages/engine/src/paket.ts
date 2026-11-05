@@ -13,6 +13,8 @@ export interface PaketUlke {
   /** Başlangıç deposu */
   depo?: { muhimmat: number; ekip: number[] };
   guc?: number;
+  /** Barış zamanı hedef tümen sayısı (karar modülü) */
+  ordu?: number;
 }
 export interface PaketEyalet { kod: string; ad: string; ulke: number; merkez: number; bolgeler: number[] }
 export interface PaketBolge {

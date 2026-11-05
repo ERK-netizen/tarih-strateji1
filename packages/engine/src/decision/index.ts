@@ -6,7 +6,7 @@ import { KISILIK, SABLON, TEKNOLOJI, NTEK, MALI, ASKERLIK, EKIPMAN, NEKIP } from
 import { S, mulDiv, clamp } from '../num/index.ts';
 import { rng, AMAC, uniformInt } from '../rng/index.ts';
 import { uygula, teklifSonuc, type Emir } from '../orders.ts';
-import { bolgeGozlem } from '../observe/index.ts';
+import { bolgeGozlem, bolgeGozlemBolgeler } from '../observe/index.ts';
 import {
   uc, savasta, savastaMi, dusmanlar, anlasmaVar, gorus, birlikIstat, birlikIkmal, girebilir, rota, sinirKomsusu, muttefik, essavasan, iddiaVar, savasUyeleri, pasif, rotaTip,
 } from '../systems/ortak.ts';
@@ -21,9 +21,9 @@ function emir(w: World, c: number, tur: string, p: Record<string, unknown>): boo
 }
 
 /** Gözlenen yabancı güç (temkinli: aralığın üst ucu). */
-function gozlenenGuc(w: World, c: number): Map<number, Map<number, number>> {
+function gozlenenGuc(w: World, c: number, bolgeler?: number[]): Map<number, Map<number, number>> {
   const m = new Map<number, Map<number, number>>(); // bölge → ülke → güç üst
-  for (const g of bolgeGozlem(w, c)) {
+  for (const g of bolgeler ? bolgeGozlemBolgeler(w, c, bolgeler) : bolgeGozlem(w, c)) {
     if (g.ulke === c) continue;
     let r = m.get(g.bolge);
     if (!r) { r = new Map(); m.set(g.bolge, r); }
@@ -102,6 +102,7 @@ function kabulEder(w: World, b: number, a: number, tur: number, p1: number, p2: 
     case TK.garanti: return g >= 60_000;
     case TK.ittifak: {
       if (g < 80_000) return false;
+      if (!sinirKomsusu(w, a, b) && (w.pkg.ulkeler[a]!.guc ?? 5) < 6 && (w.pkg.ulkeler[b]!.guc ?? 5) < 6) return false;
       // ortak düşman veya ortak tehdit
       for (let d = 0; d < w.nC; d++) if (d !== a && d !== b && gorus(w, a, d) < 35_000 && gorus(w, b, d) < 35_000) return true;
       return kis === 'Temkinli';
@@ -239,7 +240,8 @@ function orduPlan(w: World, c: number): void {
   const tehdit = w.pkg.ulkeler.some((_, d) => d !== c && !pasif(w, d) && (gerekceSurecte(w, d, c) >= 0 || (gorus(w, c, d) < 30_000 && sinirKomsusu(w, c, d))));
   let nufus = 0;
   for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === c) for (let k = 0; k < 32; k++) nufus += w.pop[r * 32 + k]!;
-  const taban = Math.max(3, Math.floor(nufus / 400_000));
+  const hedefPkg = w.pkg.ulkeler[c]!.ordu;
+  const taban = hedefPkg !== undefined ? Math.max(1, hedefPkg) : Math.max(3, Math.floor(nufus / 400_000));
   const hedef = savas ? Math.floor((taban * 18) / 10) : tehdit ? Math.floor((taban * 13) / 10) : taban;
   const gider = zorunluGider(w, c).toplam;
   const tufek = w.ekip[ck(c, 0)]! + w.ekip[ck(c, 1)]! + w.ekip[ck(c, 2)]!;
@@ -256,13 +258,25 @@ function orduPlan(w: World, c: number): void {
 function diplomasiPlan(w: World, c: number): void {
   const kis = KISILIK[w.pkg.ulkeler[c]!.kisilik]!;
   // anlaşma önerileri
+  // ilişki çevresi: komşular ve büyük güçler (uzak küçük devletler birbiriyle anlaşma kurmaz)
+  const guc = (x: number) => w.pkg.ulkeler[x]!.guc ?? 5;
+  let teklifSay = 0;
   for (let d = 0; d < w.nC; d++) {
     if (d === c || savasta(w, c, d) || pasif(w, d)) continue;
+    if (teklifSay >= 3) break; // ayda en çok üç yeni teklif
+    const komsu = sinirKomsusu(w, c, d);
+    const buyuk = guc(c) >= 6 || guc(d) >= 6;
+    if (!komsu && !buyuk) continue;
     const g = gorus(w, d, c), benim = gorus(w, c, d);
     if (benim < 25_000) continue;
-    if (g >= ESIK[TK.ticaret]! && anlasmaVar(w, A.ticaret, c, d) < 0) { emir(w, c, 'teklif', { kime: d, tip: TK.ticaret }); continue; }
-    if (g >= ESIK[TK.saldirmazlik]! && benim >= 45_000 && anlasmaVar(w, A.saldirmazlik, c, d) < 0 && kis !== 'Yayılmacı') { emir(w, c, 'teklif', { kime: d, tip: TK.saldirmazlik }); continue; }
-    if (g >= ESIK[TK.ittifak]! && benim >= 80_000 && anlasmaVar(w, A.ittifak, c, d) < 0) emir(w, c, 'teklif', { kime: d, tip: TK.ittifak });
+    if (g >= ESIK[TK.ticaret]! && anlasmaVar(w, A.ticaret, c, d) < 0) { if (emir(w, c, 'teklif', { kime: d, tip: TK.ticaret })) teklifSay++; continue; }
+    if (komsu && g >= ESIK[TK.saldirmazlik]! && benim >= 45_000 && anlasmaVar(w, A.saldirmazlik, c, d) < 0 && kis !== 'Yayılmacı') { if (emir(w, c, 'teklif', { kime: d, tip: TK.saldirmazlik })) teklifSay++; continue; }
+    if (g >= ESIK[TK.ittifak]! && benim >= 80_000 && anlasmaVar(w, A.ittifak, c, d) < 0) {
+      // ittifak yalnız ortak bir rakibe karşı: komşu ya da ortak komşu düşmanı
+      let ortak = false;
+      for (let x = 0; x < w.nC && !ortak; x++) if (x !== c && x !== d && !pasif(w, x) && gorus(w, c, x) < 35_000 && gorus(w, d, x) < 45_000 && (sinirKomsusu(w, c, x) || sinirKomsusu(w, d, x))) ortak = true;
+      if ((komsu || ortak) && emir(w, c, 'teklif', { kime: d, tip: TK.ittifak })) teklifSay++;
+    }
   }
   // tutum
   for (let d = 0; d < w.nC; d++) {
@@ -359,7 +373,10 @@ function cepheYonet(w: World, c: number): void {
     if (vs.length) sinirlarHam.push({ r, v: vs });
   }
   if (sinirlarHam.length === 0) return;
-  const gozlem = gozlenenGuc(w, c);
+  // yalnız kendi bölgelerine komşu yabancı bölgeler gözlenir
+  const gerek = new Set<number>();
+  for (let r = 0; r < w.nR; r++) if (R.kontrolEden[r] === c) for (const v of w.komsuluk[r]!) if (R.kontrolEden[v] !== c) gerek.add(v);
+  const gozlem = gozlenenGuc(w, c, [...gerek]);
   const tehdit = new Map<number, number>();
   for (const { r, v: vs } of sinirlarHam) {
     let t = 0;

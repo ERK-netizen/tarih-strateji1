@@ -5,7 +5,7 @@ import type { Table } from '../state/table.ts';
 import type { Paket } from '../paket.ts';
 import { hashV1, hashText } from '../hash/index.ts';
 
-export const SEMA_SURUM = 4;
+export const SEMA_SURUM = 5;
 const MAGIC = 0x314b5354; // 'TSK1'
 
 class Yazici {
@@ -26,12 +26,30 @@ class Yazici {
     this.yer(8); this.dv.setFloat64(this.n, v === 0 ? 0 : v, true); this.n += 8;
   }
   arr(a: ArrayLike<number>) { this.u32(a.length); for (let i = 0; i < a.length; i++) this.f64(a[i]!); }
-  /** Seyrek dizi: uzunluk, sıfır olmayan sayısı, (indeks, değer) çiftleri. */
+  /** Dizi: uzunluk, kip; seyrekse (indeks, değer) çiftleri, yoğunsa 8 bayt hizalı ham değerler. */
   arrS(a: ArrayLike<number>) {
-    let k = 0;
-    for (let i = 0; i < a.length; i++) if (a[i] !== 0) k++;
-    this.u32(a.length); this.u32(k);
-    for (let i = 0; i < a.length; i++) if (a[i] !== 0) { this.u32(i); this.f64(a[i]!); }
+    const n = a.length;
+    let k = 0, eksiSifir = false, guvenli = true;
+    const tam = !(a instanceof Float64Array);
+    for (let i = 0; i < n; i++) {
+      const v = a[i]!;
+      if (v !== 0) { k++; if (!tam && !Number.isSafeInteger(v)) guvenli = false; } else if (1 / v < 0) eksiSifir = true;
+    }
+    if (!guvenli) throw new Error('kanonik olmayan sayı dizide');
+    this.u32(n);
+    if (k * 12 > n * 8 && !eksiSifir) {
+      this.u32(0xffffffff);
+      const pad = (8 - (this.n % 8)) % 8;
+      this.yer(pad + n * 8);
+      for (let i = 0; i < pad; i++) this.dv.setUint8(this.n + i, 0);
+      this.n += pad;
+      const f = new Float64Array(this.buf, this.n, n);
+      if (a instanceof Float64Array) f.set(a); else for (let i = 0; i < n; i++) f[i] = a[i]!;
+      this.n += n * 8;
+      return;
+    }
+    this.u32(k);
+    for (let i = 0; i < n; i++) if (a[i] !== 0) { this.u32(i); this.f64(a[i]!); }
   }
   str(s: string) { const b = new TextEncoder().encode(s); this.u32(b.length); this.yer(b.length); new Uint8Array(this.buf, this.n, b.length).set(b); this.n += b.length; }
   etiket(s: string) { this.str(s); }
@@ -44,8 +62,17 @@ class Okuyucu {
   u32() { const v = this.dv.getUint32(this.n, true); this.n += 4; return v; }
   f64() { const v = this.dv.getFloat64(this.n, true); this.n += 8; return v; }
   arr(): number[] { const k = this.u32(); const a: number[] = []; for (let i = 0; i < k; i++) a.push(this.f64()); return a; }
-  arrS(): number[] {
+  arrS(): ArrayLike<number> {
     const n = this.u32(), k = this.u32();
+    if (k === 0xffffffff) {
+      this.n += (8 - (this.n % 8)) % 8;
+      const off = this.u8.byteOffset + this.n;
+      let a: Float64Array;
+      if (off % 8 === 0) a = new Float64Array(this.u8.buffer.slice(off, off + n * 8));
+      else { a = new Float64Array(n); for (let i = 0; i < n; i++) a[i] = this.dv.getFloat64(this.n + i * 8, true); }
+      this.n += n * 8;
+      return a;
+    }
     const a: number[] = new Array<number>(n).fill(0);
     for (let j = 0; j < k; j++) { const i = this.u32(); a[i] = this.f64(); }
     return a;
@@ -75,8 +102,8 @@ function tabloYaz(y: Yazici, t: Table): void {
   y.etiket(t.name);
   y.u32(t.hw);
   y.arr([...t.free].sort((a, b) => a - b));
-  y.arr(t.gen.subarray(0, t.hw));
-  y.arr(t.alive.subarray(0, t.hw));
+  y.arrS(t.gen.subarray(0, t.hw));
+  y.arrS(t.alive.subarray(0, t.hw));
   for (const [k] of t.defs) { y.etiket(k); y.arrS((t.ci[k] as Float64Array).subarray(0, t.hw)); }
 }
 function tabloOku(o: Okuyucu, t: Table): void {
@@ -86,13 +113,14 @@ function tabloOku(o: Okuyucu, t: Table): void {
   t.reserve(hw);
   t.hw = hw;
   t.free = o.arr();
-  const gen = o.arr(), alive = o.arr();
+  const gen = o.arrS(), alive = o.arrS();
   for (let i = 0; i < hw; i++) { t.gen[i] = gen[i]!; t.alive[i] = alive[i]!; }
   for (const [k] of t.defs) {
     const kk = o.str();
     if (kk !== k) throw new Error(`kolon sırası bozuk: ${kk}`);
     const a = o.arrS();
     const col = t.ci[k]!;
+    if (a.length !== hw) throw new Error(`kolon uzunluğu bozuk: ${k}`);
     for (let i = 0; i < hw; i++) (col as Float64Array)[i] = a[i]!;
   }
 }

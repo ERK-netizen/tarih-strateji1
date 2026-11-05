@@ -19,6 +19,7 @@ import { uc, anlat, savasta as ortakSavasta, eyaletUlke } from '../systems/ortak
 import { sayac } from '../num/index.ts';
 import { yeniDunya } from '../state/world.ts';
 import type { Paket } from '../paket.ts';
+import { KOL_OK, KOL_ON } from '../state/world.ts';
 
 export interface GunSonuc { gun: number; surum: number; hash: string; durmalar: Bildirim[]; bildirimler: Bildirim[]; sogukYol: number; bayt: Uint8Array }
 
@@ -43,7 +44,8 @@ export function toplamNufus(w: World): number {
 }
 
 /** Bir günü çözer ve kesinleştirir. Bütünlük bozulursa hata fırlatır (gün kesinleşmez). */
-export function gunIlerle(w: World): GunSonuc {
+/** kesinlestir=false: serileştirme ve hash atlanır (çok günlük atlamada ara günler). */
+export function gunIlerle(w: World, kesinlestir = true): GunSonuc {
   const sogukOnce = sayac.sogukYol;
   // P0: önceki günün kesinleşmiş durumu w'dir. Gün numarası ilerler.
   w.gun += 1;
@@ -103,8 +105,8 @@ export function gunIlerle(w: World): GunSonuc {
   butunluk(w, n0);
   w.surum += 1;
   fazDegisti(w);
-  const bayt = serilestir(w);
-  const hash = hashV1(bayt);
+  const bayt = kesinlestir ? serilestir(w) : new Uint8Array(0);
+  const hash = kesinlestir ? hashV1(bayt) : '';
   const durmalar = w.bildirim.filter((b) => b.durdur && (b.ulke === w.oyuncu || b.ulke < 0 || ['savas', 'baris'].includes(b.tur)));
   return { gun: w.gun, surum: w.surum, hash, durmalar, bildirimler: w.bildirim.slice(), sogukYol: sayac.sogukYol - sogukOnce, bayt };
 }
@@ -152,7 +154,7 @@ export function kokenDenetim(w: World): string | null {
   const U = uc(w);
   const birlik = new Array<number>(w.nE).fill(0);
   for (const u of w.U.rows()) {
-    for (let k = 0; k < 8; k++) { const e = U[`ok${k}`]![u]! - 1; if (e >= 0) birlik[e]! += U[`on${k}`]![u]!; }
+    for (let k = 0; k < 8; k++) { const e = U[KOL_OK[k]!]![u]! - 1; if (e >= 0) birlik[e]! += U[KOL_ON[k]!]![u]!; }
     let kova = 0;
     kova += U.on8![u]!;
     void kova;

@@ -5,25 +5,30 @@ import { dirname, join } from 'node:path';
 import { senaryoBaslat, gunIlerle, tarihMetni, ortak, ekonomi, siyaset, nufus, serilestir, coz, dunyaHash, type Paket } from '../../engine/src/index.ts';
 
 const kok = join(dirname(fileURLToPath(import.meta.url)), '../../..');
-const pkg = JSON.parse(readFileSync(join(kok, 'data/derlenmis/fixture-1a.json'), 'utf8')) as Paket;
+// Kullanım: npm run lab -- [gün] [oyuncu] [tohum] [senaryo]  (senaryo: fixture-1a, s750, s1600, s1914, s1939, s2026)
+const senaryo = process.argv[5] ?? process.env.SENARYO ?? 'fixture-1a';
+const pkg = JSON.parse(readFileSync(join(kok, `data/derlenmis/${senaryo}.json`), 'utf8')) as Paket;
 const gun = Number(process.argv[2] ?? 365);
 const oyuncu = Number(process.argv[3] ?? 2);
-if (process.argv[4]) pkg.tohum = Number(process.argv[4]);
+if (process.argv[4] && process.argv[4] !== '-') pkg.tohum = Number(process.argv[4]);
+const ayrinti = process.env.AYRINTI === '1' || senaryo === 'fixture-1a';
 
 const w = senaryoBaslat(pkg, oyuncu, 2); // Gözlemci: oyuncu ülkesi de YZ ile oynar
 const t0 = performance.now();
 let soguk = 0;
 let son = '';
 for (let i = 0; i < gun; i++) {
-  const s = gunIlerle(w);
+  const s = gunIlerle(w, i === gun - 1 || i % 30 === 29);
   soguk += s.sogukYol;
   son = s.hash;
   for (const b of s.bildirimler) if (['savas', 'baris', 'teslim'].includes(b.tur)) console.log(`  ${tarihMetni(w.gun)}: ${b.metin}`);
+  if (i % 30 === 29) console.error(`  … ${tarihMetni(w.gun)} ${((performance.now() - t0) / (i + 1)).toFixed(1)} ms/gün`);
 }
 const ms = performance.now() - t0;
 console.log(`\n${gun} gün: ${ms.toFixed(0)} ms (${(ms / gun).toFixed(2)} ms/gün), soğuk yol: ${soguk}, hash ${son}`);
 console.log(`Tarih: ${tarihMetni(w.gun)}`);
 for (let c = 0; c < w.nC; c++) {
+  if (!ayrinti && (pkg.ulkeler[c]!.pasif || (pkg.ulkeler[c]!.guc ?? 0) < 4)) continue;
   const C = w.C.c;
   const ig = nufus.insanGucu(w, c);
   const g = siyaset.orduGucu(w, c);

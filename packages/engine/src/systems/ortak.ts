@@ -1,9 +1,10 @@
 // Sistemlerin paylaştığı saf yardımcılar: ilişki, erişim, rota, birlik istatistikleri.
 import type { World } from '../state/world.ts';
 import { A, cc, kenarKey, IDDIA_MAX } from '../state/world.ts';
-import { TABUR, EKIPMAN, AILE_EKIP, ARAZI, K, KIS_HAREKET, KIS_KAPASITE, CAMUR_HAREKET } from '../catalog.ts';
+import { AKTIF, TABUR, EKIPMAN, AILE_EKIP, ARAZI, K, KIS_HAREKET, KIS_KAPASITE, CAMUR_HAREKET } from '../catalog.ts';
 import { S, mulDiv, clamp } from '../num/index.ts';
 import { tarih } from '../calendar/index.ts';
+import { KOL_E, KOL_T } from '../state/world.ts';
 
 export type Cols = Record<string, Float64Array>;
 export const uc = (w: World): Cols => w.U.c as unknown as Cols;
@@ -11,10 +12,24 @@ export const uc = (w: World): Cols => w.U.c as unknown as Cols;
 // ---------- Savaş ve ittifak ----------
 // Savaş tarafları kanonik `savasTaraf` tablosundadır; aşağıdaki matris ve indeksler türetilmiş önbellektir.
 /** Savaş veya anlaşma değiştiğinde çağrılır: önbellekleri ve rota ağaçlarını geçersiz kılar. */
-export function diploDegisti(w: World): void { w.diploSurum++; w.rotaEpoch++; }
+export function diploDegisti(w: World): void { w.diploSurum++; w.savasSurum++; w.anSurum++; w.rotaEpoch++; }
+/** Savaş tarafı değişti: savaş matrisi ve rota ağaçları geçersiz. */
+export function savasDegisti(w: World): void { w.diploSurum++; w.savasSurum++; w.rotaEpoch++; }
+/** Yeni anlaşma: indekse yerinde eklenir; yalnız ittifak ve geçiş rotaları etkiler. */
+export function anlasmaEklendi(w: World, s: number): void {
+  w.diploSurum++;
+  const o = w.onbellek.get('anIdx') as { s: number; m: Map<number, number> } | undefined;
+  const t = w.AN.c.tur[s]!;
+  if (o && o.s === w.anSurum) anahtarEkle(w, o.m, s); else w.anSurum++;
+  if (t === A.ittifak || t === A.gecis) w.rotaEpoch++;
+}
+export function anlasmaSilindi(w: World, tur: number): void {
+  w.diploSurum++; w.anSurum++;
+  if (tur === A.ittifak || tur === A.gecis) w.rotaEpoch++;
+}
 
 export function tarafi(w: World, s: number, c: number): number { return w.savasTaraf[s * w.nC + c]!; }
-export function tarafYaz(w: World, s: number, c: number, t: number): void { w.savasTaraf[s * w.nC + c] = t; diploDegisti(w); }
+export function tarafYaz(w: World, s: number, c: number, t: number): void { w.savasTaraf[s * w.nC + c] = t; savasDegisti(w); }
 export function savasUyeleri(w: World, s: number, t: number): number[] {
   const out: number[] = [];
   for (let c = 0; c < w.nC; c++) if (w.savasTaraf[s * w.nC + c] === t) out.push(c);
@@ -24,7 +39,7 @@ export function savasUyeleri(w: World, s: number, t: number): number[] {
 /** nC × nC: 1 = savaşta, 2 = aynı tarafta. */
 function savasMatris(w: World): Uint8Array {
   const o = w.onbellek.get('savasM') as { s: number; m: Uint8Array } | undefined;
-  if (o && o.s === w.diploSurum) return o.m;
+  if (o && o.s === w.savasSurum) return o.m;
   const n = w.nC;
   const m = new Uint8Array(n * n);
   for (const s of w.SV.rows()) {
@@ -33,7 +48,7 @@ function savasMatris(w: World): Uint8Array {
     for (const x of A_) { for (const y of B_) { m[x * n + y] = 1; m[y * n + x] = 1; } for (const y of A_) if (x !== y && m[x * n + y] !== 1) m[x * n + y] = 2; }
     for (const x of B_) for (const y of B_) if (x !== y && m[x * n + y] !== 1) m[x * n + y] = 2;
   }
-  w.onbellek.set('savasM', { s: w.diploSurum, m });
+  w.onbellek.set('savasM', { s: w.savasSurum, m });
   return m;
 }
 export function savasta(w: World, a: number, b: number): boolean {
@@ -56,18 +71,19 @@ export function essavasan(w: World, a: number, b: number): boolean {
   if (a === b) return true;
   return savasMatris(w)[a * w.nC + b] === 2;
 }
+function anahtarEkle(w: World, m: Map<number, number>, s: number): void {
+  const n = w.nC;
+  const t = w.AN.c.tur[s]!, x = w.AN.c.a[s]!, y = w.AN.c.b[s]!;
+  const k1 = (t * n + x) * n + y;
+  if (!m.has(k1)) m.set(k1, s);
+  if (t !== A.garanti && t !== A.tazminat) { const k2 = (t * n + y) * n + x; if (!m.has(k2)) m.set(k2, s); }
+}
 function anlasmaIndeks(w: World): Map<number, number> {
   const o = w.onbellek.get('anIdx') as { s: number; m: Map<number, number> } | undefined;
-  if (o && o.s === w.diploSurum) return o.m;
+  if (o && o.s === w.anSurum) return o.m;
   const m = new Map<number, number>();
-  const n = w.nC;
-  for (const s of w.AN.rows()) {
-    const t = w.AN.c.tur[s]!, x = w.AN.c.a[s]!, y = w.AN.c.b[s]!;
-    const k1 = (t * n + x) * n + y;
-    if (!m.has(k1)) m.set(k1, s);
-    if (t !== A.garanti && t !== A.tazminat) { const k2 = (t * n + y) * n + x; if (!m.has(k2)) m.set(k2, s); }
-  }
-  w.onbellek.set('anIdx', { s: w.diploSurum, m });
+  for (const s of w.AN.rows()) anahtarEkle(w, m, s);
+  w.onbellek.set('anIdx', { s: w.anSurum, m });
   return m;
 }
 export function anlasmaVar(w: World, tur: number, a: number, b: number): number {
@@ -242,19 +258,28 @@ export function yonetimMesafeleri(w: World, c: number): number[] {
 // ---------- Birlik istatistikleri ----------
 export interface Istat { YS: number; SV: number; YR: number; orgMax: number; genislik: number; hiz: number; dolu: number; kisiHedef: number; aileIhtiyac: Record<string, number> }
 
+const ihtiyacOn = new Map<number, { kisi: number; aile: Record<string, number> }>();
+let ihtiyacSurum = -1;
+/** Tabur dizilişinden ihtiyaç (dizilişe göre önbellekli; dönen nesne değiştirilmez). */
 export function birlikIhtiyac(w: World, u: number): { kisi: number; aile: Record<string, number> } {
   const U = uc(w);
   const n = U.taburSay![u]!;
+  let key = n;
+  for (let k = 0; k < n; k++) key = key * 16 + U[KOL_T[k]!]![u]!;
+  if (ihtiyacSurum !== AKTIF.surum) { ihtiyacOn.clear(); ihtiyacSurum = AKTIF.surum; }
+  const o = ihtiyacOn.get(key);
+  if (o) return o;
   let kisi = 0;
   const aile: Record<string, number> = {};
   for (let k = 0; k < n; k++) {
-    const t = TABUR[U[`t${k}`]![u]!]!;
+    const t = TABUR[U[KOL_T[k]!]![u]!]!;
     kisi += t.kisi;
     aile[t.aile] = (aile[t.aile] ?? 0) + t.adet;
   }
-  return { kisi, aile };
+  const r = { kisi, aile };
+  ihtiyacOn.set(key, r);
+  return r;
 }
-
 export function deneyimCarpan(d: number): number {
   if (d < 25_000) return 750_000;
   if (d < 60_000) return S;
@@ -273,7 +298,7 @@ export function birlikIstat(w: World, u: number): Istat {
   for (const [aile, gerek] of Object.entries(ih.aile)) {
     let sahip = 0, ys = 0, sv = 0, yr = 0;
     for (const k of AILE_EKIP[aile]!) {
-      const m = U[`e${k}`]![u]!;
+      const m = U[KOL_E[k]!]![u]!;
       sahip += m; ys += m * EKIPMAN[k]!.YS; sv += m * EKIPMAN[k]!.SV; yr += m * EKIPMAN[k]!.YR;
     }
     const ilk = EKIPMAN[AILE_EKIP[aile]![0]!]!;
@@ -283,7 +308,7 @@ export function birlikIstat(w: World, u: number): Istat {
     aileOran[aile] = { oran: clamp(mulDiv(sahip, S, gerek).q, 0, S), YS: ortYS, SV: ortSV, YR: ortYR };
   }
   for (let k = 0; k < n; k++) {
-    const t = TABUR[U[`t${k}`]![u]!]!;
+    const t = TABUR[U[KOL_T[k]!]![u]!]!;
     const a = aileOran[t.aile]!;
     // Tabur doluluğu: personel ve ağırlıklı ekipman oranının küçüğü (15.1). Referans adetle tekrar çarpılmaz.
     const e = Math.min(kisiOran, a.oran);
@@ -321,7 +346,7 @@ export function birlikIkmal(w: World, u: number): { gida: number; muh: number; o
 export function birlikMuhimmatGunU(w: World, u: number): number {
   const U = uc(w);
   let m = 0;
-  for (let k = 0; k < U.taburSay![u]!; k++) m += TABUR[U[`t${k}`]![u]!]!.muhimmat;
+  for (let k = 0; k < U.taburSay![u]!; k++) m += TABUR[U[KOL_T[k]!]![u]!]!.muhimmat;
   // personel oranına göre
   const ih = birlikIhtiyac(w, u).kisi;
   return mulDiv(m, U.kisi![u]!, Math.max(1, ih)).q;

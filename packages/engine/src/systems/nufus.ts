@@ -4,6 +4,7 @@ import { hc, ek, ck } from '../state/world.ts';
 import { ST, YB, NHUCRE, NKIMLIK, ASKERLIK, K, tekIdx, NTEK } from '../catalog.ts';
 import { S, mulDiv, mulRatio, largestRemainder } from '../num/index.ts';
 import { uc, birlikIhtiyac, anlat, fmtSayi } from './ortak.ts';
+import { KOL_E, KOL_OK, KOL_ON } from '../state/world.ts';
 
 const DOGUM_AY = 2500; // S: yıllık %3 nominal doğum / 12
 const NET_AY = 830; // S: (1,01)^(1/12) − 1
@@ -182,51 +183,67 @@ function eyaletAAktar(w: World, e: number, n: number, hedef: number): number {
   return m;
 }
 
-/** Birlik kişilerinin köken eyaletlerine göre çıkarılması; dönüş: eyalet → kişi. */
-export function birlikKisiCikar(w: World, u: number, n: number): number[] {
+/** Birlik kişilerinin köken eyaletlerine göre çıkarılması; dönüş: eyalet → kişi (seyrek, artan eyalet sırası). */
+export function birlikKisiCikarSeyrek(w: World, u: number, n: number): Map<number, number> {
   const U = uc(w);
   const c = U.ulke![u]!;
   const say: number[] = [];
-  for (let k = 0; k < 9; k++) say.push(U[`on${k}`]![u]!);
+  for (let k = 0; k < 9; k++) say.push(U[KOL_ON[k]!]![u]!);
   const top = say.reduce((a, b) => a + b, 0);
   const m = Math.min(n, top);
   const pay = largestRemainder(m, say);
-  const eyalet = new Array<number>(w.nE).fill(0);
+  const eyalet = new Map<number, number>();
+  const ekle = (e: number, v: number) => { if (v > 0) eyalet.set(e, (eyalet.get(e) ?? 0) + v); };
   for (let k = 0; k < 8; k++) {
     if (pay[k]! === 0) continue;
-    U[`on${k}`]![u] = U[`on${k}`]![u]! - pay[k]!;
-    eyalet[U[`ok${k}`]![u]! - 1]! += pay[k]!;
-    if (U[`on${k}`]![u] === 0) U[`ok${k}`]![u] = 0;
+    U[KOL_ON[k]!]![u] = U[KOL_ON[k]!]![u]! - pay[k]!;
+    ekle(U[KOL_OK[k]!]![u]! - 1, pay[k]!);
+    if (U[KOL_ON[k]!]![u] === 0) U[KOL_OK[k]!]![u] = 0;
   }
   if (pay[8]! > 0) {
     U.on8![u] = U.on8![u]! - pay[8]!;
-    const def: number[] = [];
-    for (let e = 0; e < w.nE; e++) def.push(w.kokenDefter[c * w.nE + e]!);
+    // yalnız sıfır olmayan defter kalemleri (sıfır ağırlık pay almaz; sıralama korunur)
+    const ix: number[] = [], def: number[] = [];
+    for (let e = 0; e < w.nE; e++) { const v = w.kokenDefter[c * w.nE + e]!; if (v !== 0) { ix.push(e); def.push(v); } }
     const dp = largestRemainder(pay[8]!, def);
-    for (let e = 0; e < w.nE; e++) { w.kokenDefter[c * w.nE + e] = w.kokenDefter[c * w.nE + e]! - dp[e]!; eyalet[e]! += dp[e]!; }
+    ix.forEach((e, i) => { w.kokenDefter[c * w.nE + e] = w.kokenDefter[c * w.nE + e]! - dp[i]!; ekle(e, dp[i]!); });
   }
   U.kisi![u] = U.kisi![u]! - m;
   return eyalet;
+}
+/** Yoğun dönüşlü sürüm (geriye uyum). */
+export function birlikKisiCikar(w: World, u: number, n: number): number[] {
+  const out = new Array<number>(w.nE).fill(0);
+  for (const [e, v] of birlikKisiCikarSeyrek(w, u, n)) out[e]! += v;
+  return out;
 }
 
 /** Muharebe kaybı: ölü, yaralı, esir (tutan ülke). */
 export function kayipYaz(w: World, u: number, olu: number, yarali: number, esir: number, tutan: number): void {
   const U = uc(w);
   const c = U.ulke![u]!;
-  const bitti = w.tekBitti[c * NTEK + tekIdx('sihhiye')] === 1;
-  void bitti;
-  const eO = birlikKisiCikar(w, u, olu);
-  const eY = birlikKisiCikar(w, u, yarali);
-  const eE = birlikKisiCikar(w, u, esir);
+  const eO = birlikKisiCikarSeyrek(w, u, olu);
+  const eY = birlikKisiCikarSeyrek(w, u, yarali);
+  const eE = birlikKisiCikarSeyrek(w, u, esir);
+  const anahtar = [...new Set([...eO.keys(), ...eY.keys(), ...eE.keys()])].sort((a, b) => a - b);
+  // aynı gün aynı eyaletin yaralıları tek kayıtta birleşir
+  let yb = w.onbellek.get('yaraliGun') as { g: number; m: Map<number, number> } | undefined;
+  if (!yb || yb.g !== w.gun) { yb = { g: w.gun, m: new Map() }; w.onbellek.set('yaraliGun', yb); }
   let topOlu = 0;
-  for (let e = 0; e < w.nE; e++) {
-    topOlu += eyaletAAktar(w, e, eO[e]!, -1);
-    const y = eyaletAAktar(w, e, eY[e]!, ST.W);
+  for (const e of anahtar) {
+    topOlu += eyaletAAktar(w, e, eO.get(e) ?? 0, -1);
+    const y = eyaletAAktar(w, e, eY.get(e) ?? 0, ST.W);
     if (y > 0) {
-      const s = w.YR.alloc();
-      w.YR.c.ulke[s] = c; w.YR.c.eyalet[s] = e; w.YR.c.kisi[s] = y; w.YR.c.gun[s] = w.gun + K.yaraliGun;
+      const k = c * w.nE + e;
+      const var_ = yb.m.get(k);
+      if (var_ !== undefined && w.YR.alive[var_] && w.YR.c.gun[var_] === w.gun + K.yaraliGun) w.YR.c.kisi[var_] = w.YR.c.kisi[var_]! + y;
+      else {
+        const s = w.YR.alloc();
+        w.YR.c.ulke[s] = c; w.YR.c.eyalet[s] = e; w.YR.c.kisi[s] = y; w.YR.c.gun[s] = w.gun + K.yaraliGun;
+        yb.m.set(k, s);
+      }
     }
-    const p = eyaletAAktar(w, e, eE[e]!, ST.P);
+    const p = eyaletAAktar(w, e, eE.get(e) ?? 0, ST.P);
     if (p > 0 && tutan >= 0) w.esir[tutan * w.nC + c] = w.esir[tutan * w.nC + c]! + p;
   }
   w.sayac.askerOlum += topOlu;
@@ -283,7 +300,7 @@ export function terhis(w: World, u: number): void {
   const eyl = birlikKisiCikar(w, u, U.kisi![u]!);
   for (let e = 0; e < w.nE; e++) eyaletAAktar(w, e, eyl[e]!, ST.E);
   for (let k = 0; k < 8; k++) {
-    const m = U[`e${k}`]?.[u] ?? 0;
+    const m = U[KOL_E[k]!]?.[u] ?? 0;
     if (m > 0) w.ekip[ck(c, k)] = w.ekip[ck(c, k)]! + m;
   }
   w.U.release(u);

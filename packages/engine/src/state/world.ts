@@ -118,6 +118,9 @@ export interface World {
   teklifBolge: Record<string, number[]>; // barış teklifindeki bölge listeleri (teklif kimliği → bölgeler)
   /** Hash dışı: savaş/anlaşma değişim sayacı (önbellek anahtarı) */
   diploSurum: number;
+  /** Hash dışı: savaş tarafı ve anlaşma tablosu sürümleri (önbellek anahtarları) */
+  savasSurum: number;
+  anSurum: number;
   kuyruk: { sira: number; emir: Record<string, unknown> }[]; // onaylı emir kuyruğu (kanonik)
   emirSira: number;
   artik: { dogum: number; olum: number; kohort: number };
@@ -133,6 +136,10 @@ export interface World {
   depo: Int32Array; // eyalet → merkez bölge
 }
 
+export const KOL_E = Array.from({ length: 16 }, (_, k) => `e${k}`);
+export const KOL_T = Array.from({ length: 16 }, (_, k) => `t${k}`);
+export const KOL_ON = Array.from({ length: 16 }, (_, k) => `on${k}`);
+export const KOL_OK = Array.from({ length: 16 }, (_, k) => `ok${k}`);
 export const hc = (r: number, yas: number, st: number) => r * NHUCRE + yas * 8 + st;
 export const ek = (r: number, k: number) => r * NKIMLIK + k;
 export const ck = (c: number, k: number) => c * NEKIP + k;
@@ -169,7 +176,7 @@ export function yeniDunya(pkg: Paket, oyuncu: number): World {
     PR: new Table('proje', PROJE_KOL, 16), YR: new Table('yarali', YARALI_KOL, 32), KE: new Table('kalici', KALICI_KOL, 8),
     TK: new Table('teklif', TEKLIF_KOL, 8), SP: new Table('siparis', SIPARIS_KOL, 16), OL: new Table('olay', OLAY_KOL, 8),
     birlikAd: [], rotaEpoch: 1, kuyruk: [], emirSira: 0,
-    savasTaraf: new Int8Array(SV_MAX * nC), iddia: new Int16Array(nR * IDDIA_MAX), teklifBolge: {}, diploSurum: 1,
+    savasTaraf: new Int8Array(SV_MAX * nC), iddia: new Int16Array(nR * IDDIA_MAX), teklifBolge: {}, diploSurum: 1, savasSurum: 1, anSurum: 1,
     artik: { dogum: 0, olum: 0, kohort: 0 },
     sayac: { dogum: 0, dogalOlum: 0, askerOlum: 0, ekOlum: 0 },
     anlati: [], bildirim: [], tarihce: [], onbellek: new Map(), ayarlar: { zorlaTamYol: false, onbellekKapali: false },
@@ -319,7 +326,7 @@ export function birlikKur(w: World, c: number, sab: number, bolge: number, ad: s
   U.durus![u] = 0;
   const s = SABLON[sab]!;
   U.taburSay![u] = s.taburlar.length;
-  s.taburlar.forEach((tk, k) => { U[`t${k}`]![u] = TABUR.findIndex((t) => t.kod === tk); });
+  s.taburlar.forEach((tk, k) => { U[KOL_T[k]!]![u] = TABUR.findIndex((t) => t.kod === tk); });
   // ekipman: başlangıçta tam (ilk ekipman türü); yeni birlikte depodan çekilir
   for (const [aile, adet] of Object.entries(ih.aile)) {
     const turler = AILE_EKIP[aile]!;
@@ -329,7 +336,7 @@ export function birlikKur(w: World, c: number, sab: number, bolge: number, ad: s
       for (let q = turler.length - 1; q >= 0 && kalan > 0; q--) {
         const k = turler[q]!;
         const al = Math.min(kalan, w.ekip[ck(c, k)]!);
-        w.ekip[ck(c, k)] = w.ekip[ck(c, k)]! - al; U[`e${k}`]![u] = U[`e${k}`]![u]! + al; kalan -= al;
+        w.ekip[ck(c, k)] = w.ekip[ck(c, k)]! - al; U[KOL_E[k]!]![u] = U[KOL_E[k]!]![u]! + al; kalan -= al;
       }
     }
   }
@@ -347,7 +354,7 @@ export function birlikMuhimmatGun(w: World, u: number): number {
   const U = w.U.c as unknown as Record<string, Float64Array>;
   let m = 0;
   const n = U.taburSay![u]!;
-  for (let k = 0; k < n; k++) m += TABUR[U[`t${k}`]![u]!]!.muhimmat;
+  for (let k = 0; k < n; k++) m += TABUR[U[KOL_T[k]!]![u]!]!.muhimmat;
   return m;
 }
 
@@ -359,21 +366,21 @@ export function kokenEkle(w: World, u: number, eyaletKisi: number[]): void {
     let n = eyaletKisi[e]!;
     if (n <= 0) continue;
     let slot = -1;
-    for (let k = 0; k < 8; k++) if (U[`ok${k}`]![u] === e + 1) { slot = k; break; }
-    if (slot < 0) for (let k = 0; k < 8; k++) if (U[`ok${k}`]![u] === 0) { slot = k; U[`ok${k}`]![u] = e + 1; break; }
+    for (let k = 0; k < 8; k++) if (U[KOL_OK[k]!]![u] === e + 1) { slot = k; break; }
+    if (slot < 0) for (let k = 0; k < 8; k++) if (U[KOL_OK[k]!]![u] === 0) { slot = k; U[KOL_OK[k]!]![u] = e + 1; break; }
     if (slot < 0) {
       // dokuzuncu köken: en küçük parti (eşitlikte büyük eyalet kimliği) diğer kovasına
       let min = -1;
       for (let k = 0; k < 8; k++) {
-        if (min < 0 || U[`on${k}`]![u]! < U[`on${min}`]![u]! || (U[`on${k}`]![u] === U[`on${min}`]![u] && U[`ok${k}`]![u]! > U[`ok${min}`]![u]!)) min = k;
+        if (min < 0 || U[KOL_ON[k]!]![u]! < U[KOL_ON[min]!]![u]! || (U[KOL_ON[k]!]![u] === U[KOL_ON[min]!]![u] && U[KOL_OK[k]!]![u]! > U[KOL_OK[min]!]![u]!)) min = k;
       }
-      const ey = U[`ok${min}`]![u]! - 1;
-      const say = U[`on${min}`]![u]!;
+      const ey = U[KOL_OK[min]!]![u]! - 1;
+      const say = U[KOL_ON[min]!]![u]!;
       U.on8![u] = U.on8![u]! + say;
       w.kokenDefter[c * w.nE + ey] = w.kokenDefter[c * w.nE + ey]! + say;
-      U[`ok${min}`]![u] = e + 1; U[`on${min}`]![u] = 0; slot = min;
+      U[KOL_OK[min]!]![u] = e + 1; U[KOL_ON[min]!]![u] = 0; slot = min;
     }
-    U[`on${slot}`]![u] = U[`on${slot}`]![u]! + n;
+    U[KOL_ON[slot]!]![u] = U[KOL_ON[slot]!]![u]! + n;
     n = 0;
   }
 }

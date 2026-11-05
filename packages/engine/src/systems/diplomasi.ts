@@ -3,7 +3,7 @@ import type { World } from '../state/world.ts';
 import { A, cc, hc, SV_MAX } from '../state/world.ts';
 import { NHUCRE, YONETIM, K, ST, YB, EKIPMAN } from '../catalog.ts';
 import { S, mulDiv, clamp, approach } from '../num/index.ts';
-import { savasta, savastaMi, anlasmaVar, uc, gorus, anlat, bildir, birlikIstat, tarafi, tarafYaz, savasUyeleri, diploDegisti, iddiaEkle, iddiaSil, pasif } from './ortak.ts';
+import { savasta, savastaMi, anlasmaVar, uc, gorus, anlat, bildir, birlikIstat, tarafi, tarafYaz, savasUyeleri, savasDegisti, anlasmaEklendi, anlasmaSilindi, iddiaEkle, iddiaSil, pasif } from './ortak.ts';
 import { esirIade } from './nufus.ts';
 import { insanGucu } from './nufus.ts';
 
@@ -42,9 +42,9 @@ export function anlasmaKur(w: World, tur: number, a: number, b: number, bitis = 
   if (anlasmaVar(w, tur, a, b) >= 0 && tur !== A.tazminat) return;
   const s = w.AN.alloc();
   w.AN.c.tur[s] = tur; w.AN.c.a[s] = a; w.AN.c.b[s] = b; w.AN.c.baslangic[s] = w.gun; w.AN.c.bitis[s] = bitis; w.AN.c.miktar[s] = miktar;
-  diploDegisti(w);
+  anlasmaEklendi(w, s);
 }
-export function anlasmaSil(w: World, s: number): void { w.AN.release(s); diploDegisti(w); }
+export function anlasmaSil(w: World, s: number): void { const t = w.AN.c.tur[s]!; w.AN.release(s); anlasmaSilindi(w, t); }
 export function anlasmaBoz(w: World, tur: number, a: number, b: number, ihlal: boolean): void {
   const s = anlasmaVar(w, tur, a, b);
   if (s < 0) return;
@@ -89,7 +89,7 @@ export function gerekceGunu(w: World): void {
 export function savasKapat(w: World, s: number): void {
   w.savasTaraf.fill(0, s * w.nC, (s + 1) * w.nC);
   w.SV.release(s);
-  diploDegisti(w);
+  savasDegisti(w);
 }
 
 export function savasIlan(w: World, a: number, b: number, cagri = true): number {

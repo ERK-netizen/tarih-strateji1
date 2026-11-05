@@ -11,6 +11,7 @@ import {
 import { kayipYaz, birlikKisiCikar } from './nufus.ts';
 import { baslangicItaat } from './siyaset.ts';
 import { kenarKey } from '../state/world.ts';
+import { KOL_E } from '../state/world.ts';
 
 export const DURUS = ['Hattı tut', 'Esnek savunma', 'Saldırı', 'Garnizon'] as const;
 
@@ -38,7 +39,8 @@ export function hareketGunu(w: World): Muharebe[] {
     const c = U.ulke![u]!;
     const r = U.bolge![u]!;
     if (r === hedef) { U.hedef![u] = -1; U.sonraki![u] = -1; continue; }
-    const y = rotaTip(w, c, 0, r, hedef);
+    // komşu hedefe doğrudan (sık durum: cephe hareketi), uzak hedefe önbellekli rota
+    const y = w.komsuluk[r]!.includes(hedef) ? { yol: [r, hedef], km: 0 } : rotaTip(w, c, 0, r, hedef);
     if (!y || y.yol.length < 2) { U.hedef![u] = -1; continue; }
     const sonraki = y.yol[1]!;
     if (U.sonraki![u] !== sonraki) { U.sonraki![u] = sonraki; U.ilerleme![u] = 0; }
@@ -182,9 +184,9 @@ export function muharebeGunu(w: World, list: Muharebe[]): void {
     }
     // ekipman kaybı: oranın yarısı
     for (let k = 0; k < NEKIP; k++) {
-      const e = U[`e${k}`]![u]!;
+      const e = U[KOL_E[k]!]![u]!;
       const kayip = mulDiv(e, Math.floor(ko.oran / 2), S).q;
-      U[`e${k}`]![u] = e - kayip;
+      U[KOL_E[k]!]![u] = e - kayip;
     }
   }
 }
@@ -253,7 +255,7 @@ function geriCekil(w: World, u: number, saldiranlar: number[]): void {
   const n = U.kisi![u]!;
   kayipYaz(w, u, 0, 0, n, dusman);
   for (let k = 0; k < NEKIP; k++) {
-    const e = U[`e${k}`]![u]!;
+    const e = U[KOL_E[k]!]![u]!;
     w.ekip[ck(dusman, k)] = w.ekip[ck(dusman, k)]! + Math.floor(e / 2);
   }
   anlat(w, `${ad} ${w.pkg.bolgeler[r]!.ad}'da kuşatıldı ve ${fmtSayi(n)} askeriyle teslim oldu.`, 'muharebe', c, 3);

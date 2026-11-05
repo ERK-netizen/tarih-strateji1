@@ -7,7 +7,8 @@ import { rng, AMAC, uniformInt } from '../rng/index.ts';
 import { tarih, gunNo, haftaGunu } from '../calendar/index.ts';
 import { uc, gorus, savasta, anlat, bildir, savastaMi, dostBolge, rota, eyaletUlke } from './ortak.ts';
 import { tarimIsciIhtiyac } from './nufus.ts';
-import { kapasiteAsimi, kontrolErisim } from './siyaset.ts';
+import { kapasiteAsimi, kapasiteAsimiHepsi, kontrolErisim } from './siyaset.ts';
+import { KOL_E } from '../state/world.ts';
 
 const tek = (w: World, c: number, kod: string) => w.tekBitti[c * NTEK + tekIdx(kod)] === 1;
 
@@ -141,6 +142,16 @@ export function gidaGunu(w: World): void {
 }
 
 export function enYakinEyalet(w: World, c: number, r: number): number {
+  let o = w.onbellek.get('enYakin') as { e: number; m: Map<number, number> } | undefined;
+  if (!o || o.e !== w.rotaEpoch) { o = { e: w.rotaEpoch, m: new Map() }; w.onbellek.set('enYakin', o); }
+  const key = c * 8192 + r;
+  const v = o.m.get(key);
+  if (v !== undefined) return v;
+  const b = enYakinEyaletHesap(w, c, r);
+  o.m.set(key, b);
+  return b;
+}
+function enYakinEyaletHesap(w: World, c: number, r: number): number {
   let best = -1, bd = Infinity;
   for (let e = 0; e < w.nE; e++) {
     const d = w.depo[e]!;
@@ -399,13 +410,13 @@ export function katmaDeger(w: World, r: number): number {
 }
 
 export interface VergiDetay { taban: number; oran: number; idari: number; huzur: number; erisim: number; kapasite: number; vergi: number }
-export function bolgeVergi(w: World, c: number, r: number): VergiDetay {
+export function bolgeVergi(w: World, c: number, r: number, asim?: number): VergiDetay {
   const taban = katmaDeger(w, r);
   const oran = w.C.c.vergi[c]!;
   const idari = idariVerim(w, c, r);
   const huzur = 500_000 + mulDiv(w.C.c.huzur[c]!, S, 200_000).q;
   const erisim = w.R.c.sahip[r] === c ? kontrolErisim(w, r) : isgalErisim(w, r);
-  const kapasite = Math.max(600_000, S - mulDiv(500_000, kapasiteAsimi(w, c), S).q);
+  const kapasite = Math.max(600_000, S - mulDiv(500_000, asim ?? kapasiteAsimi(w, c), S).q);
   let v = mulRatio(taban, oran).q;
   v = mulRatio(v, idari).q; v = mulRatio(v, huzur).q; v = mulRatio(v, erisim).q; v = mulRatio(v, kapasite).q;
   return { taban, oran, idari, huzur, erisim, kapasite, vergi: v };
@@ -413,19 +424,36 @@ export function bolgeVergi(w: World, c: number, r: number): VergiDetay {
 
 export interface Gider { borc: number; personel: number; bakim: number; idari: number; politika: number; toplam: number }
 
-export function zorunluGider(w: World, c: number): Gider {
+/** Bütün ülkelerin personel, ekipman değeri ve nüfus toplamları (tek geçiş). */
+export function giderTabani(w: World): { personel: number[]; ekipDeger: number[]; nufus: number[] } {
   const U = uc(w);
-  let personel = 0, ekipDeger = 0;
+  const personel = new Array<number>(w.nC).fill(0), ekipDeger = new Array<number>(w.nC).fill(0), nufus = new Array<number>(w.nC).fill(0);
   for (const u of w.U.rows()) {
-    if (U.ulke![u] !== c) continue;
-    personel += U.kisi![u]!;
-    for (let k = 0; k < EKIPMAN.length; k++) ekipDeger += U[`e${k}`]![u]! * EKIPMAN[k]!.sp;
+    const c = U.ulke![u]!;
+    personel[c]! += U.kisi![u]!;
+    let d = 0;
+    for (let k = 0; k < EKIPMAN.length; k++) d += U[KOL_E[k]!]![u]! * EKIPMAN[k]!.sp;
+    ekipDeger[c]! += d;
+  }
+  for (let r = 0; r < w.nR; r++) { let n = 0; for (let k = 0; k < NHUCRE; k++) n += w.pop[r * NHUCRE + k]!; nufus[w.R.c.sahip[r]!]! += n; }
+  return { personel, ekipDeger, nufus };
+}
+
+export function zorunluGider(w: World, c: number, taban?: { personel: number[]; ekipDeger: number[]; nufus: number[] }): Gider {
+  let personel = 0, ekipDeger = 0, nufus = 0;
+  if (taban) { personel = taban.personel[c]!; ekipDeger = taban.ekipDeger[c]!; nufus = taban.nufus[c]!; }
+  else {
+    const U = uc(w);
+    for (const u of w.U.rows()) {
+      if (U.ulke![u] !== c) continue;
+      personel += U.kisi![u]!;
+      for (let k = 0; k < EKIPMAN.length; k++) ekipDeger += U[KOL_E[k]!]![u]! * EKIPMAN[k]!.sp;
+    }
+    for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === c) for (let k = 0; k < NHUCRE; k++) nufus += w.pop[r * NHUCRE + k]!;
   }
   const bakimHedef = w.C.c.bakimHedef[c]!;
   const per = mulRatio(mulDiv(personel, K.maasGun, 1000).q, bakimHedef).q;
   const bak = mulRatio(mulDiv(ekipDeger, K.spDeger * K.ekipBakim, 1000 * 1000 * 10).q, bakimHedef).q;
-  let nufus = 0;
-  for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === c) for (let k = 0; k < NHUCRE; k++) nufus += w.pop[r * NHUCRE + k]!;
   const idari = mulDiv(nufus, K.idariGider, 1000 * 365).q;
   const borc = mulDiv(w.C.c.borc[c]!, w.C.c.faiz[c]!, S * 365).q;
   return { borc, personel: per, bakim: bak, idari, politika: 0, toplam: borc + per + bak + idari };
@@ -435,11 +463,14 @@ export function zorunluGider(w: World, c: number): Gider {
 export function maliyeGunu(w: World): void {
   const C = w.C.c, R = w.R.c;
   for (let r = 0; r < w.nR; r++) { R.vergiDun[r] = 0; R.vaDun[r] = katmaDeger(w, r); }
+  const grup: number[][] = Array.from({ length: w.nC }, () => []);
+  for (let r = 0; r < w.nR; r++) grup[R.kontrolEden[r]!]!.push(r);
+  const asim = kapasiteAsimiHepsi(w);
+  const tabanG = giderTabani(w);
   for (let c = 0; c < w.nC; c++) {
     let gelir = 0;
-    for (let r = 0; r < w.nR; r++) {
-      if (R.kontrolEden[r] !== c) continue;
-      const v = bolgeVergi(w, c, r).vergi;
+    for (const r of grup[c]!) {
+      const v = bolgeVergi(w, c, r, asim[c]).vergi;
       R.vergiDun[r] = v; gelir += v;
     }
     // tazminat gelir/gider anlaşmaları
@@ -453,7 +484,7 @@ export function maliyeGunu(w: World): void {
     }
     C.hazine[c] = C.hazine[c]! + gelir;
     C.gelirAy[c] = C.gelirAy[c]! + gelir; C.gelirDun[c] = gelir;
-    const g = zorunluGider(w, c);
+    const g = zorunluGider(w, c, tabanG);
     // 1) borç servisi (kısmi ödenirse kalan nakit bakım ve personele kalmaz)
     let odenen = 0;
     if (g.borc > 0) {

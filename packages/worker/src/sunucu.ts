@@ -139,7 +139,9 @@ export class Sunucu {
       while (w.gun < hedef) {
         if (this.durdurIstek) { neden = 'kullanici'; break; }
         let s;
-        try { s = gunIlerle(w); }
+        // ara günler kesinleştirilmez (hız); hedef günü, her 30 günde bir ve olay/durma günleri kesinleşir
+        const sonGun = w.gun + 1 >= hedef || this.durdurIstek || (w.gun + 1 - bas) % 30 === 0;
+        try { s = gunIlerle(w, sonGun); }
         catch (e) {
           // bütünlük hatası: gün kesinleşmez, son kesinleşmiş güne dönülür
           if (this.son) this.w = coz(this.son, this.pkg);
@@ -147,16 +149,19 @@ export class Sunucu {
           neden = 'hata';
           break;
         }
-        this.son = s.bayt;
+        if (s.bayt.length) this.son = s.bayt;
         const delta = new Int16Array(w.nR + 4);
         for (let r = 0; r < w.nR; r++) delta[r] = w.R.c.kontrolEden[r]!;
         this.yanit(m.id, 'dayCommitted', { gun: s.gun, tarih: tarihMetni(s.gun), surum: s.surum, hash: s.hash, ilerleme: Math.min(100, Math.floor(((s.gun - bas) * 100) / Math.max(1, hedef - bas))), delta: delta.buffer, bildirim: s.bildirimler.filter((b) => b.ulke === w.oyuncu || b.durdur).slice(0, 8) }, [delta.buffer]);
         const dur = s.durmalar.filter((b) => SESSIZE_ALINAMAZ.has(b.tur) || !sessiz.has(b.tur));
+        const olayDur = p.birim === 'olay' && w.OL.list().some((x) => w.OL.c.ulke[x] === w.oyuncu);
+        if ((dur.length || olayDur) && !s.bayt.length) this.son = serilestir(w);
         if (dur.length) { neden = 'olay'; durmalar.push(...dur); break; }
-        if (p.birim === 'olay' && w.OL.list().some((x) => w.OL.c.ulke[x] === w.oyuncu)) { neden = 'olay'; break; }
+        if (olayDur) { neden = 'olay'; break; }
         await this.bekle(); // mesaj döngüsüne dön: "Durdur" aç bırakılmaz (T061)
       }
     } finally { this.calisiyor = false; }
+    if (neden !== 'hata') this.son = serilestir(this.dunya());
     // tur sonu otomatik kayıt
     if (neden !== 'hata') await this.kaydet(-1, 'otomatik').catch(() => undefined);
     this.yanit(m.id, 'stopped', { neden, durmalar, gun: this.dunya().gun, tarih: tarihMetni(this.dunya().gun), gecen: this.dunya().gun - bas, rapor: this.rapor(bas) });

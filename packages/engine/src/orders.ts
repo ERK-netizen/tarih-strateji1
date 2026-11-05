@@ -173,7 +173,9 @@ export function onizle(w: World, e: Emir): Kart {
       for (let k = 0; k < 3; k++) if (w.arastirma[c * 3 + k] === t) return red('Araştırma', `${T.ad} zaten araştırılıyor.`);
       const eksik = T.on.filter((o) => !w.tekBitti[c * NTEK + TEKNOLOJI.findIndex((x) => x.kod === o)]);
       if (eksik.length) return red('Araştırma', `Ön koşul: ${eksik.map((o) => TEKNOLOJI.find((x) => x.kod === o)!.ad).join(', ')}.`);
-      let bos = -1; for (let k = 0; k < 3; k++) if (w.arastirma[c * 3 + k]! < 0) { bos = k; break; }
+      const yuva = arastirmaYuvalari(w, c);
+      if (yuva.sirada.includes(t)) return red('Araştırma', `${T.ad} zaten sırada (yarın başlar).`);
+      const bos = yuva.yuva.indexOf(-1);
       const m = tekMaliyetHesapla(w, c, t);
       const v = Math.max(1, w.C.c.arastirmaHizi[c]!);
       return { gecerli: true, baslik: `Araştırma: ${T.ad}`, kapsam: T.etki, bugun: [bos < 0 ? 'Yuva dolu: en eski araştırmanın yerine geçer (ilerleme korunur)' : `Yuva ${bos + 1}`], tahmin: [`Süre ≈ ${Math.floor(m / v)} gün (bilim bütçesiyle kısalır)`, T.yil > 1914 ? `Zamanından önce (${T.yil}) maliyet artışı uygulandı` : 'Dönem maliyeti'], iptal: 'İlerleme saklanır' };
@@ -495,6 +497,22 @@ export function teklifSonuc(w: World, s: number, kabul: boolean): void {
 }
 
 /** Kuyruğa al (onaylı emir). P2'de sırayla işlenir. */
+/** Yuvaların, kuyruktaki araştırma emirleri uygulandıktan sonraki hâli (önizleme ve arayüz için). */
+export function arastirmaYuvalari(w: World, c: number): { yuva: number[]; sirada: number[] } {
+  const yuva = [0, 1, 2].map((k) => w.arastirma[c * 3 + k]!);
+  const sirada: number[] = [];
+  for (const k of w.kuyruk) {
+    const e = k.emir as Emir;
+    if (e.tur !== 'arastir' || e.ulke !== c) continue;
+    const t = Number(e.tek);
+    if (yuva.includes(t)) continue;
+    let b = yuva.indexOf(-1);
+    if (b < 0) b = 0;
+    yuva[b] = t; sirada.push(t);
+  }
+  return { yuva, sirada };
+}
+
 export function kuyrugaAl(w: World, e: Emir): void {
   w.kuyruk.push({ sira: w.emirSira++, emir: e });
 }

@@ -2,8 +2,9 @@
 import {
   type World, tarihMetni, ortak, ekonomi, siyaset, nufus, diplomasi, olaylar, bolgeGozlem, istihbaratDuzeyi, aralik, hazineKademe,
   ARAZI, ASKERLIK, EKONOMI, ISGAL, YONETIM, KISILIK, TUTUM, TEKNOLOJI, NTEK, EKIPMAN, AILE_EKIP, TABUR, SABLON, MAL, PROJE, URUN_MUH, A, ANLASMA_TUR, K,
-  hc, ST, YB, kara,
+  hc, ST, YB, kara, arastirmaYuvalari,
 } from '@ts/engine';
+import { KOL_E, KOL_T } from '@ts/engine';
 
 const U = (w: World) => ortak.uc(w);
 
@@ -115,11 +116,11 @@ export function birlikler(w: World) {
     const ik = ortak.birlikIkmal(w, u);
     const aile = Object.entries(s.aileIhtiyac).map(([a, gerek]) => {
       let sahip = 0;
-      for (const k of AILE_EKIP[a]!) sahip += UU[`e${k}`]![u]!;
+      for (const k of AILE_EKIP[a]!) sahip += UU[KOL_E[k]!]![u]!;
       return { ad: EKIPMAN[AILE_EKIP[a]![0]!]!.ad.replace(/ I$/, ''), sahip, gerek };
     });
     const taburlar: string[] = [];
-    for (let k = 0; k < UU.taburSay![u]!; k++) taburlar.push(TABUR[UU[`t${k}`]![u]!]!.ad);
+    for (let k = 0; k < UU.taburSay![u]!; k++) taburlar.push(TABUR[UU[KOL_T[k]!]![u]!]!.ad);
     return {
       id: w.U.id(u), ad: ortak.birlikAdi(w, u), sablon: SABLON[UU.sablon![u]!]!.ad, bolge: UU.bolge![u]!, bolgeAd: w.pkg.bolgeler[UU.bolge![u]!]!.ad,
       hedef: UU.hedef![u]!, hedefAd: UU.hedef![u]! >= 0 ? w.pkg.bolgeler[UU.hedef![u]!]!.ad : null, durus: kara.DURUS[UU.durus![u]!],
@@ -195,15 +196,16 @@ export function ekonomiG(w: World) {
 export function arastirmaG(w: World) {
   const P = w.oyuncu;
   const hiz = ekonomi.arastirmaHizi(w, P);
+  const yv = arastirmaYuvalari(w, P);
   return {
-    hiz, yuvalar: [0, 1, 2].map((k) => w.arastirma[P * 3 + k]!),
+    hiz, yuvalar: yv.yuva, sirada: yv.sirada,
     teknolojiler: TEKNOLOJI.map((t, i) => {
       const bitti = w.tekBitti[P * NTEK + i] === 1;
       const maliyet = w.tekMaliyet[P * NTEK + i]! || ekonomi.tekMaliyetHesapla(w, P, i);
       const ilerleme = w.tekIlerleme[P * NTEK + i]!;
       const onUygun = t.on.every((o) => w.tekBitti[P * NTEK + TEKNOLOJI.findIndex((x) => x.kod === o)]);
-      const arastiriliyor = [0, 1, 2].some((k) => w.arastirma[P * 3 + k] === i);
-      return { i, ad: t.ad, yil: t.yil, etki: t.etki, on: t.on.map((o) => TEKNOLOJI.find((x) => x.kod === o)!.ad), bitti, arastiriliyor, uygun: onUygun, yuzde: Math.min(100, Math.floor((ilerleme * 100) / Math.max(1, maliyet))), kalanGun: Math.ceil(Math.max(0, maliyet - ilerleme) / Math.max(1, hiz)) };
+      const arastiriliyor = yv.yuva.includes(i);
+      return { i, ad: t.ad, yil: t.yil, etki: t.etki, on: t.on.map((o) => TEKNOLOJI.find((x) => x.kod === o)!.ad), bitti, arastiriliyor, sirada: yv.sirada.includes(i), uygun: onUygun, yuzde: Math.min(100, Math.floor((ilerleme * 100) / Math.max(1, maliyet))), kalanGun: Math.ceil(Math.max(0, maliyet - ilerleme) / Math.max(1, hiz)) };
     }),
   };
 }

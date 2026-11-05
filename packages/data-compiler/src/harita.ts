@@ -134,6 +134,7 @@ const TAVAN: Record<string, number> = { RU: 29, US: 16, CN: 21, IN: 13, CA: 7, B
 const ZORUNLU: [string, string][] = [
   ['Venice', 'IT'], ['Florence', 'IT'], ['Velikiy Novgorod', 'RU'], ['Kazan', 'RU'], ['Smolensk', 'RU'], ['Voronezh', 'RU'], ['Nizhniy Novgorod', 'RU'], ['Samarkand', 'UZ'], ['Herat', 'AF'],
   ['Nanjing', 'CN'], ['Lhasa', 'CN'], ['Kashgar', 'CN'], ['Timbuktu', 'ML'], ['Cusco', 'PE'], ['Irákleion', 'GR'], ['Thessaloníki', 'GR'], ['Saint Petersburg', 'RU'], ['Ho Chi Minh City', 'VN'], ['Bologna', 'IT'], ['Simferopol', 'UA'], ['Poznań', 'PL'], ['Oviedo', 'ES'], ['Fès', 'MA'], ['Huế', 'VN'],
+  ['Vladivostok', 'RU'], ['Liverpool', 'GB'],
 ];
 /** Modern şehir adı düzeltmeleri (ülke:ad → Türkçe/anlamlı ad). */
 const DUZELT: Record<string, string> = {
@@ -172,6 +173,7 @@ const TR_SEHIR: Record<string, string> = {
   Muscat: 'Maskat', "Sana'a": 'San’a', Sanaa: 'San’a', Aden: 'Aden', Jeddah: 'Cidde', Karachi: 'Karaçi', Lahore: 'Lahor', Dhaka: 'Dakka', Tokyo: 'Tokyo', Seoul: 'Seul',
   'Ho Chi Minh City': 'Saygon', Hanoi: 'Hanoi', Bangkok: 'Bangkok', Jakarta: 'Cakarta', Manila: 'Manila', Rabat: 'Rabat', Casablanca: 'Kazablanka', Marrakesh: 'Marakeş', Fes: 'Fas',
   Ankara: 'Ankara', Bursa: 'Bursa', Konya: 'Konya', Adana: 'Adana', Trabzon: 'Trabzon', Erzurum: 'Erzurum', Diyarbakir: 'Diyarbakır', Edirne: 'Edirne', Antalya: 'Antalya', Samsun: 'Samsun',
+  Mogadishu: 'Mogadişu', Djibouti: 'Cibuti', 'Bandar Seri Begawan': 'Bandar Seri Begawan',
   Kayseri: 'Kayseri', Sivas: 'Sivas', Van: 'Van', Gaziantep: 'Antep', Sanliurfa: 'Urfa', Malatya: 'Malatya', Eskisehir: 'Eskişehir', Balikesir: 'Balıkesir', Canakkale: 'Çanakkale',
 };
 
@@ -212,7 +214,9 @@ for (const u of ulkeler) {
   let dmin = 0.62 * Math.sqrt(alanPx / k);
   const secilen: Sehir[] = [];
   // zorunlu şehirler tavanı aşmaz; başkent korunur, ardından zorunlular
-  const bas = adaylar.find((c) => c.featureCode === 'PPLC');
+  // başkent kıyıda/adada olabilir (sadeleştirilmiş poligonun dışında kalır): süzgeçsiz listeden alınır
+  const bas = adaylar.find((c) => c.featureCode === 'PPLC') ?? (kentSehir.get(u.iso) ?? []).find((c) => c.featureCode === 'PPLC');
+  if (bas && !adaylar.includes(bas)) adaylar.unshift(bas);
   if (bas) secilen.push(bas);
   for (const z of zorunlu) if (!secilen.includes(z)) secilen.push(z);
   for (let tur = 0; tur < 4 && secilen.length < k; tur++) {
@@ -428,8 +432,19 @@ const cikti = {
   kenarlar,
   ulkeler: Object.fromEntries(ulkeler.map((u) => [u.iso, { ad: u.ad, lon: yuv(u.lon), lat: yuv(u.lat) }])),
 };
+// deniz adları (dönemden bağımsız coğrafî adlar)
+const DENIZ: [string, number, number][] = [
+  ['Atlas Okyanusu', -38, 28], ['Atlas Okyanusu', -22, -22], ['Pasifik Okyanusu', -140, 18], ['Pasifik Okyanusu', -120, -28], ['Pasifik Okyanusu', 165, 30], ['Hint Okyanusu', 78, -22],
+  ['Akdeniz', 18, 34.6], ['Karadeniz', 34.5, 43.3], ['Hazar Denizi', 50.6, 41.8], ['Kızıldeniz', 38.6, 21], ['Basra Körfezi', 51.2, 27.2], ['Baltık Denizi', 19.3, 56.6], ['Kuzey Denizi', 3.4, 56.2],
+  ['Arap Denizi', 64, 15], ['Bengal Körfezi', 89, 15], ['Güney Çin Denizi', 114, 13], ['Doğu Çin Denizi', 125.5, 29], ['Japon Denizi', 135, 40.5], ['Meksika Körfezi', -90, 25.3], ['Karayip Denizi', -75, 15],
+  ['Barents Denizi', 40, 73], ['Ohotsk Denizi', 149, 54], ['Tasman Denizi', 160, -38], ['Gine Körfezi', 3, 1.5], ['Arktik Okyanusu', -10, 81], ['Bering Denizi', -177, 58], ['Hudson Körfezi', -86, 59.5],
+  ['Norveç Denizi', 2, 67], ['Ege Denizi', 25, 38.7], ['Adriyatik', 16, 42.6], ['Mercan Denizi', 155, -16],
+];
+const denizler = DENIZ.map(([ad, lon, lat]) => { const [x, y] = proj(lon, lat); return { ad, x: yuv(x), y: yuv(y) }; }).filter((d) => d.x > 0 && d.x < W && d.y > 0 && d.y < H);
 const kok = join(dirname(fileURLToPath(import.meta.url)), '../../..');
 mkdirSync(join(kok, 'data/derlenmis'), { recursive: true });
-writeFileSync(join(kok, 'data/derlenmis/harita.json'), JSON.stringify(cikti));
+writeFileSync(join(kok, 'data/derlenmis/harita.json'), JSON.stringify({ ...cikti, denizler }));
+// arayüz için yalnız geometri (senaryolar ortak kullanır)
+writeFileSync(join(kok, 'data/derlenmis/dunya-geo.json'), JSON.stringify({ gen: W, yuk: H, poligon: cikti.bolgeler.map((b) => b.poligon), denizler }));
 const tur = [0, 0, 0]; for (const k of kenarlar) tur[k.tur]!++;
 console.log(`harita: ${bolgeler.length} bölge, ${ulkeler.length} ülke, kenar kara/boğaz/okyanus ${tur.join('/')}, ${W}×${H}`);

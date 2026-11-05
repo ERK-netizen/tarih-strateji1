@@ -7,6 +7,7 @@ import { uc, rotaTip, dostBolge, kenarKapasite, birlikGidaGun, birlikMuhimmatGun
 import { askerCek, kokenEkle } from '../state/world.ts';
 import { malEkle, eyaletDengeTalepleri, enYakinEyalet } from './ekonomi.ts';
 import { hashV1 } from '../hash/index.ts';
+import { KOL_E } from '../state/world.ts';
 
 export interface Talep {
   sinif: number; // 0 acil sivil, 1 cephe ikmali, 4 diğer ikmal
@@ -120,7 +121,7 @@ export function talepTopla(w: World): Talep[] {
     const ih = birlikIhtiyac(w, u);
     for (const [aile, gerek] of Object.entries(ih.aile)) {
       let sahip = 0;
-      for (const k of AILE_EKIP[aile]!) sahip += U[`e${k}`]![u]! + y.ekip[k]!;
+      for (const k of AILE_EKIP[aile]!) sahip += U[KOL_E[k]!]![u]! + y.ekip[k]!;
       let acik = gerek - sahip;
       // en iyi nesilden başla
       const turler = AILE_EKIP[aile]!;
@@ -142,14 +143,20 @@ export function talepTopla(w: World): Talep[] {
   return out;
 }
 
-function kaynakStok(w: World, t: Talep): number {
+function kisiStok(w: World, c: number): number {
+  let y = 0;
+  for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === c && w.R.c.kontrolEden[r] === c) y += mulDiv(w.pop[hc(r, YB.ASKER, ST.Y)]!, w.R.c.kontrol[r]!, 100_000).q;
+  return y;
+}
+function kaynakStok(w: World, t: Talep, kisiOn?: Map<number, number>): number {
   if (t.tur === T_GIDA) return w.E.c.gida[t.kaynakId]!;
   if (t.tur === T_MUH) return w.C.c.muhimmat[t.ulke]!;
   if (t.tur === T_EKIP) return w.ekip[ck(t.ulke, t.alt)]!;
   if (t.tur === T_KISI) {
-    let y = 0;
-    for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === t.ulke && w.R.c.kontrolEden[r] === t.ulke) y += mulDiv(w.pop[hc(r, YB.ASKER, ST.Y)]!, w.R.c.kontrol[r]!, 100_000).q;
-    return y;
+    if (!kisiOn) return kisiStok(w, t.ulke);
+    let v = kisiOn.get(t.ulke);
+    if (v === undefined) { v = kisiStok(w, t.ulke); kisiOn.set(t.ulke, v); }
+    return v;
   }
   return 0;
 }
@@ -163,9 +170,11 @@ export function tahsis(w: World, talepler: Talep[]): TahsisSonuc {
   const rotalar = talepler.map((t) => rotaTip(w, t.ulke, 1, t.kaynakBolge, t.hedefBolge));
   // önbellek anahtarı (7.4): rota epoch'u, talep vektörü, kapasite vektörü, stok uygunluğu
   let anahtar = '';
-  if (!w.ayarlar.onbellekKapali) {
+  const kisiOn = new Map<number, number>();
+  // büyük haritada talep vektörü her gün değişir; anahtar maliyeti isabetten yüksek olduğundan önbellek yalnız küçük paketlerde
+  if (!w.ayarlar.onbellekKapali && w.nR <= 100) {
     const parca: number[] = [w.rotaEpoch];
-    for (const t of talepler) parca.push(t.sinif, t.tur, t.alt, t.miktar, t.kaynakBolge, t.hedefBolge, t.ulke, kaynakStok(w, t));
+    for (const t of talepler) parca.push(t.sinif, t.tur, t.alt, t.miktar, t.kaynakBolge, t.hedefBolge, t.ulke, kaynakStok(w, t, kisiOn));
     for (const k of w.pkg.kenarlar) parca.push(kenarKapasite(w, k.a, k.b));
     anahtar = hashV1(new Uint8Array(new Float64Array(parca).buffer));
     const on = w.onbellek.get('tahsis') as { anahtar: string; olcek: number[] } | undefined;
@@ -174,6 +183,7 @@ export function tahsis(w: World, talepler: Talep[]): TahsisSonuc {
   const kalan = new Map<number, number>();
   for (const k of w.pkg.kenarlar) kalan.set(kenarKey(k.a, k.b), kenarKapasite(w, k.a, k.b));
   const stokKalan = new Map<string, number>();
+  const anahtarlar = talepler.map(stokAnahtar);
   const olcek = new Array<number>(n).fill(0);
   let acik = 0;
   for (const sinif of [0, 1, 2, 3, 4, 5]) {
@@ -181,11 +191,12 @@ export function tahsis(w: World, talepler: Talep[]): TahsisSonuc {
     if (idx.length === 0) continue;
     // kaynak stoğu oranı
     const stokIst = new Map<string, number>();
-    for (const i of idx) { const k = stokAnahtar(talepler[i]!); stokIst.set(k, (stokIst.get(k) ?? 0) + talepler[i]!.miktar); }
+    const ilk = new Map<string, number>();
+    for (const i of idx) { const k = anahtarlar[i]!; stokIst.set(k, (stokIst.get(k) ?? 0) + talepler[i]!.miktar); if (!ilk.has(k)) ilk.set(k, i); }
     const stokOran = new Map<string, number>();
     for (const [k, ist] of stokIst) {
-      const t = talepler[idx.find((i) => stokAnahtar(talepler[i]!) === k)!]!;
-      const mevcut = stokKalan.get(k) ?? kaynakStok(w, t);
+      const t = talepler[ilk.get(k)!]!;
+      const mevcut = stokKalan.get(k) ?? kaynakStok(w, t, kisiOn);
       stokKalan.set(k, mevcut);
       stokOran.set(k, ist <= mevcut ? S : mulDiv(mevcut, S, ist).q);
     }
@@ -202,7 +213,7 @@ export function tahsis(w: World, talepler: Talep[]): TahsisSonuc {
     for (const i of idx) {
       const t = talepler[i]!;
       const y = rotalar[i]!.yol;
-      let o = stokOran.get(stokAnahtar(t))!;
+      let o = stokOran.get(anahtarlar[i]!)!;
       for (let k = 0; k + 1 < y.length; k++) o = Math.min(o, kenarOran.get(kenarKey(y[k]!, y[k + 1]!))!);
       olcek[i] = o;
     }
@@ -210,7 +221,7 @@ export function tahsis(w: World, talepler: Talep[]): TahsisSonuc {
     for (const i of idx) {
       const t = talepler[i]!;
       const m = mulRatio(t.miktar, olcek[i]!).q;
-      const k = stokAnahtar(t);
+      const k = anahtarlar[i]!;
       stokKalan.set(k, stokKalan.get(k)! - m);
       const y = rotalar[i]!.yol;
       const ag = mulDiv(m, t.agirlik, 1000).q;
@@ -225,13 +236,14 @@ export function tahsis(w: World, talepler: Talep[]): TahsisSonuc {
 /** P6–P7: tahsis sonucunu sevkiyata çevirir (kaynaktan düşer, transit yaratır). */
 export function sevkiyat(w: World, talepler: Talep[], s: TahsisSonuc): void {
   const U = uc(w);
+  const kisiOn = new Map<number, number>();
   talepler.forEach((t, i) => {
     const y = s.rotalar[i];
     if (!y) return;
     let m = mulRatio(t.miktar, s.olcek[i]!).q;
     if (m <= 0) return;
     // kaynaktan gerçek düşüm (stok her zaman ayrı sınırdır, T048)
-    m = Math.min(m, kaynakStok(w, t));
+    m = Math.min(m, kaynakStok(w, t, kisiOn));
     if (m <= 0) return;
     const hizli = y.yol.every((r) => w.R.c.demiryolu[r]! >= 1);
     const hiz = hizli ? 300 : 100;
@@ -247,6 +259,7 @@ export function sevkiyat(w: World, talepler: Talep[], s: TahsisSonuc): void {
     else if (t.tur === T_KISI) {
       const ey = askerCek(w, t.ulke, m);
       if (!ey) return;
+      kisiOn.set(t.ulke, kisiOn.get(t.ulke)! - m);
       ey.forEach((n, e) => { if (n > 0) yeni(T_KISI, e, n); });
     }
   });
