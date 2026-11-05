@@ -384,7 +384,7 @@ export function derle(t: SenaryoTanim): { paket: Paket; ozet: string } {
       pg: d.pasif ? 0 : 50_000 + d.guc * 2000, vergi: d.pasif ? 80_000 : 110_000 + d.eko * 5000, askerlik: d.askerlik ?? 1, ekonomi: savasVar ? 2 : d.guc >= 7 ? 1 : 0,
       huzur: d.pasif ? 60_000 : 58_000 + (d.eko - 5) * 1000, mesru: 60_000, kultur: kI(devletHalk[c]![0]), inanc: iI(devletHalk[c]![1]),
       yedekOran: Math.round((d.pasif ? 0.03 : 0.04 + d.guc / 250) * 1_000_000), tekler: d.eko >= 8 && !d.pasif ? ['tarim1', 'sanayi1'] : d.eko >= 6 && !d.pasif ? ['tarim1'] : [],
-      lider: d.lider, pasif: d.pasif || undefined, yonetimAd: d.yAd, guc: d.guc, ordu: n,
+      lider: d.lider, pasif: d.pasif || undefined, yonetimAd: d.yAd, guc: d.guc, ordu: n, destek: savasVar ? 65_000 : undefined,
       depo: { muhimmat: d.pasif ? 2000 : Math.round(n * 6500 * ekoF), ekip },
     } as PaketUlke;
   });

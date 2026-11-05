@@ -200,7 +200,7 @@ export function yeniDunya(pkg: Paket, oyuncu: number): World {
   const C = w.C.c;
   pkg.ulkeler.forEach((u, c) => {
     C.hazine[c] = u.hazine; C.pg[c] = u.pg; C.huzur[c] = u.huzur; C.mesru[c] = u.mesru;
-    C.destek[c] = 40_000; C.vergi[c] = u.vergi; C.askerlik[c] = u.askerlik; C.ekonomi[c] = u.ekonomi; C.isgalPol[c] = 1;
+    C.destek[c] = u.destek ?? 40_000; C.vergi[c] = u.vergi; C.askerlik[c] = u.askerlik; C.ekonomi[c] = u.ekonomi; C.isgalPol[c] = 1;
     C.b0[c] = 250_000; C.b1[c] = 200_000; C.b2[c] = 300_000; C.b3[c] = 250_000; C.egitim[c] = 30_000;
     C.guvenilir[c] = 50_000; C.faiz[c] = 50_000; C.arastirmaHizi[c] = 1000; C.hedefUlke[c] = -1; C.bakimHedef[c] = S;
     C.muhimmat[c] = 0; C.bakimOdenen[c] = S; C.harcamaOran[c] = 700_000; C.otoTakviye[c] = 1; C.tuketimYet[c] = S;

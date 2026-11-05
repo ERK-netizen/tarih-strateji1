@@ -15,6 +15,8 @@ export interface PaketUlke {
   guc?: number;
   /** Barış zamanı hedef tümen sayısı (karar modülü) */
   ordu?: number;
+  /** Başlangıç savaşa desteği (×1000; yoksa 40) */
+  destek?: number;
 }
 export interface PaketEyalet { kod: string; ad: string; ulke: number; merkez: number; bolgeler: number[] }
 export interface PaketBolge {

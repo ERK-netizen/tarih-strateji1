@@ -444,7 +444,59 @@ const denizler = DENIZ.map(([ad, lon, lat]) => { const [x, y] = proj(lon, lat); 
 const kok = join(dirname(fileURLToPath(import.meta.url)), '../../..');
 mkdirSync(join(kok, 'data/derlenmis'), { recursive: true });
 writeFileSync(join(kok, 'data/derlenmis/harita.json'), JSON.stringify({ ...cikti, denizler }));
+// sınır çizgileri: iki bölgenin paylaştığı kenar parçaları (a,b) ve kıyılar (b = -1) çoklu çizgi olarak
+function sinirCizgileri(pol: number[][][]): { a: number; b: number; p: number[] }[] {
+  const anahtar = (x1: number, y1: number, x2: number, y2: number) => (x1 < x2 || (x1 === x2 && y1 <= y2) ? `${x1},${y1},${x2},${y2}` : `${x2},${y2},${x1},${y1}`);
+  const sahip = new Map<string, number[]>();
+  pol.forEach((halkalar, r) => {
+    for (const h of halkalar) for (let i = 0; i + 3 < h.length + 2; i += 2) {
+      const j = (i + 2) % h.length;
+      if (j === 0 && i + 2 !== h.length) continue;
+      const x1 = h[i]!, y1 = h[i + 1]!, x2 = h[j]!, y2 = h[j + 1]!;
+      if (x1 === x2 && y1 === y2) continue;
+      const k = anahtar(x1, y1, x2, y2);
+      const l = sahip.get(k);
+      if (l) { if (!l.includes(r)) l.push(r); } else sahip.set(k, [r]);
+    }
+  });
+  // parçaları (a,b) çiftine göre topla ve uç uca ekle
+  const grup = new Map<string, [number, number, number, number][]>();
+  for (const [k, l] of sahip) {
+    const [x1, y1, x2, y2] = k.split(',').map(Number) as [number, number, number, number];
+    const a = l[0]!, b = l.length > 1 ? l[1]! : -1;
+    const g = `${Math.min(a, b < 0 ? a : b)}|${b < 0 ? -1 : Math.max(a, b)}`;
+    (grup.get(g) ?? grup.set(g, []).get(g)!).push([x1, y1, x2, y2]);
+  }
+  const out: { a: number; b: number; p: number[] }[] = [];
+  for (const [g, parca] of grup) {
+    const [a, b] = g.split('|').map(Number) as [number, number];
+    // uç noktası indeksi ile zincirle
+    const uc = new Map<string, number[]>();
+    parca.forEach((q, i) => { for (const n of [`${q[0]},${q[1]}`, `${q[2]},${q[3]}`]) (uc.get(n) ?? uc.set(n, []).get(n)!).push(i); });
+    const kullan = new Uint8Array(parca.length);
+    for (let i = 0; i < parca.length; i++) {
+      if (kullan[i]) continue;
+      kullan[i] = 1;
+      const zincir: number[] = [parca[i]![0], parca[i]![1], parca[i]![2], parca[i]![3]];
+      for (const yon of [1, -1]) {
+        for (;;) {
+          const x = yon > 0 ? zincir[zincir.length - 2]! : zincir[0]!, y = yon > 0 ? zincir[zincir.length - 1]! : zincir[1]!;
+          const aday = (uc.get(`${x},${y}`) ?? []).find((j) => !kullan[j]);
+          if (aday === undefined) break;
+          kullan[aday] = 1;
+          const q = parca[aday]!;
+          const [nx, ny] = q[0] === x && q[1] === y ? [q[2], q[3]] : [q[0], q[1]];
+          if (yon > 0) zincir.push(nx, ny); else zincir.unshift(nx, ny);
+        }
+      }
+      out.push({ a, b, p: zincir });
+    }
+  }
+  return out;
+}
+const cizgiler = sinirCizgileri(cikti.bolgeler.map((b) => b.poligon));
 // arayüz için yalnız geometri (senaryolar ortak kullanır)
-writeFileSync(join(kok, 'data/derlenmis/dunya-geo.json'), JSON.stringify({ gen: W, yuk: H, poligon: cikti.bolgeler.map((b) => b.poligon), denizler }));
+writeFileSync(join(kok, 'data/derlenmis/dunya-geo.json'), JSON.stringify({ gen: W, yuk: H, poligon: cikti.bolgeler.map((b) => b.poligon), denizler, cizgiler }));
+console.log(`sınır çizgisi: ${cizgiler.length} (kıyı ${cizgiler.filter((c) => c.b < 0).length})`);
 const tur = [0, 0, 0]; for (const k of kenarlar) tur[k.tur]!++;
 console.log(`harita: ${bolgeler.length} bölge, ${ulkeler.length} ülke, kenar kara/boğaz/okyanus ${tur.join('/')}, ${W}×${H}`);
