@@ -5,7 +5,7 @@ import { ST, YB, NHUCRE, NKIMLIK, ASKERLIK, K, tekIdx, NTEK } from '../catalog.t
 import { S, mulDiv, mulRatio, largestRemainder } from '../num/index.ts';
 import { uc, birlikIhtiyac, anlat, fmtSayi } from './ortak.ts';
 import { KOL_E, KOL_OK, KOL_ON } from '../state/world.ts';
-import { trEk, trEkK } from '../tr.ts';
+import { trEkK } from '../tr.ts';
 
 const DOGUM_AY = 2500; // S: yıllık %3 nominal doğum / 12
 const NET_AY = 830; // S: (1,01)^(1/12) − 1

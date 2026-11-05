@@ -1,5 +1,5 @@
 // Eylem yardımcıları: komut çalıştırma, önizleme, emir gönderme, zaman ilerletme.
-import { istemci, komutSonuc, tost, tazele, ilerliyor, ilerleme, rapor, harita, sessiz, komutHatirla, taninmayanEkle, seciliBirlik, ozet, panelSurum } from './durum.ts';
+import { istemci, komutSonuc, tost, tazele, ilerliyor, ilerleme, rapor, harita, sessiz, komutHatirla, taninmayanEkle, seciliBirlik, ozet, panelSurum, cekmece } from './durum.ts';
 
 export async function komutCalistir(metin: string) {
   const m = metin.trim();
@@ -55,6 +55,11 @@ export async function ilerlet(birim: string, adet = 1) {
       }
     }, ['stopped']);
     rapor.value = { neden: son.neden, gecen: son.gecen, olaylar: son.rapor.olaylar, durmalar: son.durmalar };
+    // tek pencere: panel açıksa rapor onun yerine geçmez, kısa bildirim verilir
+    const c = cekmece.value;
+    const kayda = son.durmalar.length > 0 || son.rapor.olaylar.length > 0;
+    if (kayda && (!c || c.tur !== 'panel')) cekmece.value = { tur: 'rapor' };
+    else if (kayda) tost(`${son.gecen} gün geçti: ${son.durmalar[0]?.metin ?? son.rapor.olaylar[0]?.metin ?? ''}`.slice(0, 140));
   } catch (e: any) {
     tost(e?.ayrinti ?? 'Zaman ilerletilemedi.', 'hata');
   } finally {

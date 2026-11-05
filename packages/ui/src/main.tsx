@@ -18,7 +18,7 @@ import './stil.css';
 import { App } from './App.tsx';
 import { istemci, tost } from './durum.ts';
 
-istemci.dinle = (t, p) => { if (t === 'error') tost(`${p?.ayrinti ?? 'Hata'}${p?.oneri ? ' — ' + p.oneri : ''}`, 'hata'); };
+istemci.dinle = (t, p) => { if (t === 'error' && p?.kod !== 'paket') tost(`${p?.ayrinti ?? 'Hata'}${p?.oneri ? ' — ' + p.oneri : ''}`, 'hata'); };
 render(<App />, document.getElementById('app')!);
 // yazı tipleri yüklenince haritayı yeniden çiz
 void document.fonts?.ready.then(() => window.dispatchEvent(new Event('resize')));

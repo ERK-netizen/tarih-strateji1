@@ -2,7 +2,7 @@
 import {
   type World, tarihMetni, ortak, ekonomi, siyaset, nufus, diplomasi, olaylar, bolgeGozlem, istihbaratDuzeyi, aralik, hazineKademe,
   ARAZI, ASKERLIK, EKONOMI, ISGAL, YONETIM, KISILIK, TUTUM, TEKNOLOJI, NTEK, EKIPMAN, AILE_EKIP, TABUR, SABLON, MAL, PROJE, URUN_MUH, A, ANLASMA_TUR, K,
-  hc, ST, YB, kara, arastirmaYuvalari,
+  hc, ST, YB, kara, arastirmaYuvalari, AKTIF, DONEMLER, sablonIhtiyac,
 } from '@ts/engine';
 import { KOL_E, KOL_T } from '@ts/engine';
 
@@ -35,6 +35,23 @@ export function ozet(w: World) {
     }),
     teklifler: w.TK.list().filter((s) => w.TK.c.kime[s] === P && w.TK.c.durum[s] === 0).map((s) => teklifOzet(w, s)),
     ayarlar: { yasa: { askerlik: ASKERLIK.map((a) => a.ad), ekonomi: EKONOMI.map((a) => a.ad), isgal: ISGAL.map((a) => a.ad) } },
+    baskent: pu.baskent, senaryo: w.pkg.senaryo.ad, paket: w.pkg.kimlik, donem: donemOzet(),
+  };
+}
+
+/** Dönem adları ve görselleri: arayüz şablon, ürün ve tesis adlarını buradan alır. */
+export function donemOzet() {
+  const d = DONEMLER[AKTIF.donem];
+  const aileSimge = (aile: string) => d.simge[aile as keyof typeof d.simge] ?? d.simge.piyade;
+  return {
+    kod: d.kod, ad: d.ad, terim: d.terim, simge: d.simge,
+    sablonlar: SABLON.map((s, i) => {
+      const ana = TABUR.find((t) => t.kod === s.taburlar[0]);
+      return { i, ad: s.ad, kisa: s.kisa, simge: i === 3 ? d.simge.piyade : aileSimge(ana?.aile ?? 'piyade'), ihtiyac: sablonIhtiyac(i).kisi };
+    }),
+    ekipman: EKIPMAN.map((e, i) => ({ i, ad: e.ad, aile: e.aile, simge: aileSimge(e.aile) })),
+    projeler: PROJE.map((p, i) => ({ i, ad: p.ad })),
+    mallar: MAL.map((m, i) => ({ i, ad: m.ad })),
   };
 }
 
@@ -94,7 +111,16 @@ export function bolge(w: World, r: number) {
   const gorunur = k === P || R.sahip[r] === P || istihbaratDuzeyi(w, P, k, r) >= 50_000;
   const kimlik = b.kimlikAnahtar.map(([ku, inn], i) => ({ ad: ku < 0 ? 'Diğer' : `${w.pkg.kultur[ku]!.ad} · ${w.pkg.inanc[inn]!.ad}`, kisi: w.kim[r * 7 + i]! })).filter((x) => x.kisi > 0);
   const UU = U(w);
-  const birlikler = w.U.list().filter((u) => UU.bolge![u] === r && UU.ulke![u] === P).map((u) => ({ id: w.U.id(u), ad: ortak.birlikAdi(w, u) }));
+  const birlikler = w.U.list().filter((u) => UU.bolge![u] === r && UU.ulke![u] === P).map((u) => {
+    const st = ortak.birlikIstat(w, u);
+    return {
+      id: w.U.id(u), ad: ortak.birlikAdi(w, u), sablon: UU.sablon![u]!, kisi: UU.kisi![u]!, kisiHedef: st.kisiHedef,
+      org: st.orgMax > 0 ? Math.floor((UU.org![u]! * 100) / st.orgMax) : 0, guc: Math.floor((st.YS + st.SV) / 1000),
+      egitim: UU.egitimBitis![u]! > w.gun ? UU.egitimBitis![u]! - w.gun : 0, muharebe: UU.muharebe![u]!, durus: kara.DURUS[UU.durus![u]!],
+      hedefAd: UU.hedef![u]! >= 0 ? w.pkg.bolgeler[UU.hedef![u]!]!.ad : null,
+    };
+  });
+  const yabanci = bolgeGozlem(w, P).filter((g) => g.bolge === r && g.ulke !== P).map((g) => ({ ulke: g.ulke, ad: w.pkg.ulkeler[g.ulke]!.kisa, renk: w.pkg.ulkeler[g.ulke]!.renk, birlik: g.birlik, gucAlt: Math.floor(g.gucAlt / 1000), gucUst: Math.floor(g.gucUst / 1000), kisiAlt: g.kisiAlt, kisiUst: g.kisiUst, kesin: g.kesin }));
   const projeler = w.PR.list().filter((s) => w.PR.c.bolge[s] === r).map((s) => ({ ad: PROJE[w.PR.c.tur[s]!]!.ad, yuzde: Math.floor((w.PR.c.spKul[s]! * 100) / Math.max(1, w.PR.c.spTop[s]!)) }));
   return {
     id: r, ad: b.ad, eyalet: w.pkg.eyaletler[b.eyalet]!.ad, arazi: ARAZI[b.arazi]!.ad, yerlesim: ['Kırsal', 'Kasaba', 'Şehir'][b.yerlesim],
@@ -102,7 +128,8 @@ export function bolge(w: World, r: number) {
     nufus: gorunur ? bolgeNufus(w, r) : null, kimlik: gorunur ? kimlik : [],
     uretim: gorunur ? R.uretimDun[r]! : null, sivilF: R.sivilF[r]!, askeriF: R.askeriF[r]!, altyapi: R.altyapi[r]!, demiryolu: R.demiryolu[r]!, sulama: R.sulama[r]!,
     celik: b.celik, komur: b.komur, anaYurt: b.anaYurt.map((u) => w.pkg.ulkeler[u]!.kisa), iddia: w.pkg.ulkeler.map((u, c) => (ortak.iddiaVar(w, r, c) ? u.kisa : '')).filter(Boolean),
-    birlikler, projeler, vergi: k === P ? R.vergiDun[r]! : null, isyan: R.isyan[r]!, cephe: w.gun - R.sonMuharebe[r]! <= 7,
+    birlikler, yabanci, projeler, vergi: k === P ? R.vergiDun[r]! : null, baskent: w.pkg.ulkeler.findIndex((u) => u.baskent === r),
+    sahipAd: w.pkg.ulkeler[R.sahip[r]!]!.ad, kontrolAd: w.pkg.ulkeler[k]!.ad, sahipRenk: w.pkg.ulkeler[R.sahip[r]!]!.renk, kontrolRenk: w.pkg.ulkeler[k]!.renk, isyan: R.isyan[r]!, cephe: w.gun - R.sonMuharebe[r]! <= 7,
     kis: ortak.kisDuzey(w, r), camur: ortak.camurDuzey(w, r),
     komsu: b.komsu,
   };

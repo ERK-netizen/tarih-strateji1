@@ -8,7 +8,7 @@ import { rng, AMAC, uniformInt } from '../rng/index.ts';
 import { uygula, teklifSonuc, type Emir } from '../orders.ts';
 import { bolgeGozlem, bolgeGozlemBolgeler, ulkeGozlem } from '../observe/index.ts';
 import {
-  uc, savasta, savastaMi, dusmanlar, anlasmaVar, gorus, birlikIstat, birlikIkmal, girebilir, rota, sinirKomsusu, muttefik, essavasan, iddiaVar, savasUyeleri, pasif, rotaTip, kontrolB, sahipB,
+  uc, savasta, savastaMi, dusmanlar, anlasmaVar, gorus, birlikIstat, birlikIkmal, sinirKomsusu, muttefik, essavasan, iddiaVar, savasUyeleri, pasif, rotaTip, kontrolB, sahipB,
 } from '../systems/ortak.ts';
 import { insanGucu } from '../systems/nufus.ts';
 import { ulkeGidaStok, zorunluGider, krediLimiti } from '../systems/ekonomi.ts';
@@ -233,7 +233,6 @@ function totalFab(w: World, c: number): number {
 // ---------- Ordu planı ----------
 function orduPlan(w: World, c: number): void {
   const C = w.C.c;
-  const U = uc(w);
   const birlik = ulkeBirimleri(w, c).length;
   const ig = insanGucu(w, c);
   const savas = savastaMi(w, c);
@@ -261,12 +260,17 @@ function diplomasiPlan(w: World, c: number): void {
   // ilişki çevresi: komşular ve büyük güçler (uzak küçük devletler birbiriyle anlaşma kurmaz)
   const guc = (x: number) => w.pkg.ulkeler[x]!.guc ?? 5;
   let teklifSay = 0;
+  // oyuncunun önüne yığılan teklifler: uzak küçük devletler oyuncuya yazmaz, bekleyen teklif sayısı sınırlı
+  const insan = w.mod !== 2 ? w.oyuncu : -1;
+  let oyuncuyaBekleyen = 0;
+  if (insan >= 0) for (const s of w.TK.rows()) if (w.TK.c.kime[s] === insan && w.TK.c.durum[s] === 0) oyuncuyaBekleyen++;
   for (let d = 0; d < w.nC; d++) {
     if (d === c || savasta(w, c, d) || pasif(w, d)) continue;
     if (teklifSay >= 3) break; // ayda en çok üç yeni teklif
     const komsu = sinirKomsusu(w, c, d);
     const buyuk = guc(c) >= 6 || guc(d) >= 6;
     if (!komsu && !buyuk) continue;
+    if (d === insan && ((!komsu && guc(c) < 6) || oyuncuyaBekleyen >= 4)) continue;
     const g = gorus(w, d, c), benim = gorus(w, c, d);
     if (benim < 25_000) continue;
     if (g >= ESIK[TK.ticaret]! && anlasmaVar(w, A.ticaret, c, d) < 0) { if (emir(w, c, 'teklif', { kime: d, tip: TK.ticaret })) teklifSay++; continue; }

@@ -587,7 +587,7 @@ export function emirMetni(e: Emir, k: Katalog): string {
     case 'dur': return `${birl(e.birlikler)} dursun`;
     case 'terhis': return `${birl(e.birlikler)} terhis edilsin`;
     case 'durus': return `${birl(e.birlikler)} ${['hattı tutsun', 'esnek savunmaya geçsin', 'saldırı duruşuna geçsin', 'garnizon olsun'][Number(e.durus)]}`;
-    case 'birlikKur': return `${Number(e.adet) > 1 ? `${e.adet} ` : ''}${k.sablonlar[Number(e.sablon)]?.ad.toLocaleLowerCase('tr')} kur${e.bolge !== undefined ? ` (${b(e.bolge)})` : ''}`;
+    case 'birlikKur': return `${e.bolge !== undefined ? `${ekle(b(e.bolge), 'bulunma')} ` : ''}${Number(e.adet) > 1 ? `${e.adet} ` : ''}${k.sablonlar[Number(e.sablon)]?.ad.toLocaleLowerCase('tr')} kur`;
     case 'vergi': return `Vergiyi %${Number(e.oran) / 10_000} yap`;
     case 'butce': return `Bütçe: ${(e.paylar as number[]).map((p, i) => `${['bilim', 'eğitim', 'altyapı', 'sosyal'][i]} %${Math.round(p / 10_000)}`).join(', ')}`;
     case 'askerlik': return `Askerlik yasasını ${k.askerlik[Number(e.yasa)]?.toLocaleLowerCase('tr')} yap`;

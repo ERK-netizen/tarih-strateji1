@@ -3,7 +3,7 @@ import type { World } from '../state/world.ts';
 import { ck, kenarKey, T_GIDA, T_MUH, T_EKIP, T_KISI, T_PARA, T_MAL, H_EYALET, H_BIRLIK, H_ULKE, hc } from '../state/world.ts';
 import { EKIPMAN, AILE_EKIP, K, ST, YB, MUHIMMAT } from '../catalog.ts';
 import { S, mulDiv, mulRatio, largestRemainder, clamp } from '../num/index.ts';
-import { uc, rotaTip, dostBolge, kenarKapasite, birlikGidaGun, birlikMuhimmatGunU, birlikIhtiyac, anlat } from './ortak.ts';
+import { uc, rotaTip, kenarKapasite, birlikGidaGun, birlikMuhimmatGunU, birlikIhtiyac, anlat } from './ortak.ts';
 import { askerCek, kokenEkle } from '../state/world.ts';
 import { malEkle, eyaletDengeTalepleri, enYakinEyalet } from './ekonomi.ts';
 import { hashV1 } from '../hash/index.ts';
@@ -211,7 +211,6 @@ export function tahsis(w: World, talepler: Talep[]): TahsisSonuc {
     const kenarOran = new Map<number, number>();
     for (const [key, l] of yuk) { const c = kalan.get(key) ?? 0; kenarOran.set(key, l <= c ? S : mulDiv(c, S, l).q); }
     for (const i of idx) {
-      const t = talepler[i]!;
       const y = rotalar[i]!.yol;
       let o = stokOran.get(anahtarlar[i]!)!;
       for (let k = 0; k + 1 < y.length; k++) o = Math.min(o, kenarOran.get(kenarKey(y[k]!, y[k + 1]!))!);

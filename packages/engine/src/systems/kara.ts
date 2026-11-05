@@ -5,7 +5,7 @@ import { ARAZI, K, EKIPMAN, NEKIP, ST, YB, NTEK, tekIdx } from '../catalog.ts';
 import { S, mulDiv, mulRatio, clamp, largestRemainder } from '../num/index.ts';
 import { rng, AMAC, combatR } from '../rng/index.ts';
 import {
-  uc, rotaTip, kenarTur, girebilir, savasta, essavasan, muttefik, birlikIstat, birlikIkmal, birlikGidaGun, birlikMuhimmatGunU,
+  uc, rotaTip, kenarTur, savasta, essavasan, muttefik, birlikIstat, birlikIkmal, birlikGidaGun, birlikMuhimmatGunU,
   deneyimCarpan, hareketMevsim, camurDuzey, kisDuzey, birlikAdi, anlat, bildir, fmtSayi,
 } from './ortak.ts';
 import { kayipYaz, birlikKisiCikar } from './nufus.ts';
@@ -86,6 +86,27 @@ export function hareketGunu(w: World): Muharebe[] {
 }
 
 /** Bölgedeki, saldıran ülkeyle savaşta olan savunucular. */
+/** Önizleme: yol boyunca hareket kuralının aynısıyla tahmini gün (bugünkü mevsim, arazi, demiryolu, deniz). */
+export function tahminiGun(w: World, u: number, yol: number[]): number {
+  const ist = birlikIstat(w, u);
+  const c = uc(w).ulke![u]!;
+  let gun = 0;
+  for (let i = 0; i + 1 < yol.length; i++) {
+    const r = yol[i]!, q = yol[i + 1]!;
+    const deniz = kenarTur(w, r, q);
+    let hiz = ist.hiz * 1000;
+    if (deniz > 0) hiz = (deniz === 1 ? K.bogazHiz : K.okyanusHiz) * 1000;
+    else {
+      hiz = mulRatio(hiz, hareketMevsim(w, q)).q;
+      hiz = mulRatio(hiz, ARAZI[w.pkg.bolgeler[q]!.arazi]!.hareket).q;
+      if (w.R.c.demiryolu[r]! >= 1 && w.R.c.demiryolu[q]! >= 1 && w.R.c.kontrolEden[r] === c && w.R.c.kontrolEden[q] === c) hiz *= 3;
+    }
+    const km = (w.kenarKm.get(kenarKey(r, q)) ?? 150) * 1000;
+    gun += Math.ceil(km / Math.max(1, hiz));
+  }
+  return Math.max(1, gun);
+}
+
 export function savunanlar(w: World, r: number, saldiranUlke: number): number[] {
   const U = uc(w);
   return w.U.list().filter((u) => U.bolge![u] === r && savasta(w, saldiranUlke, U.ulke![u]!));

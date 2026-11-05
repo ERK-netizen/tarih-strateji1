@@ -33,8 +33,6 @@ const R_ERKEN = 2; // raster ölçeği
 // ---------- Ülkeler ----------
 const ADA_ISO: Record<string, string> = { Somaliland: 'SO', Kosovo: 'XK', 'N. Cyprus': 'KK', 'Siachen Glacier': 'IN' };
 const AT: Set<string> = new Set(['AQ', 'TF', 'HM', 'GS', 'BV', 'IO', 'UM', 'PN', 'SH', 'FK', 'AX', 'GG', 'JE', 'IM', 'FO', 'PM', 'WF', 'NF', 'CX', 'CC', 'MF', 'SX', 'BL', 'AI', 'MS', 'VG', 'VI', 'KY', 'TC', 'BM', 'NU', 'CK', 'TK', 'AS', 'GU', 'MP', 'PF', 'NC', 'AW', 'CW', 'GL0']);
-// Bağımlı topraklar → egemen ülke (2026)
-const BAGLI: Record<string, string> = { GL: 'DK', PR: 'US', NC: 'FR', PF: 'FR', FK: 'GB', EH: 'MA', HK: 'CN', MO: 'CN', GF: 'FR', RE: 'FR', GP: 'FR', MQ: 'FR', YT: 'FR' };
 const TR_AD: Record<string, string> = { XK: 'Kosova', KK: 'Kuzey Kıbrıs' };
 
 interface Ulke { iso: string; ad: string; poligon: MPoly; alanKm2: number; lon: number; lat: number }
@@ -48,33 +46,6 @@ projeksiyon.translate([projeksiyon.translate()[0], projeksiyon.translate()[1] - 
 const proj = (lon: number, lat: number): P2 => { const p = projeksiyon([lon, lat])!; return [p[0], p[1]]; };
 projeksiyon.clipExtent([[0, 0], [W, 4000]]);
 
-function dp(r0: Ring, eps: number): Ring {
-  if (r0.length < 5) return r0;
-  const f = r0[0]!, l = r0[r0.length - 1]!;
-  if (f[0] === l[0] && f[1] === l[1]) {
-    const m = Math.floor(r0.length / 2);
-    const a = dpAc(r0.slice(0, m + 1), eps), b = dpAc(r0.slice(m), eps);
-    return [...a, ...b.slice(1)];
-  }
-  return dpAc(r0, eps);
-}
-function dpAc(r: Ring, eps: number): Ring {
-  if (r.length < 3) return r;
-  const keep = new Uint8Array(r.length); keep[0] = 1; keep[r.length - 1] = 1;
-  const yigin: [number, number][] = [[0, r.length - 1]];
-  while (yigin.length) {
-    const [a, b] = yigin.pop()!;
-    let dmax = 0, im = -1;
-    const [ax, ay] = r[a]!, [bx, by] = r[b]!;
-    const L = Math.hypot(bx - ax, by - ay) || 1e-9;
-    for (let i = a + 1; i < b; i++) {
-      const d = Math.abs((bx - ax) * (ay - r[i]![1]) - (ax - r[i]![0]) * (by - ay)) / L;
-      if (d > dmax) { dmax = d; im = i; }
-    }
-    if (dmax > eps && im > 0) { keep[im] = 1; yigin.push([a, im], [im, b]); }
-  }
-  return r.filter((_, i) => keep[i]);
-}
 const halkaAlan = (r: Ring) => { let s = 0; for (let i = 0; i < r.length; i++) { const a = r[i]!, b = r[(i + 1) % r.length]!; s += a[0] * b[1] - b[0] * a[1]; } return s / 2; };
 
 /** d3-geo yolu (antimeridyen kırpması dahil) → halkalar; çift-tek kuralıyla çokgen. */
@@ -129,12 +100,12 @@ function bolgeYogunluk(lon: number, lat: number): { alan: number; kent: number }
   if (lat > 45 && lon >= 45) return { alan: 400_000, kent: 6_000_000 }; // Rusya Asya
   return { alan: 260_000, kent: 6_000_000 };
 }
-const TAVAN: Record<string, number> = { RU: 29, US: 16, CN: 21, IN: 13, CA: 7, BR: 8, AU: 5, TR: 14, IR: 8, SA: 5, EG: 5, DZ: 5, LY: 3, KZ: 6, MX: 6, AR: 5, ID: 7, CD: 4, SD: 3, FR: 10, DE: 10, GB: 8, IT: 10, ES: 9, UA: 10, PL: 7, JP: 6, PK: 5, GL: 1, GR: 3, MA: 3, UZ: 3, AF: 3, ML: 2, PE: 5, VN: 3 };
+const TAVAN: Record<string, number> = { RU: 29, US: 18, CN: 21, IN: 13, CA: 7, BR: 8, AU: 5, TR: 14, IR: 8, SA: 5, EG: 5, DZ: 5, LY: 3, KZ: 6, MX: 6, AR: 5, ID: 7, CD: 4, SD: 3, FR: 11, DE: 10, GB: 8, IT: 10, ES: 9, UA: 10, PL: 7, JP: 6, PK: 5, GL: 1, GR: 3, MA: 3, UZ: 3, AF: 3, ML: 2, PE: 5, VN: 3 };
 /** Tarihî önemi için mutlaka bölge merkezi olacak şehirler (aralık kuralından muaf). */
-const ZORUNLU: [string, string][] = [
+const ZORUNLU: [string, string, string?][] = [
   ['Venice', 'IT'], ['Florence', 'IT'], ['Velikiy Novgorod', 'RU'], ['Kazan', 'RU'], ['Smolensk', 'RU'], ['Voronezh', 'RU'], ['Nizhniy Novgorod', 'RU'], ['Samarkand', 'UZ'], ['Herat', 'AF'],
   ['Nanjing', 'CN'], ['Lhasa', 'CN'], ['Kashgar', 'CN'], ['Timbuktu', 'ML'], ['Cusco', 'PE'], ['Irákleion', 'GR'], ['Thessaloníki', 'GR'], ['Saint Petersburg', 'RU'], ['Ho Chi Minh City', 'VN'], ['Bologna', 'IT'], ['Simferopol', 'UA'], ['Poznań', 'PL'], ['Oviedo', 'ES'], ['Fès', 'MA'], ['Huế', 'VN'],
-  ['Vladivostok', 'RU'], ['Liverpool', 'GB'],
+  ['Vladivostok', 'RU'], ['Liverpool', 'GB'], ['Anchorage', 'US'], ['Honolulu', 'US'], ['Cayenne', 'FR', 'GF'],
 ];
 /** Modern şehir adı düzeltmeleri (ülke:ad → Türkçe/anlamlı ad). */
 const DUZELT: Record<string, string> = {
@@ -200,7 +171,7 @@ function noktaIcinde(p: P2, mp: MPoly): boolean {
 const ulkeler = [...ulkeHam.values()].sort((a, b) => a.iso.localeCompare(b.iso));
 for (const u of ulkeler) {
   const tumAday = (kentSehir.get(u.iso) ?? []).filter((s) => noktaIcinde(proj(...s.loc.coordinates), u.poligon));
-  const zorunlu = ZORUNLU.filter(([, k]) => k === u.iso).map(([ad]) => SEHIRLER.filter((c) => c.country === u.iso && (c.name === ad || c.altName.split(',').includes(ad))).sort((a, b) => b.population - a.population)[0]).filter((c): c is Sehir => !!c);
+  const zorunlu = ZORUNLU.filter(([, k]) => k === u.iso).map(([ad, , sk]) => SEHIRLER.filter((c) => c.country === (sk ?? u.iso) && (c.name === ad || c.altName.split(',').includes(ad))).sort((a, b) => b.population - a.population)[0]).filter((c): c is Sehir => !!c);
   const adaylar = [...zorunlu, ...tumAday.filter((c) => !zorunlu.includes(c))];
   const kentNufus = adaylar.reduce((s, c) => s + c.population, 0);
   const y = bolgeYogunluk(u.lon, u.lat);
@@ -243,6 +214,25 @@ for (const u of ulkeler) {
       if (!c) return [];
       try { return polygonClipping.intersection([c] as never, u.poligon as never) as unknown as MPoly; } catch { return []; }
     });
+  }
+  // antimeridyen ve uzak adalar: Voronoi düzlemde çalışır; haritanın öbür ucuna düşen parçalar (Wrangel, Çukotka,
+  // Aleutlar) büyük daire uzaklığında açıkça daha yakın bir tohuma verilir (yoksa Kaliningrad Bering'e uzanır)
+  if (tohum.length > 1) {
+    const tasinan: MPoly[] = tohum.map(() => []);
+    const kaynak = secilen.map((t) => t.loc.coordinates as [number, number]);
+    hucreler = hucreler.map((hp, i) => hp.filter((poly) => {
+      const r = poly[0]!;
+      let sx = 0, sy = 0;
+      for (const q of r) { sx += q[0]; sy += q[1]; }
+      const ll = projeksiyon.invert!([sx / r.length, sy / r.length]);
+      if (!ll) return true;
+      const kendi = mesafeKm(ll as [number, number], kaynak[i]!);
+      let en = i, enD = kendi;
+      kaynak.forEach((t, j) => { const d = mesafeKm(ll as [number, number], t); if (d < enD) { enD = d; en = j; } });
+      if (en !== i && enD < kendi * 0.6) { tasinan[en]!.push(poly); return false; }
+      return true;
+    }));
+    hucreler = hucreler.map((hp, i) => [...hp, ...tasinan[i]!]);
   }
   hucreler.forEach((hp, i) => {
     if (!hp.length) return;

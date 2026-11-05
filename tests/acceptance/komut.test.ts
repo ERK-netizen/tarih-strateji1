@@ -73,7 +73,7 @@ describe('T123 her menü eyleminin eşdeğer komutu aynı emre geri çözülür'
   const hedef = ws.pkg.bolgeler.findIndex((b, i) => ws.R.c.kontrolEden[i] === 2);
   const emirler = [
     { tur: 'vergi', ulke: 0, oran: 180_000 }, { tur: 'askerlik', ulke: 0, yasa: 2 }, { tur: 'ekonomi', ulke: 0, yasa: 2 }, { tur: 'karne', ulke: 0, acik: 1 },
-    { tur: 'birlikKur', ulke: 0, sablon: 0, adet: 2 }, { tur: 'hareket', ulke: 0, birlikler: [u], hedef: k.birlikler[0]!.bolge === 1 ? 2 : 1 },
+    { tur: 'birlikKur', ulke: 0, sablon: 0, adet: 2 }, { tur: 'birlikKur', ulke: 0, sablon: 1, adet: 3, bolge: ws.pkg.bolgeler.findIndex((b, i) => ws.R.c.kontrolEden[i] === 0 && i !== ws.pkg.ulkeler[0]!.baskent) }, { tur: 'hareket', ulke: 0, birlikler: [u], hedef: k.birlikler[0]!.bolge === 1 ? 2 : 1 },
     { tur: 'saldir', ulke: 0, birlikler: [u], hedef }, { tur: 'arastir', ulke: 0, tek: 5 }, { tur: 'insa', ulke: 0, proje: 1, bolge: 0 },
     { tur: 'satinAl', ulke: 0, mal: 0, miktar: 300, kalici: 0 }, { tur: 'sat', ulke: 0, mal: 2, miktar: 50, kalici: 1 },
     { tur: 'teklif', ulke: 0, kime: 3, tip: 1 }, { tur: 'gerekce', ulke: 0, hedef: 3 }, { tur: 'savasIlan', ulke: 0, hedef: 3 },
@@ -81,7 +81,7 @@ describe('T123 her menü eyleminin eşdeğer komutu aynı emre geri çözülür'
     { tur: 'otoCephe', ulke: 0, acik: 1 }, { tur: 'uretim', ulke: 0, urun: 100, fabrika: 3000 }, { tur: 'sandbox', ulke: 0, alan: 'hazine', miktar: 500_000 },
     { tur: 'isgalPol', ulke: 0, pol: 2 },
   ];
-  for (const e of emirler) test(e.tur, () => {
+  for (const [i, e] of emirler.entries()) test(`${e.tur} #${i}`, () => {
     const m = emirMetni(e, k);
     const s = ayristir(m, k);
     const t = s.tur === 'emir' ? s.yorum.emir : s.tur === 'belirsiz' ? s.secenekler.find((x) => x.emir.tur === e.tur)?.emir : null;

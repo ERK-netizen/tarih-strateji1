@@ -86,6 +86,7 @@ export const S1939: SenaryoTanim = {
   ],
   dolgu: [],
   adlar: {
+    'Anchorage': 'Alaska', 
     'St. Petersburg': 'Leningrad', 'Volgograd': 'Stalingrad', 'Yekaterinburg': 'Sverdlovsk', 'Nijni Novgorod': 'Gorki', 'Dnipro': 'Dnipropetrovsk', 'Donetsk': 'Stalino', 'Bishkek': 'Frunze',
     'Dushanbe': 'Stalinabad', 'Almaty': 'Alma-Ata', 'Astana': 'Akmolinsk', 'Orenburg': 'Çkalov', 'Khmelnytskyi': 'Proskurov', 'Ashgabat': 'Aşkabat', 'Vilnius': 'Kaunas', 'Kaliningrad': 'Königsberg',
     'Szczecin': 'Stettin', 'Gdańsk': 'Pomorze (Gdynia)', 'Lviv': 'Lwów', 'Brno': 'Brünn', 'Prag': 'Prag', 'Tel Aviv': 'Kudüs', 'Gaza': 'Gazze', 'Amman': 'Amman', 'Kuzey Kıbrıs': 'Girne',

@@ -1,13 +1,26 @@
-# Tarih Strateji Oyunu — Aşama 1A
+# Tarih Strateji Oyunu
 
-Android için çevrimdışı, yapay zekâsız, komut öncelikli büyük strateji oyunu. Bu depo, **Üretim Şartnamesi v1.4**'ün (docs/sartname-v1.4.md) Aşama 1A kapsamını uygular: kurgusal 4 devletli, 48 bölgeli dünyada çalışan tam oyun döngüsü, deterministik motor, Türkçe komut çubuğu ve Android (Capacitor) kabuğu.
+Android için çevrimdışı, yapay zekâsız, komut öncelikli büyük strateji oyunu. **Üretim Şartnamesi v1.4** (docs/sartname-v1.4.md) üzerine kurulu: deterministik motor, Türkçe komut çubuğu, Android (Capacitor) kabuğu ve gerçek dünya haritasında beş tarihî senaryo.
+
+## Senaryolar
+
+| Senaryo | Başlangıç | Devlet | Öne çıkanlar |
+|---|---|---|---|
+| Halifeler ve Krallar | 1 Ocak 750 | 50 etkin + 69 topluluk | Abbâsîler (Ebu'l-Abbas es-Seffah) – Emevîler (II. Mervan) savaşı, Bizans, Franklar (Kısa Pepin), Tang (Xuanzong), Tibet, Hazarlar |
+| Barut ve Keşifler | 1 Ocak 1600 | 70 etkin + 73 topluluk | Osmanlı (III. Mehmed) – Habsburg Uzun Savaşı, İspanya (III. Felipe) – Felemenk, I. Elizabeth İngilteresi, Ekber Şah, I. Abbas |
+| Büyük Savaş | 28 Haziran 1914 | 62 | Saraybosna suikastı → Temmuz Krizi zinciri; II. Wilhelm, V. George/Asquith, II. Nikolay, Poincaré, V. Mehmed Reşad |
+| İkinci Dünya Savaşı | 1 Eylül 1939 | 68 | Almanya–Polonya ve Japonya–Çin savaşları; Hitler, Chamberlain, Stalin, Roosevelt, Mussolini, İnönü |
+| Modern Dünya | 1 Ocak 2026 | 179 | Rusya–Ukrayna ve Sudan savaşları, NATO; 2026 başındaki devlet ve hükümet başkanları |
+
+Harita Natural Earth sınırları ve GeoNames şehirleriyle derlenir (463 bölge, 179 ülke); her senaryo bölge adlarını, sahiplerini, liderleri, kültürleri, orduları ve tarihî olay zincirini kendi döneminden alır. Birlik, ekipman, teknoloji ve tesis adları dönemle değişir (ör. 750'de Piyade Ordusu ve mancınık, 2026'da mekanize tugay ve roket taburu).
 
 ## Oyunda ne var
 
 | Sistem | Durum (1A) |
 |---|---|
-| Senaryo | “Dört Taht Krizi”, 28 Haziran 1914; Akdağ, Mavikıyı, Demirhan, Kızılova. Açılış: Tunçkale suikastı → ültimatom zinciri |
-| Harita | 48 bölge, 8 eyalet, gürültülü Voronoi sınırları; 6 harita modu (siyasi, kontrol, gıda, nüfus, ilişki, altyapı); işgal taraması, cephe hattı, birlik sembolleri |
+| Senaryo | Beş tarihî senaryo (yukarıda); test için 1A kurgusal dünyası (48 bölge) korunur |
+| Harita | Gerçek dünya; 6 harita modu (siyasi, kontrol, gıda, nüfus, ilişki, altyapı); işgal taraması, cephe hattı, başkent yıldızları, yakınlaşmaya göre ülke/bölge adları; dönem görselli birlik pulları (game-icons.net) |
+| Arayüz | Tek sağ çekmece (panel, bölge ya da tur raporu; pencereler üst üste binmez), sol ray, orta sütunda plan kartı ve komut; bölgede birlik türü başına −/+ seçimi; yeni birliğin konuşlanacağı şehir listeden ya da haritadan seçilir |
 | Komut çubuğu | Türkçe cümleyle emir: kip × olumsuzluk × hal eki çözümleme, soru → danışman, güven < 0,80 → yorum çipleri, ret → en yakın 3 öneri, tanınmayan komut günlüğü |
 | Plan kartı | Her emir için “Bugün · kesin” / “30 gün · tahmin” ayrımı, başarısızlık nedeni, iptal bedeli, **eşdeğer komut metni** |
 | Nüfus | Bölge başına 4 yaş × 8 statü (O, S, Y, E, A, W, P, R), kimlik dağılımı (≤ 7 hücre), kohort giriş/çıkış, askerlik yasaları, yaralı/esir, köken eyalet muhasebesi |
@@ -33,7 +46,7 @@ Android için çevrimdışı, yapay zekâsız, komut öncelikli büyük strateji
 
 ```bash
 npm ci
-npm test            # 100 kabul testi (tip denetimi: npm run tip, lint: npm run lint)
+npm test            # 114 kabul testi (tip denetimi: npm run tip, lint: npm run lint)
 npm run dev         # tarayıcıda geliştirme sunucusu
 npm run lab -- 365  # başsız laboratuvar: 1 yıllık gözlemci koşusu, hash ve özet
 npm run build:tek   # tek dosyalık oynanabilir HTML → dist-tek/index.html
@@ -63,20 +76,18 @@ APK yatay kilitlidir, **INTERNET ve RECORD_AUDIO izni yoktur** (manifestte `tool
 
 ## Nasıl oynanır
 
-- **Ülke seçin**, başlayın. İlk gün Demirhan'ın suikast kararı gelir; zinciri izleyin.
-- **Zaman**: 1 gün · 1 hafta · 1 ay · *Sonraki olay ▸* (önemli olayda veya en çok 3 ayda durur). Uzun atlamalar her gün kesinleşir; *Durdur* bir sonraki gün sınırında işler.
+- **Senaryo seçin**, sonra devleti seçin (öne çıkan kartlar, arama ya da haritaya dokunarak) ve başlayın.
+- **Zaman**: 1 gün · 1 hafta · 1 ay · *Olay* (önemli olayda veya en çok 3 ayda durur). *Durdur* bir sonraki gün sınırında işler.
+- **Harita**: bölgeye dokunun → sağda bölge çekmecesi açılır. Kendi birliklerimiz türlerine göre gruplanır; **− / +** ile kaç birlik göndereceğinizi seçin (en hazırlıklılar önce), sonra haritada hedef bölgeye dokunun → plan kartı → *Onayla*. Birlik puluna ikinci kez dokunmak o bölgedeki bütün birlikleri seçer.
+- **Birlik kurma**: Ordu panelinde tür ve adet seçin; *Konuşlanma* listesinden şehri seçin ya da *Haritadan seç* ile haritada şehre dokunun. Bölge çekmecesindeki *Burada birlik kur* aynı işi o şehir için yapar.
 - **Komut çubuğu** (birincil giriş). Örnekler:
-  - `Tunçkale'ye saldır` · `1. Piyade Tümeni Sarıova'ya gitsin` · `Akyurt'taki birlikler Kuzgunkaya'ya ilerlesin`
-  - `2 piyade tümeni kur` · `Mühimmat üretimine 4 fabrika ayır` · `Seri üretimi araştır`
-  - `Vergiyi %18 yap` · `Bilime %40 ayır` · `Savaş ekonomisine geç` · `Askerlik yasasını kapsamlı yap`
-  - `Kızılova ile ticaret anlaşması öner` · `Mavikıyı için gerekçe hazırla` · `Demirhan'a beyaz barış öner`
-  - `Kızılova'dan her hafta 200 gıda al` · `1 milyon borç al` · `Cepheyi otomatik yönet`
-  - Sorular danışmana gider: `Huzur neden düşüyor?` · `Ne yapmalıyım?` · `Savaş nasıl gidiyor?` · `Rakipler ne planlıyor?`
-  - Olumsuz emir mevcut emri iptal eder: `Tunçkale'ye saldırmayın`
-  - Sandbox: `Hazineye 1 milyon ekle` · `Demirhan'ın hazinesine 2 milyon ekle`
-- **Harita**: bölgeye dokunun → bölge kartı (inşa, savun, saldır). Birliğe dokunun → seçin (uzun bas/ctrl: çoklu), sonra hedef bölgeye dokunun → plan kartı.
+  - `Varşova'ya saldır` · `Paris'teki birlikler Lille'e gitsin` · `Berlin'de 2 piyade tümeni kur`
+  - `Vergiyi %18 yap` · `Bilime %40 ayır` · `Savaş ekonomisine geç` · `Mühimmat üretimine 4 fabrika ayır`
+  - `Fransa ile ticaret anlaşması öner` · `Sırbistan için gerekçe hazırla` · `Rusya'ya beyaz barış öner`
+  - Sorular danışmana gider: `Huzur neden düşüyor?` · `Ne yapmalıyım?` · `Rakipler ne planlıyor?`
+  - Olumsuz emir mevcut emri iptal eder: `Varşova'ya saldırmayın`
 - **Göstergeler**: üst çubuktaki her değere dokunmak “Neden?” ekranını açar.
-- Her menü eyleminin plan kartında **“Bu eylemin komutu: …”** satırı vardır; dokunulduğunda komut çubuğuna yazılır.
+- Her plan kartında **“Komutu: …”** satırı vardır; dokunulduğunda komut çubuğuna yazılır.
 
 ## Depo yapısı (şartname 5.4)
 
@@ -88,7 +99,7 @@ packages/storage       OPFS / IndexedDB / bellek depoları, nesil + A/B başlık
 packages/worker        tek yazar Worker: görünümler, danışman, ilerletme döngüsü
 packages/map           Canvas harita çizicisi
 packages/ui            Preact arayüz
-packages/data-compiler 1A fixture üreticisi (deterministik)
+packages/data-compiler harita derleyicisi (Natural Earth + GeoNames), senaryo DSL'i ve beş senaryo, simge çıkarıcı, 1A fixture
 packages/lab           başsız koşucu
 tests/acceptance       kabul testleri (T-kimlikleri test adlarında)
 tests/corpus           Türkçe komut kabul kümesi
@@ -96,6 +107,10 @@ apps/android           Capacitor kabuğu ve Android projesi
 docs/                  şartname, karar kaydı (Ek A), test raporu
 ```
 
+## Lisanslar ve kaynaklar
+
+Harita: Natural Earth (kamu malı), GeoNames şehir verisi (CC BY 4.0). Birlik ve arayüz simgeleri: [game-icons.net](https://game-icons.net) — Lorc, Delapouite ve diğerleri, CC BY 3.0.
+
 ## Sonraki aşamalar (şartname 27)
 
-1B-1: bayrakların açılması (seferberlik, tahkimat, büyük taarruz, üç rota adayı, zırh), Balkan–Anadolu–Kafkasya kesiti (250–350 bölge). 1B-2: seçim, para basma, çok taraflı konferans, tam istihbarat. Dünya sistemleri: deniz/hava soyut modları, 1914 dünyası. Ardından 1936/1939, 2026, 1600, 750 senaryoları.
+Bayrakların açılması (seferberlik, tahkimat, büyük taarruz, üç rota adayı, zırh), seçim, para basma, çok taraflı konferans, deniz/hava soyut modları.

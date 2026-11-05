@@ -126,7 +126,7 @@ export const S1600: SenaryoTanim = {
     P('ALG', 'Algonkin ve Huron halkları', ['Ottawa'], 'Algonkin', 'yerel'), P('MIK', 'Mikmak halkı', ['Moncton'], 'Mikmak', 'yerel'), P('BEO', 'Beothuk halkı', ['St. John\'s'], 'Beothuk', 'yerel'),
     P('CRE', 'Kri ve Siksika halkları', ['Winnipeg', 'Calgary'], 'Kri', 'yerel'), P('INU', 'İnuitler (Thule)', ['Nuuk'], 'İnuit', 'yerel'),
     P('MAY', 'Maya şehirleri (Petén)', ['Belmopan'], 'Maya', 'yerel'), P('LUC', 'Bahama adaları', ['Nassau'], 'Lukayan', 'yerel'),
-    P('KAR', 'Karib ve Arawak halkları', ['Georgetown', 'Paramaribo', 'Ciudad Guayana'], 'Karib', 'yerel'), P('AMA', 'Amazon halkları (Omagua ve Tupi)', ['Manaus', 'Iquitos', 'Fortaleza', 'Brasília'], 'Tupi', 'yerel'),
+    P('KAR', 'Karib ve Arawak halkları', ['Georgetown', 'Paramaribo', 'Ciudad Guayana', 'Cayenne'], 'Karib', 'yerel'), P('ALE', 'Aleut ve Yupik halkları', ['Anchorage'], 'Aleut', 'yerel'), P('HAW', 'Hawaii şeflikleri', ['Honolulu'], 'Hawaii yerlisi', 'yerel', 'Hawaii aliʻi şefleri'), P('AMA', 'Amazon halkları (Omagua ve Tupi)', ['Manaus', 'Iquitos', 'Fortaleza', 'Brasília'], 'Tupi', 'yerel'),
     P('MOX', 'Mojo halkları', ['Trinidad'], 'Mojo', 'yerel'), P('GUA', 'Guarani halkları', ['Campo Grande', 'Porto Alegre'], 'Guarani', 'yerel'),
     P('GUY', 'Guaykuru halkları (Gran Chaco)', ['Resistencia'], 'Guaykuru', 'yerel'), P('TEH', 'Tehuelçe ve Puelçe halkları', ['Bahía Blanca'], 'Tehuelçe', 'yerel'),
     P('CHA', 'Çarrua halkı', ['Montevideo'], 'Çarrua', 'yerel'),
@@ -134,6 +134,7 @@ export const S1600: SenaryoTanim = {
     P('PAP2', 'Papua halkları', ['Port Moresby'], 'Papualı', 'yerel'), P('MEL', 'Melanezya ve Polinezya halkları', ['Honiara', 'Port-Vila', 'Suva', 'Apia'], 'Melanezyalı', 'yerel'),
   ],
   adlar: {
+    'Anchorage': 'Alaska', 'Honolulu': 'Hawaii', 'Cayenne': 'Guyana kıyısı', 'Petropavlovsk-Kamchatsky': 'Kamçatka', 
     'Yeni Delhi': 'Agra', 'İstanbul': 'Kostantiniyye', 'St. Petersburg': 'İngermanland', 'Volgograd': 'Çaritsin', 'Dnipro': 'Zaporijya Siç', 'Odessa': 'Özi', 'Kherson': 'Yedisan',
     'Donetsk': 'Deşt-i Kıpçak', 'Kırım': 'Bahçesaray', 'Kişinev': 'Bucak', 'Iaşi': 'Yaş', 'Bükreş': 'Tırgovişte', 'Cluj-Napoca': 'Erdel', 'Timişoara': 'Temeşvar', 'Budapeşte': 'Budin', 'Debrecen': 'Eğri',
     'Bratislava': 'Pozsony', 'Tebriz': 'Tebriz', 'Erivan': 'Revan', 'Tiflis': 'Tiflis', 'Bakü': 'Şirvan', 'Tel Aviv': 'Kudüs', 'Gaza': 'Gazze', 'Amman': 'Kerek', 'Beyrut': 'Sayda', 'Deir ez-Zor': 'Rakka',

@@ -1,6 +1,6 @@
 // Simülasyon Worker'ının çekirdeği: tek yazar. Mesaj döngüsünden bağımsızdır (Node testlerinde de çalışır).
 import {
-  type World, type Paket, senaryoBaslat, gunIlerle, onizle, kuyrugaAl, serilestir, coz, acikla, tarihMetni, ayEkle, dunyaHash, anlatiHash,
+  type World, type Paket, senaryoBaslat, gunIlerle, onizle, kuyrugaAl, serilestir, coz, acikla, tarihMetni, ayEkle, dunyaHash, anlatiHash, kayitPaketi,
   type Emir,
 } from '@ts/engine';
 import { ayristir, emirMetni, type Sonuc } from '@ts/command';
@@ -18,7 +18,7 @@ export class Sunucu {
   kayit: KayitDeposu;
   durdurIstek = false;
   calisiyor = false;
-  constructor(public pkg: Paket, depo: Depo, public gonder: (m: Mesaj, aktar?: Transferable[]) => void, public bekle: () => Promise<void> = () => new Promise((r) => setTimeout(r, 0))) {
+  constructor(public pkg: Paket | null, depo: Depo, public gonder: (m: Mesaj, aktar?: Transferable[]) => void, public bekle: () => Promise<void> = () => new Promise((r) => setTimeout(r, 0))) {
     this.kayit = new KayitDeposu(depo);
   }
 
@@ -55,7 +55,9 @@ export class Sunucu {
   dunya(): World { if (!this.w) throw new Error('oyun başlatılmadı'); return this.w; }
 
   private init(m: Mesaj) {
-    const p = m.p as { oyuncu: number; mod: number };
+    const p = m.p as { oyuncu: number; mod: number; paket?: Paket };
+    if (p.paket) this.pkg = p.paket;
+    if (!this.pkg) return this.yanit(m.id, 'error', { kod: 'paket', ayrinti: 'Senaryo paketi yüklenmedi.' });
     this.w = senaryoBaslat(this.pkg, p.oyuncu, p.mod);
     this.son = serilestir(this.w);
     this.yanit(m.id, 'ready', this.hazir());
@@ -144,7 +146,7 @@ export class Sunucu {
         try { s = gunIlerle(w, sonGun); }
         catch (e) {
           // bütünlük hatası: gün kesinleşmez, son kesinleşmiş güne dönülür
-          if (this.son) this.w = coz(this.son, this.pkg);
+          if (this.son) this.w = coz(this.son, this.dunya().pkg);
           this.yanit(m.id, 'error', { kod: 'butunluk', ayrinti: String((e as Error).message), oneri: 'Gün geri alındı. Kaydı dışa aktarıp geliştiriciye iletin.' });
           neden = 'hata';
           break;
@@ -188,7 +190,11 @@ export class Sunucu {
     const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
     if (dv.getUint32(0, true) !== 0x43534b54) throw new Error('Geçersiz kayıt dosyası');
     const n = dv.getUint32(4, true);
-    const w = coz(b.subarray(8, 8 + n), this.pkg);
+    const sim = b.subarray(8, 8 + n);
+    const k = kayitPaketi(sim);
+    if (!k) throw new Error('Geçersiz kayıt dosyası');
+    if (!this.pkg || this.pkg.kimlik !== k.kimlik) throw Object.assign(new Error('paket'), { paket: k.kimlik });
+    const w = coz(sim, this.pkg);
     try { const ek = JSON.parse(new TextDecoder().decode(b.subarray(8 + n))); w.anlati = ek.anlati ?? []; w.tarihce = ek.tarihce ?? []; } catch { /* anlatı yok */ }
     return w;
   }
@@ -196,18 +202,28 @@ export class Sunucu {
   async kaydet(id: number, yuva: string) {
     const w = this.dunya();
     const b = this.paketle();
-    const bas = await this.kayit.kaydet(yuva, b, { gun: w.gun, etiket: `${w.pkg.ulkeler[w.oyuncu]!.kisa} · ${tarihMetni(w.gun)}`, sandbox: w.mod === 1, ulke: w.oyuncu, zaman: new Date().toISOString() });
+    const bas = await this.kayit.kaydet(yuva, b, { gun: w.gun, etiket: `${w.pkg.ulkeler[w.oyuncu]!.kisa} · ${tarihMetni(w.gun)}`, sandbox: w.mod === 1, ulke: w.oyuncu, zaman: new Date().toISOString(), paket: w.pkg.kimlik, senaryo: w.pkg.senaryo.ad });
     if (id >= 0) this.yanit(id, 'saveResult', bas);
     return bas;
   }
 
+  private bekleyenBayt: Uint8Array | null = null;
   private async yukle(m: Mesaj) {
-    const p = m.p as { yuva?: string; bayt?: ArrayBuffer };
+    const p = m.p as { yuva?: string; bayt?: ArrayBuffer; paket?: Paket; bekleyen?: boolean };
+    if (p.paket) this.pkg = p.paket;
     let b: Uint8Array | null = null;
     if (p.bayt) b = new Uint8Array(p.bayt);
     else if (p.yuva) b = (await this.kayit.yukle(p.yuva))?.veri ?? null;
+    else if (p.bekleyen) b = this.bekleyenBayt;
     if (!b) return this.yanit(m.id, 'error', { kod: 'kayit', ayrinti: 'Geçerli kayıt bulunamadı.' });
-    this.w = this.ac(b);
+    try { this.w = this.ac(b); }
+    catch (e) {
+      const pk = (e as { paket?: string }).paket;
+      // kayıt başka senaryoya ait: arayüz o paketi yükleyip yeniden ister (dosya baytları bekletilir)
+      if (pk) { this.bekleyenBayt = b; return this.yanit(m.id, 'error', { kod: 'paket', paket: pk, ayrinti: 'Kayıt başka bir senaryoya ait.' }); }
+      throw e;
+    }
+    this.bekleyenBayt = null;
     this.son = serilestir(this.w);
     this.yanit(m.id, 'ready', this.hazir());
   }

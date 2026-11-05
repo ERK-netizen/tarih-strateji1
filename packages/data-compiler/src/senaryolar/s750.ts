@@ -103,8 +103,8 @@ export const S750: SenaryoTanim = {
     P('ARI', 'Aridoamerika halkları', ['Monterrey', 'Chihuahua', 'Juárez', 'Tijuana'], 'Çiçimek', 'yerel'), P('PUE', 'Atalar Pueblo ve Hohokam halkları', ['Albuquerque', 'Phoenix', 'Denver'], 'Pueblo', 'yerel'),
     P('WDL', 'Orman Dönemi halkları (Doğu Ormanları)', ['Washington', 'Boston', 'Charlotte', 'Memphis', 'Chicago', 'Jacksonville', 'Ottawa', 'Moncton'], 'Algonkin', 'yerel'),
     P('OVA', 'Ova ve Mississippi halkları', ['Minneapolis', 'Kansas City', 'Oklahoma City', 'Houston', 'Winnipeg', 'Calgary'], 'Kaddo', 'yerel'),
-    P('KAL', 'Pasifik kıyısı halkları', ['Los Angeles', 'Sacramento', 'Seattle', 'Vancouver', 'Whitehorse'], 'Kaliforniya yerlisi', 'yerel'), P('DOR', 'Dorset halkı', ['Nuuk', 'St. John\'s'], 'Dorset', 'yerel'),
-    P('KAR2', 'Karayip ve Arawak halkları', ['Havana', 'Santo Domingo', 'San Juan', 'Kingston', 'Port-au-Prince', 'Nassau', 'Port of Spain', 'Caracas', 'Barinas', 'Ciudad Guayana', 'Georgetown', 'Paramaribo'], 'Arawak', 'yerel'),
+    P('KAL', 'Pasifik kıyısı halkları', ['Los Angeles', 'Sacramento', 'Seattle', 'Vancouver', 'Whitehorse'], 'Kaliforniya yerlisi', 'yerel'), P('DOR', 'Dorset halkı', ['Nuuk', 'St. John\'s'], 'Dorset', 'yerel'), P('NRT', 'Norton ve İpiutak halkları', ['Anchorage'], 'Yupik', 'yerel'), P('POL', 'Polinezya denizcileri', ['Honolulu'], 'Polinezyalı', 'yerel'),
+    P('KAR2', 'Karayip ve Arawak halkları', ['Havana', 'Santo Domingo', 'San Juan', 'Kingston', 'Port-au-Prince', 'Nassau', 'Port of Spain', 'Caracas', 'Barinas', 'Ciudad Guayana', 'Georgetown', 'Paramaribo', 'Cayenne'], 'Arawak', 'yerel'),
     P('ITM', 'Orta Amerika halkları', ['Managua', 'San José', 'Panamá'], 'Çibça', 'yerel'), P('KOL', 'Kuzey And şefliği halkları', ['Bogotá', 'Barranquilla', 'Cúcuta', 'Pasto', 'Buenaventura', 'Quito'], 'Muisca', 'yerel'),
     P('WAR', 'Wari İmparatorluğu', ['Lima', 'Cusco'], 'Ketçua', 'yerel', 'Wari yöneticileri'), P('MOC', 'Moche şehirleri', ['Trujillo'], 'Moche', 'yerel'), P('TIW', 'Tiwanaku', ['Sucre', 'Antofagasta'], 'Aymara', 'yerel', 'Tiwanaku rahip-kralları'),
     P('AMZ', 'Amazon halkları (Marajoara ve Tupi)', ['Manaus', 'Iquitos', 'Trinidad', 'Fortaleza', 'Recife', 'Bahia', 'Brasília', 'São Paulo'], 'Tupi', 'yerel'),
@@ -112,6 +112,7 @@ export const S750: SenaryoTanim = {
     P('MAP', 'Mapuçe ve Pampa halkları', ['Santiago', 'Buenos Aires', 'Córdoba', 'San Miguel de Tucumán', 'Bahía Blanca'], 'Mapuçe', 'yerel'),
   ],
   adlar: {
+    'Anchorage': 'Alaska', 'Honolulu': 'Hawaii', 'Cayenne': 'Guyana kıyısı', 'Petropavlovsk-Kamchatsky': 'Kamçatka', 
     'Bağdat': 'Kûfe', 'İstanbul': 'Konstantinopolis', 'İzmir': 'Smirni', 'Ankara': 'Ankyra', 'Konya': 'İkonion', 'Antalya': 'Attaleia', 'Eskişehir': 'Dorylaion', 'Samsun': 'Amisos', 'Kayseri': 'Kaisareia',
     'Adana': 'Massisa (Sugur)', 'Antep': 'Harran (Cezire)', 'Diyarbakır': 'Amid', 'Malatya': 'Melitene', 'Erzurum': 'Kalikala', 'Van': 'Vaspurakan', 'Musul': 'Musul', 'Şam': 'Dımaşk', 'Tel Aviv': 'Kudüs',
     'Gaza': 'Gazze', 'Amman': 'Belka', 'Beyrut': 'Beyrut', 'Halep': 'Halep', 'Deir ez-Zor': 'Rakka', 'Kahire': 'Fustat', 'Luxor': 'Said', 'Asyut': 'Asyut', 'Mersa Matruh': 'İskenderiye', 'Dahab': 'Kulzüm',

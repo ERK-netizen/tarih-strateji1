@@ -1,9 +1,7 @@
 // Simülasyon Worker'ı giriş noktası.
 /// <reference lib="webworker" />
-import type { Paket } from '@ts/engine';
 import { varsayilanDepo, BellekDepo, type Depo } from '@ts/storage';
 import { Sunucu } from './sunucu.ts';
-import paketJson from '../../../data/derlenmis/fixture-1a.json';
 
 declare const self: DedicatedWorkerGlobalScope;
 
@@ -25,7 +23,7 @@ const bekleyen: (() => void)[] = [];
 ch.port1.onmessage = () => { const f = bekleyen.shift(); f?.(); };
 const bekle = () => new Promise<void>((r) => { bekleyen.push(r); ch.port2.postMessage(0); });
 
-const sunucu = new Sunucu(paketJson as unknown as Paket, gecikmeliDepo(), (m, aktar) => self.postMessage(m, aktar ?? []), bekle);
+const sunucu = new Sunucu(null, gecikmeliDepo(), (m, aktar) => self.postMessage(m, aktar ?? []), bekle);
 
 self.onmessage = (e: MessageEvent) => {
   // stop: zaman ilerlerken anında işaretlenir

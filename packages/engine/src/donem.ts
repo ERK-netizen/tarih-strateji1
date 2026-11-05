@@ -101,7 +101,7 @@ export const DONEMLER: Record<DonemKod, Donem> = {
     proje: projeler([['sivil', 'Sivil fabrika', ['fabrika']], ['askeri', 'Askerî fabrika', ['askeri fabrika', 'silah fabrikası', 'cephane fabrikası']], ['sulama', 'Sulama', ['kanal']], ['demiryolu', 'Demiryolu düzeyi', ['demiryolu', 'ray', 'tren yolu']], ['altyapi', 'Altyapı', ['yol']], ['valilik', 'Valilik', ['idare binası']]]),
     mal: mallar([['Gıda', ['yiyecek', 'tahıl', 'buğday', 'erzak']], ['Çelik', ['demir']], ['Kömür', []], ['Mühimmat', ['cephane', 'mermi']]]),
     terim: { sivilF: 'sivil fabrika', askeriF: 'askerî fabrika', demiryolu: 'demiryolu', muhimmat: 'mühimmat', para: 'altın' },
-    simge: { piyade: 'rifle', suvari: 'cavalry', mt: 'machine-gun', sahra: 'field-gun', agir: 'cannon' },
+    simge: { piyade: 'brodie-helmet', suvari: 'cavalry', mt: 'machine-gun', sahra: 'field-gun', agir: 'cannon' },
   },
   ikinci: {
     kod: 'ikinci', ad: 'İkinci Dünya Savaşı',
@@ -121,7 +121,7 @@ export const DONEMLER: Record<DonemKod, Donem> = {
     proje: projeler([['sivil', 'Sivil fabrika', ['fabrika']], ['askeri', 'Askerî fabrika', ['askeri fabrika', 'silah fabrikası']], ['sulama', 'Sulama', ['kanal']], ['demiryolu', 'Demiryolu düzeyi', ['demiryolu', 'ray']], ['altyapi', 'Altyapı', ['yol', 'otoyol']], ['valilik', 'Valilik', ['idare binası']]]),
     mal: mallar([['Gıda', ['yiyecek', 'tahıl', 'erzak']], ['Çelik', ['demir']], ['Petrol ve kömür', ['kömür', 'petrol', 'yakıt']], ['Mühimmat', ['cephane', 'mermi']]]),
     terim: { sivilF: 'sivil fabrika', askeriF: 'askerî fabrika', demiryolu: 'demiryolu', muhimmat: 'mühimmat', para: 'altın' },
-    simge: { piyade: 'brodie-helmet', suvari: 'tank', mt: 'machine-gun', sahra: 'field-gun', agir: 'cannon' },
+    simge: { piyade: 'winchester-rifle', suvari: 'tank', mt: 'machine-gun', sahra: 'field-gun', agir: 'cannon' },
   },
   modern: {
     kod: 'modern', ad: 'Günümüz',
@@ -131,8 +131,8 @@ export const DONEMLER: Record<DonemKod, Donem> = {
       E('mt', 'Tanksavar füzesi', 'mt', 2015, 12000, 20000, 2000, 2500, 120, 20), E('sahra', 'Obüs', 'sahra', 2015, 30000, 8000, 5000, 7000, 900, 150),
       E('agir1', 'Çok namlulu roketatar', 'agir', 2015, 42000, 8000, 5000, 10000, 1300, 300), E('agir2', 'İHA ve hassas füze', 'agir', 2027, 50000, 8000, 6000, 11000, 900, 200, 'agirtop2'),
     ],
-    tabur: [T('piyade', 'Mekanize piyade taburu', 700, 'piyade', 70, 60000, 2, 40, 80, 120), T('suvari', 'Tank taburu', 400, 'suvari', 40, 55000, 2, 45, 150, 180),
-      T('mt', 'Tanksavar bölüğü', 150, 'mt', 12, 60000, 0, 40, 60, 120), T('sahra', 'Obüs taburu', 400, 'sahra', 18, 45000, 3, 35, 800, 150), T('agir', 'Roket taburu', 300, 'agir', 12, 45000, 3, 35, 1200, 150)],
+    tabur: [T('piyade', 'Mekanize piyade taburu', 700, 'piyade', 70, 60000, 2, 70, 80, 120), T('suvari', 'Tank taburu', 400, 'suvari', 40, 55000, 2, 60, 150, 180),
+      T('mt', 'Tanksavar bölüğü', 150, 'mt', 12, 60000, 0, 70, 60, 120), T('sahra', 'Obüs taburu', 400, 'sahra', 18, 45000, 3, 50, 800, 150), T('agir', 'Roket taburu', 300, 'agir', 12, 45000, 3, 50, 1200, 150)],
     sablon: sablon([['piyade', 'Mekanize Tugay', ['piyade', 'piyade', 'piyade', 'suvari', 'sahra', 'mt'], ['mekanize', 'tugay', 'piyade', 'asker', 'birlik', 'mekanize tugay']],
       ['suvari', 'Zırhlı Tugay', ['suvari', 'suvari', 'suvari', 'piyade', 'sahra'], ['zırhlı', 'tank', 'zırhlı tugay']], ['topcu', 'Topçu Tugayı', ['sahra', 'sahra', 'agir'], ['topçu', 'roket', 'topçu tugayı']],
       ['yedek', 'Yedek Tugay', ['piyade', 'piyade'], ['yedek', 'garnizon', 'yedek tugay']]]),

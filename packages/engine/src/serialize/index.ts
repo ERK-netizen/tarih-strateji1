@@ -144,6 +144,16 @@ export function serilestir(w: World): Uint8Array {
 export function dunyaHash(w: World): string { return hashV1(serilestir(w)); }
 export function anlatiHash(w: World): string { return hashText(kanonikJson(w.anlati)); }
 
+/** Kaydın hangi pakete ait olduğunu (tam çözmeden) okur; kayıt değilse null. */
+export function kayitPaketi(bytes: Uint8Array): { kimlik: string; surum: string } | null {
+  try {
+    const o = new Okuyucu(bytes);
+    if (o.u32() !== MAGIC) return null;
+    o.u32();
+    return { kimlik: o.str(), surum: o.str() };
+  } catch { return null; }
+}
+
 export function coz(bytes: Uint8Array, pkg: Paket): World {
   const o = new Okuyucu(bytes);
   if (o.u32() !== MAGIC) throw new Error('kayıt dosyası değil');
