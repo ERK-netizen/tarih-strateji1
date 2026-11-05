@@ -1,3 +1,4 @@
+import { DONEMLER, type DonemKod } from './donem.ts';
 // Ek B: veri sözlüğü ve başlangıç katsayıları (1A). Bütün sayılar VARSAYILAN denge başlangıç değeridir.
 // Ölçekler: oran S=1e6, puan ×1000, gıda/mühimmat/kaynak milibirim, sanayi milipuan (SP×1000).
 
@@ -33,7 +34,7 @@ export interface Ekipman {
   zirh: number; delme: number; sertlik: number; sp: number; celik: number; agirlik: number; tek?: string;
 }
 // İstatistikler ×1000 tamsayı; sp milipuan; çelik milibirim; ağırlık milibirim taşıma.
-export const EKIPMAN: readonly Ekipman[] = [
+export const EKIPMAN: Ekipman[] = [
   { kod: 'psil1', ad: 'Piyade silahı I', aile: 'piyade', yil: 1914, YS: 5000, SS: 500, SV: 20000, YR: 3000, zirh: 0, delme: 3000, sertlik: 0, sp: 400, celik: 50, agirlik: 5 },
   { kod: 'psil2', ad: 'Piyade silahı II', aile: 'piyade', yil: 1916, YS: 6000, SS: 600, SV: 22000, YR: 3500, zirh: 0, delme: 3000, sertlik: 0, sp: 450, celik: 55, agirlik: 5, tek: 'piyade2' },
   { kod: 'psil3', ad: 'Piyade silahı III', aile: 'piyade', yil: 1918, YS: 7000, SS: 800, SV: 24000, YR: 4000, zirh: 0, delme: 4000, sertlik: 0, sp: 500, celik: 60, agirlik: 5, tek: 'piyade3' },
@@ -46,7 +47,11 @@ export const EKIPMAN: readonly Ekipman[] = [
 export const NEKIP = EKIPMAN.length;
 export const ekipIdx = (kod: string): number => EKIPMAN.findIndex((e) => e.kod === kod);
 export const AILE_EKIP: Record<string, number[]> = {};
-EKIPMAN.forEach((e, i) => { (AILE_EKIP[e.aile] ??= []).push(i); });
+function aileKur(): void {
+  for (const k of Object.keys(AILE_EKIP)) delete AILE_EKIP[k];
+  EKIPMAN.forEach((e, i) => { (AILE_EKIP[e.aile] ??= []).push(i); });
+}
+aileKur();
 
 // ---------- Mühimmat (13.2) ----------
 export const MUHIMMAT = { sp: 1200, celik: 600, komur: 300, agirlik: 1000 };
@@ -54,7 +59,7 @@ export const MUHIMMAT = { sp: 1200, celik: 600, komur: 300, agirlik: 1000 };
 // ---------- Taburlar ----------
 export interface Tabur { kod: string; ad: string; kisi: number; aile: string; adet: number; org: number; genislik: number; hiz: number; muhimmat: number; destek?: boolean; egitim: number }
 // org ×1000; hız km/gün; mühimmat milibirim/gün muharebede
-export const TABUR: readonly Tabur[] = [
+export const TABUR: Tabur[] = [
   { kod: 'piyade', ad: 'Piyade taburu', kisi: 1000, aile: 'piyade', adet: 100, org: 60000, genislik: 2, hiz: 25, muhimmat: 50, egitim: 90 },
   { kod: 'suvari', ad: 'Süvari taburu', kisi: 800, aile: 'suvari', adet: 80, org: 50000, genislik: 2, hiz: 45, muhimmat: 50, egitim: 120 },
   { kod: 'mt', ad: 'Makineli tüfek bölüğü', kisi: 200, aile: 'mt', adet: 12, org: 60000, genislik: 0, hiz: 25, muhimmat: 80, destek: true, egitim: 90 },
@@ -64,7 +69,7 @@ export const TABUR: readonly Tabur[] = [
 export const taburIdx = (kod: string): number => TABUR.findIndex((t) => t.kod === kod);
 
 export interface Sablon { kod: string; ad: string; kisa: string; taburlar: string[]; esanlam: string[] }
-export const SABLON: readonly Sablon[] = [
+export const SABLON: Sablon[] = [
   { kod: 'piyade', ad: 'Piyade Tümeni', kisa: 'P', taburlar: ['piyade', 'piyade', 'piyade', 'piyade', 'sahra', 'mt'], esanlam: ['piyade', 'tümen', 'piyade tümeni', 'asker', 'birlik'] },
   { kod: 'suvari', ad: 'Süvari Tümeni', kisa: 'S', taburlar: ['suvari', 'suvari', 'suvari'], esanlam: ['süvari', 'atlı', 'süvari tümeni'] },
   { kod: 'topcu', ad: 'Topçu Alayı', kisa: 'T', taburlar: ['sahra', 'sahra', 'agir'], esanlam: ['topçu', 'top', 'topçu alayı'] },
@@ -73,12 +78,13 @@ export const SABLON: readonly Sablon[] = [
 export const MAX_TABUR = 6;
 
 // ---------- Mallar (pazar) ----------
-export const MAL = [
+export interface Mal { kod: string; ad: string; p0: number; esanlam: string[] }
+export const MAL: Mal[] = [
   { kod: 'gida', ad: 'Gıda', p0: 900, esanlam: ['gıda', 'yiyecek', 'tahıl', 'buğday', 'erzak'] },
   { kod: 'celik', ad: 'Çelik', p0: 1500, esanlam: ['çelik', 'demir'] },
   { kod: 'komur', ad: 'Kömür', p0: 400, esanlam: ['kömür'] },
   { kod: 'muhimmat', ad: 'Mühimmat', p0: 3500, esanlam: ['mühimmat', 'cephane', 'mermi'] },
-] as const;
+];
 export const NMAL = MAL.length;
 export const MALI = { gida: 0, celik: 1, komur: 2, muhimmat: 3 } as const;
 
@@ -115,7 +121,7 @@ export const BUTCE = ['Bilim', 'Eğitim', 'Altyapı/Tarım', 'Sosyal/Güvenlik']
 // ---------- Teknoloji (1A alt kümesi) ----------
 export interface Teknoloji { kod: string; ad: string; yil: number; maliyet: number; on: string[]; etki: string; esanlam: string[] }
 // maliyet: araştırma puanı ×1000 (taban hız günlük 1000 → 1 puan/gün)
-export const TEKNOLOJI: readonly Teknoloji[] = [
+export const TEKNOLOJI: Teknoloji[] = [
   { kod: 'piyade2', ad: 'Piyade silahı II', yil: 1916, maliyet: 150_000, on: [], etki: 'Piyade silahı II üretimi', esanlam: ['piyade silahı', 'tüfek', 'piyade silahı ii'] },
   { kod: 'piyade3', ad: 'Piyade silahı III', yil: 1918, maliyet: 180_000, on: ['piyade2'], etki: 'Piyade silahı III üretimi', esanlam: ['piyade silahı iii'] },
   { kod: 'agirtop2', ad: 'Ağır top II', yil: 1916, maliyet: 160_000, on: [], etki: 'Ağır top II üretimi', esanlam: ['ağır top', 'topçu', 'ağır top ii'] },
@@ -133,15 +139,32 @@ export const NTEK = TEKNOLOJI.length;
 export const tekIdx = (kod: string): number => TEKNOLOJI.findIndex((t) => t.kod === kod);
 
 // ---------- Projeler (13.6) ----------
-export const PROJE = [
+export interface Proje { kod: string; ad: string; sp: number; nakit: number; gun: number; esanlam: string[] }
+export const PROJE: Proje[] = [
   { kod: 'sivil', ad: 'Sivil fabrika', sp: 1_800_000, nakit: 900_000, gun: 180, esanlam: ['sivil fabrika', 'fabrika'] },
   { kod: 'askeri', ad: 'Askerî fabrika', sp: 1_800_000, nakit: 1_000_000, gun: 180, esanlam: ['askeri fabrika', 'askerî fabrika', 'silah fabrikası', 'cephane fabrikası'] },
   { kod: 'sulama', ad: 'Sulama', sp: 600_000, nakit: 500_000, gun: 120, esanlam: ['sulama', 'kanal'] },
   { kod: 'demiryolu', ad: 'Demiryolu düzeyi', sp: 900_000, nakit: 800_000, gun: 120, esanlam: ['demiryolu', 'ray', 'tren yolu'] },
   { kod: 'altyapi', ad: 'Altyapı', sp: 700_000, nakit: 500_000, gun: 90, esanlam: ['altyapı', 'yol'] },
   { kod: 'valilik', ad: 'Valilik', sp: 500_000, nakit: 700_000, gun: 150, esanlam: ['valilik', 'idare binası'] },
-] as const;
+];
 export const projeIdx = (kod: string): number => PROJE.findIndex((p) => p.kod === kod);
+
+// ---------- Dönem kataloğu ----------
+/** Etkin dönem: senaryo paketine göre katalog dizileri yerinde değiştirilir (Worker'da tek dünya vardır). */
+export const AKTIF = { donem: 'buyuk' as DonemKod };
+export function donemYukle(kod: DonemKod | undefined): void {
+  const d = DONEMLER[kod ?? 'buyuk'];
+  if (AKTIF.donem === d.kod && EKIPMAN[0]?.ad === d.ekipman[0]!.ad) return;
+  EKIPMAN.splice(0, EKIPMAN.length, ...d.ekipman);
+  TABUR.splice(0, TABUR.length, ...d.tabur);
+  SABLON.splice(0, SABLON.length, ...d.sablon);
+  TEKNOLOJI.splice(0, TEKNOLOJI.length, ...d.teknoloji);
+  PROJE.splice(0, PROJE.length, ...d.proje);
+  MAL.splice(0, MAL.length, ...d.mal);
+  aileKur();
+  AKTIF.donem = d.kod;
+}
 
 // ---------- Bayraklar (5.8) ----------
 export const BAYRAK = ['zirh_aktif', 'rota_alternatif', 'seferberlik', 'tahkimat', 'buyuk_taarruz', 'secim', 'para_basma', 'deniz_soyut', 'deniz_ayrintili', 'hava_soyut', 'goc', 'istihbarat'] as const;

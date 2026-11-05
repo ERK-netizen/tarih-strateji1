@@ -148,7 +148,7 @@ export class Sunucu {
           break;
         }
         this.son = s.bayt;
-        const delta = new Int8Array(w.nR + 4);
+        const delta = new Int16Array(w.nR + 4);
         for (let r = 0; r < w.nR; r++) delta[r] = w.R.c.kontrolEden[r]!;
         this.yanit(m.id, 'dayCommitted', { gun: s.gun, tarih: tarihMetni(s.gun), surum: s.surum, hash: s.hash, ilerleme: Math.min(100, Math.floor(((s.gun - bas) * 100) / Math.max(1, hedef - bas))), delta: delta.buffer, bildirim: s.bildirimler.filter((b) => b.ulke === w.oyuncu || b.durdur).slice(0, 8) }, [delta.buffer]);
         const dur = s.durmalar.filter((b) => SESSIZE_ALINAMAZ.has(b.tur) || !sessiz.has(b.tur));

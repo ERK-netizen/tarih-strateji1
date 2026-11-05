@@ -42,7 +42,7 @@ function teklifOzet(w: World, s: number) {
   const tur = T.tur[s]!;
   let detay = '';
   if (tur === diplomasi.TK.baris) {
-    const rs = diplomasi.maskeBolgeler(T.bolgeMaske[s]!);
+    const rs = diplomasi.teklifBolgeleri(w, s);
     detay = `${diplomasi.BARIS_TUR[T.p1[s]!]}${rs.length ? ': ' + rs.map((r) => w.pkg.bolgeler[r]!.ad).join(', ') : ''}`;
   } else if (tur === diplomasi.TK.cagri) detay = 'Müttefikiniz savaşa katılmanızı istiyor';
   else if (tur === diplomasi.TK.ekipman) detay = `${T.p2[s]} ${EKIPMAN[T.p1[s]!]!.ad}`;
@@ -73,8 +73,8 @@ export function harita(w: World) {
   const yabanci = bolgeGozlem(w, P).filter((g) => g.ulke !== P).map((g) => ({ bolge: g.bolge, ulke: g.ulke, birlik: g.birlik, gucAlt: g.gucAlt, gucUst: g.gucUst, kisiAlt: g.kisiAlt, kisiUst: g.kisiUst, kesin: g.kesin }));
   const savaslar: number[][] = [];
   for (const s of w.SV.rows()) {
-    const mA = w.SV.c.maskeA[s]!, mB = w.SV.c.maskeB[s]!;
-    for (let a = 0; a < w.nC; a++) for (let b = 0; b < w.nC; b++) if ((mA & (1 << a)) && (mB & (1 << b))) savaslar.push([a, b]);
+    const A_ = ortak.savasUyeleri(w, s, 1), B_ = ortak.savasUyeleri(w, s, 2);
+    for (const a of A_) for (const b of B_) savaslar.push([a, b]);
   }
   return { bolgeler, birimler, yabanci, savaslar, ulkeler: w.pkg.ulkeler.map((u) => ({ kisa: u.kisa, renk: u.renk })) };
 }

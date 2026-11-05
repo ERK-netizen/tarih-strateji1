@@ -14,7 +14,7 @@ import { aylikDiplomasi, gerekceGunu } from '../systems/diplomasi.ts';
 import { olayGunu, aylikOlaylar, hasatAnlat, acilisOlaylari } from '../systems/olaylar.ts';
 import { serilestir } from '../serialize/index.ts';
 import { hashV1 } from '../hash/index.ts';
-import { uc, anlat } from '../systems/ortak.ts';
+import { uc, anlat, savasta as ortakSavasta } from '../systems/ortak.ts';
 import { sayac } from '../num/index.ts';
 import { yeniDunya } from '../state/world.ts';
 import type { Paket } from '../paket.ts';
@@ -125,13 +125,7 @@ function durmaKosullari(w: World): void {
   w.onbellek.set('ui2', ui2);
   void ulkeGidaGuvence;
 }
-function savastaKontrol(w: World, a: number, b: number): boolean {
-  for (const s of w.SV.rows()) {
-    const x = w.SV.c.maskeA[s]!, y = w.SV.c.maskeB[s]!;
-    if (((x >> a) & 1 && (y >> b) & 1) || ((x >> b) & 1 && (y >> a) & 1)) return true;
-  }
-  return false;
-}
+function savastaKontrol(w: World, a: number, b: number): boolean { return ortakSavasta(w, a, b); }
 
 /** P12 bütünlük: negatif olmama, nüfus korunumu, köken muhasebesi. */
 export function butunluk(w: World, n0: number): void {

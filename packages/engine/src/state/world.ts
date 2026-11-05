@@ -1,7 +1,8 @@
 // Kanonik dünya durumu. Tek yazar: çözümleyici (faz hattı). Bütün değerler tamsayıdır.
 import { Table, fixedTable, type ColType } from './table.ts';
 import type { Paket } from '../paket.ts';
-import { NHUCRE, NKIMLIK, NEKIP, NTEK, NMAL, MAL, BAYRAK, ST, YB, TABUR, SABLON, AILE_EKIP, EKIPMAN, MAX_TABUR, K } from '../catalog.ts';
+import { NHUCRE, NKIMLIK, NEKIP, NTEK, NMAL, MAL, BAYRAK, ST, YB, TABUR, SABLON, AILE_EKIP, EKIPMAN, MAX_TABUR, K, donemYukle } from '../catalog.ts';
+import type { DonemKod } from '../donem.ts';
 import { gunNo } from '../calendar/index.ts';
 import { largestRemainder, S } from '../num/index.ts';
 
@@ -13,7 +14,7 @@ export const BOLGE_KOL = [
   ['altyapi', f], ['demiryolu', f], ['sulama', f], ['sivilF', f], ['askeriF', f], ['hasar', f],
   ['isTarim', f], ['isSanayi', f], ['isHizmet', f], ['isGucu', f], ['issiz', f],
   ['yerelGida', f], ['gidaArtik', f], ['uretimDun', f], ['vergiDun', f],
-  ['isgalGun', f], ['anaYurtGun', f], ['mesafe', f], ['valilik', f], ['isyan', f], ['tahkimat', f], ['sonMuharebe', f], ['vaDun', f], ['iddia', i32],
+  ['isgalGun', f], ['anaYurtGun', f], ['mesafe', f], ['valilik', f], ['isyan', f], ['tahkimat', f], ['sonMuharebe', f], ['vaDun', f],
 ] as const;
 export type BolgeK = (typeof BOLGE_KOL)[number][0];
 
@@ -29,7 +30,7 @@ export const ULKE_KOL = [
   ['un', f], ['guvenilir', f], ['saldiriyaUgradi', f], ['zafer', f], ['olumAy', f], ['sakatAy', f],
   ['spDun', f], ['muhimmat', f], ['celikDun', f], ['komurDun', f], ['celikKayip', f],
   ['arastirmaHizi', f], ['otoCephe', i32], ['tamPuan', f], ['yasakGun', f], ['krizAsama', i32], ['gerginlik', f],
-  ['olu', f], ['sonPlan', f], ['hedefUlke', i32], ['bakimHedef', f], ['propaganda', f], ['celik', f], ['komur', f], ['tuketimYet', f], ['bakimOdenen', f], ['harcamaOran', f], ['otoTakviye', i32], ['vergiAy', f], ['kaliciGida', i32], ['olayEsik', f],
+  ['olu', f], ['sonPlan', f], ['hedefUlke', i32], ['bakimHedef', f], ['propaganda', f], ['celik', f], ['komur', f], ['tuketimYet', f], ['bakimOdenen', f], ['harcamaOran', f], ['otoTakviye', i32], ['vergiAy', f], ['kaliciGida', i32], ['olayEsik', f], ['pasif', i32],
 ] as const;
 export type UlkeK = (typeof ULKE_KOL)[number][0];
 
@@ -53,14 +54,18 @@ export const ANLASMA_TUR = ['ticaret', 'saldirmazlik', 'gecis', 'garanti', 'itti
 export const A = { ticaret: 0, saldirmazlik: 1, gecis: 2, garanti: 3, ittifak: 4, ateskes: 5, tazminat: 6 } as const;
 export const ANLASMA_KOL = [['tur', i32], ['a', i32], ['b', i32], ['baslangic', f], ['bitis', f], ['miktar', f]] as const;
 
-export const SAVAS_KOL = [['saldiran', i32], ['savunan', i32], ['maskeA', i32], ['maskeB', i32], ['baslangic', f], ['kayipA', f], ['kayipB', f], ['gerekceli', i32]] as const;
+export const SAVAS_KOL = [['saldiran', i32], ['savunan', i32], ['baslangic', f], ['kayipA', f], ['kayipB', f], ['gerekceli', i32]] as const;
+/** Eşzamanlı savaş sınırı (taraf tablosu satır sayısı). */
+export const SV_MAX = 48;
+/** Bölge başına en çok iddia sahibi. */
+export const IDDIA_MAX = 4;
 export const GEREKCE_KOL = [['ulke', i32], ['hedef', i32], ['bitis', f], ['hazir', i32]] as const;
 export const HAT_KOL = [['ulke', i32], ['urun', i32], ['fabrika', f], ['verim', f], ['wip', f], ['oncelik', f]] as const;
 export const URUN_MUH = 100;
 export const PROJE_KOL = [['ulke', i32], ['tur', i32], ['bolge', i32], ['spTop', f], ['nakitTop', f], ['spKul', f], ['nakitKul', f], ['sira', f]] as const;
 export const YARALI_KOL = [['ulke', i32], ['eyalet', i32], ['kisi', f], ['gun', f]] as const;
 export const KALICI_KOL = [['ulke', i32], ['tur', i32], ['p1', f], ['p2', f], ['p3', f], ['sonGun', f]] as const;
-export const TEKLIF_KOL = [['kimden', i32], ['kime', i32], ['tur', i32], ['p1', f], ['p2', f], ['gun', f], ['durum', i32], ['bolgeMaske', f], ['bolgeMaske2', f]] as const;
+export const TEKLIF_KOL = [['kimden', i32], ['kime', i32], ['tur', i32], ['p1', f], ['p2', f], ['gun', f], ['durum', i32]] as const;
 export const SIPARIS_KOL = [['ulke', i32], ['mal', i32], ['miktar', f], ['yon', i32], ['karsi', i32], ['kalici', i32]] as const;
 export const OLAY_KOL = [['olay', i32], ['ulke', i32], ['gun', f], ['p1', f], ['p2', f], ['secim', i32]] as const;
 
@@ -108,6 +113,11 @@ export interface World {
   OL: Table<(typeof OLAY_KOL)[number][0]>;
   birlikAd: string[]; // adNo indeksli dizge tablosu
   rotaEpoch: number;
+  savasTaraf: Int8Array; // SV_MAX × C: 0 yok, 1 saldıran tarafı, 2 savunan tarafı
+  iddia: Int16Array; // R × IDDIA_MAX: ülke+1 (0 boş)
+  teklifBolge: Record<string, number[]>; // barış teklifindeki bölge listeleri (teklif kimliği → bölgeler)
+  /** Hash dışı: savaş/anlaşma değişim sayacı (önbellek anahtarı) */
+  diploSurum: number;
   kuyruk: { sira: number; emir: Record<string, unknown> }[]; // onaylı emir kuyruğu (kanonik)
   emirSira: number;
   artik: { dogum: number; olum: number; kohort: number };
@@ -141,6 +151,7 @@ export function bolgeNufus(w: World, r: number): number {
 }
 
 export function yeniDunya(pkg: Paket, oyuncu: number): World {
+  donemYukle(pkg.donem as DonemKod | undefined);
   const nR = pkg.bolgeler.length, nE = pkg.eyaletler.length, nC = pkg.ulkeler.length;
   const w: World = {
     pkg, gun: gunNo(pkg.senaryo.baslangic), surum: 0, tohum: pkg.tohum, oyuncu, mod: 0,
@@ -158,6 +169,7 @@ export function yeniDunya(pkg: Paket, oyuncu: number): World {
     PR: new Table('proje', PROJE_KOL, 16), YR: new Table('yarali', YARALI_KOL, 32), KE: new Table('kalici', KALICI_KOL, 8),
     TK: new Table('teklif', TEKLIF_KOL, 8), SP: new Table('siparis', SIPARIS_KOL, 16), OL: new Table('olay', OLAY_KOL, 8),
     birlikAd: [], rotaEpoch: 1, kuyruk: [], emirSira: 0,
+    savasTaraf: new Int8Array(SV_MAX * nC), iddia: new Int16Array(nR * IDDIA_MAX), teklifBolge: {}, diploSurum: 1,
     artik: { dogum: 0, olum: 0, kohort: 0 },
     sayac: { dogum: 0, dogalOlum: 0, askerOlum: 0, ekOlum: 0 },
     anlati: [], bildirim: [], tarihce: [], onbellek: new Map(), ayarlar: { zorlaTamYol: false, onbellekKapali: false },
@@ -169,12 +181,12 @@ export function yeniDunya(pkg: Paket, oyuncu: number): World {
 
   const R = w.R.c;
   pkg.bolgeler.forEach((b, r) => {
-    R.sahip[r] = b.sahip; R.kontrolEden[r] = b.sahip; R.kontrol[r] = 80_000; R.itaat[r] = 0;
+    R.sahip[r] = b.sahip; R.kontrolEden[r] = b.kontrol ?? b.sahip; R.kontrol[r] = 80_000; R.itaat[r] = b.kontrol !== undefined && b.kontrol !== b.sahip ? 15_000 : 0;
     R.butunlesme[r] = b.anaYurt.includes(b.sahip) ? 80_000 : 30_000;
     R.altyapi[r] = b.altyapi; R.demiryolu[r] = b.demiryolu; R.sulama[r] = b.sulama;
     R.sivilF[r] = b.sivilF; R.askeriF[r] = b.askeriF;
     R.anaYurtGun[r] = 0;
-    for (const d of b.iddia) R.iddia[r] = R.iddia[r]! | (1 << d);
+    b.iddia.slice(0, IDDIA_MAX).forEach((d, i) => { w.iddia[r * IDDIA_MAX + i] = d + 1; });
     for (let k = 0; k < NHUCRE; k++) w.pop[r * NHUCRE + k] = b.nufus[k]!;
     for (let k = 0; k < NKIMLIK; k++) w.kim[r * NKIMLIK + k] = b.kimlik[k]!;
   });
@@ -185,12 +197,19 @@ export function yeniDunya(pkg: Paket, oyuncu: number): World {
     C.b0[c] = 250_000; C.b1[c] = 200_000; C.b2[c] = 300_000; C.b3[c] = 250_000; C.egitim[c] = 30_000;
     C.guvenilir[c] = 50_000; C.faiz[c] = 50_000; C.arastirmaHizi[c] = 1000; C.hedefUlke[c] = -1; C.bakimHedef[c] = S;
     C.muhimmat[c] = 0; C.bakimOdenen[c] = S; C.harcamaOran[c] = 700_000; C.otoTakviye[c] = 1; C.tuketimYet[c] = S;
-    C.celik[c] = 20_000; C.komur[c] = 20_000;
+    C.celik[c] = 20_000; C.komur[c] = 20_000; C.pasif[c] = u.pasif ? 1 : 0;
     for (let d = 0; d < nC; d++) w.gorus[c * nC + d] = pkg.gorus[c]![d]!;
   });
   for (const a of pkg.anlasmalar) {
     const s = w.AN.alloc();
     w.AN.c.tur[s] = (A as Record<string, number>)[a.tur]!; w.AN.c.a[s] = a.a; w.AN.c.b[s] = a.b; w.AN.c.baslangic[s] = w.gun; w.AN.c.bitis[s] = -1;
+  }
+  for (const sv of pkg.savaslar ?? []) {
+    if (w.SV.count() >= SV_MAX || !sv.a.length || !sv.b.length) continue;
+    const s = w.SV.alloc();
+    w.SV.c.saldiran[s] = sv.a[0]!; w.SV.c.savunan[s] = sv.b[0]!; w.SV.c.baslangic[s] = w.gun - (sv.gun ?? 0); w.SV.c.gerekceli[s] = sv.gerekceli === false ? 0 : 1;
+    for (const c of sv.a) w.savasTaraf[s * nC + c] = 1;
+    for (const c of sv.b) w.savasTaraf[s * nC + c] = 2;
   }
   // Başlangıç birlikleri: personel köken eyaletlerinden A statüsüne, ekipman tam
   for (let r = 0; r < nR; r++) R.sonMuharebe[r] = -999;
@@ -206,13 +225,20 @@ export function yeniDunya(pkg: Paket, oyuncu: number): World {
     w.E.c.guvence[e] = S;
   }
   for (let c = 0; c < nC; c++) {
-    const buyuk = [1, 0, 2, 1][c] ?? 1;
-    w.C.c.muhimmat[c] = [60_000, 25_000, 90_000, 40_000][c] ?? 30_000;
-    w.ekip[ck(c, 0)] = [2500, 900, 3200, 1600][c] ?? 1000;
-    w.ekip[ck(c, 3)] = 150 * (buyuk + 1);
-    w.ekip[ck(c, 4)] = 30 * (buyuk + 1);
-    w.ekip[ck(c, 5)] = 25 * (buyuk + 1);
-    w.ekip[ck(c, 6)] = 8 * buyuk;
+    const u = pkg.ulkeler[c]!;
+    if (u.depo) {
+      w.C.c.muhimmat[c] = u.depo.muhimmat;
+      u.depo.ekip.forEach((v, k) => { w.ekip[ck(c, k)] = v; });
+    } else {
+      const buyuk = [1, 0, 2, 1][c] ?? 1;
+      w.C.c.muhimmat[c] = [60_000, 25_000, 90_000, 40_000][c] ?? 30_000;
+      w.ekip[ck(c, 0)] = [2500, 900, 3200, 1600][c] ?? 1000;
+      w.ekip[ck(c, 3)] = 150 * (buyuk + 1);
+      w.ekip[ck(c, 4)] = 30 * (buyuk + 1);
+      w.ekip[ck(c, 5)] = 25 * (buyuk + 1);
+      w.ekip[ck(c, 6)] = 8 * buyuk;
+    }
+    if (u.pasif) continue;
     // başlangıç üretim hatları
     hatEkle(w, c, 0, 450_000);
     hatEkle(w, c, URUN_MUH, 300_000);

@@ -180,7 +180,7 @@ describe('17 siyaset ve 19 istihbarat', () => {
     diplomasi.savasIlan(w, 2, 1);
     const rs = w.R.list().filter((r) => w.R.c.sahip[r] === 1).slice(0, 2);
     for (const r of rs) w.R.c.kontrolEden[r] = 2;
-    diplomasi.barisUygula(w, 2, 1, 1, diplomasi.bolgelerMaske([rs[0]!]));
+    diplomasi.barisUygula(w, 2, 1, 1, [rs[0]!]);
     expect(w.R.c.sahip[rs[0]!]).toBe(2);
     expect(w.R.c.kontrolEden[rs[1]!]).toBe(1);
     expect(ortak.savasta(w, 1, 2)).toBe(false);

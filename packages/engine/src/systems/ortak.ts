@@ -1,6 +1,6 @@
 // Sistemlerin paylaştığı saf yardımcılar: ilişki, erişim, rota, birlik istatistikleri.
 import type { World } from '../state/world.ts';
-import { A, cc, kenarKey } from '../state/world.ts';
+import { A, cc, kenarKey, IDDIA_MAX } from '../state/world.ts';
 import { TABUR, EKIPMAN, AILE_EKIP, ARAZI, K, KIS_HAREKET, KIS_KAPASITE, CAMUR_HAREKET } from '../catalog.ts';
 import { S, mulDiv, clamp } from '../num/index.ts';
 import { tarih } from '../calendar/index.ts';
@@ -9,42 +9,69 @@ export type Cols = Record<string, Float64Array>;
 export const uc = (w: World): Cols => w.U.c as unknown as Cols;
 
 // ---------- Savaş ve ittifak ----------
+// Savaş tarafları kanonik `savasTaraf` tablosundadır; aşağıdaki matris ve indeksler türetilmiş önbellektir.
+/** Savaş veya anlaşma değiştiğinde çağrılır: önbellekleri ve rota ağaçlarını geçersiz kılar. */
+export function diploDegisti(w: World): void { w.diploSurum++; w.rotaEpoch++; }
+
+export function tarafi(w: World, s: number, c: number): number { return w.savasTaraf[s * w.nC + c]!; }
+export function tarafYaz(w: World, s: number, c: number, t: number): void { w.savasTaraf[s * w.nC + c] = t; diploDegisti(w); }
+export function savasUyeleri(w: World, s: number, t: number): number[] {
+  const out: number[] = [];
+  for (let c = 0; c < w.nC; c++) if (w.savasTaraf[s * w.nC + c] === t) out.push(c);
+  return out;
+}
+
+/** nC × nC: 1 = savaşta, 2 = aynı tarafta. */
+function savasMatris(w: World): Uint8Array {
+  const o = w.onbellek.get('savasM') as { s: number; m: Uint8Array } | undefined;
+  if (o && o.s === w.diploSurum) return o.m;
+  const n = w.nC;
+  const m = new Uint8Array(n * n);
+  for (const s of w.SV.rows()) {
+    const A_: number[] = [], B_: number[] = [];
+    for (let c = 0; c < n; c++) { const t = w.savasTaraf[s * n + c]; if (t === 1) A_.push(c); else if (t === 2) B_.push(c); }
+    for (const x of A_) { for (const y of B_) { m[x * n + y] = 1; m[y * n + x] = 1; } for (const y of A_) if (x !== y && m[x * n + y] !== 1) m[x * n + y] = 2; }
+    for (const x of B_) for (const y of B_) if (x !== y && m[x * n + y] !== 1) m[x * n + y] = 2;
+  }
+  w.onbellek.set('savasM', { s: w.diploSurum, m });
+  return m;
+}
 export function savasta(w: World, a: number, b: number): boolean {
   if (a === b || a < 0 || b < 0) return false;
-  const ma = 1 << a, mb = 1 << b;
-  for (const s of w.SV.rows()) {
-    const x = w.SV.c.maskeA[s]!, y = w.SV.c.maskeB[s]!;
-    if (((x & ma) && (y & mb)) || ((x & mb) && (y & ma))) return true;
-  }
-  return false;
+  return savasMatris(w)[a * w.nC + b] === 1;
 }
 export function savastaMi(w: World, a: number): boolean {
-  const m = 1 << a;
-  for (const s of w.SV.rows()) if ((w.SV.c.maskeA[s]! & m) || (w.SV.c.maskeB[s]! & m)) return true;
+  const m = savasMatris(w), n = w.nC;
+  for (let b = 0; b < n; b++) if (m[a * n + b] === 1) return true;
   return false;
 }
 export function dusmanlar(w: World, a: number): number[] {
+  const m = savasMatris(w), n = w.nC;
   const out: number[] = [];
-  for (let b = 0; b < w.nC; b++) if (savasta(w, a, b)) out.push(b);
+  for (let b = 0; b < n; b++) if (m[a * n + b] === 1) out.push(b);
   return out;
 }
 /** Aynı tarafta savaşanlar (eş savaşan). */
 export function essavasan(w: World, a: number, b: number): boolean {
   if (a === b) return true;
-  const ma = 1 << a, mb = 1 << b;
-  for (const s of w.SV.rows()) {
-    const x = w.SV.c.maskeA[s]!, y = w.SV.c.maskeB[s]!;
-    if (((x & ma) && (x & mb)) || ((y & ma) && (y & mb))) return true;
+  return savasMatris(w)[a * w.nC + b] === 2;
+}
+function anlasmaIndeks(w: World): Map<number, number> {
+  const o = w.onbellek.get('anIdx') as { s: number; m: Map<number, number> } | undefined;
+  if (o && o.s === w.diploSurum) return o.m;
+  const m = new Map<number, number>();
+  const n = w.nC;
+  for (const s of w.AN.rows()) {
+    const t = w.AN.c.tur[s]!, x = w.AN.c.a[s]!, y = w.AN.c.b[s]!;
+    const k1 = (t * n + x) * n + y;
+    if (!m.has(k1)) m.set(k1, s);
+    if (t !== A.garanti && t !== A.tazminat) { const k2 = (t * n + y) * n + x; if (!m.has(k2)) m.set(k2, s); }
   }
-  return false;
+  w.onbellek.set('anIdx', { s: w.diploSurum, m });
+  return m;
 }
 export function anlasmaVar(w: World, tur: number, a: number, b: number): number {
-  for (const s of w.AN.rows()) {
-    if (w.AN.c.tur[s] !== tur) continue;
-    const x = w.AN.c.a[s]!, y = w.AN.c.b[s]!;
-    if ((x === a && y === b) || (tur !== A.garanti && tur !== A.tazminat && x === b && y === a)) return s;
-  }
-  return -1;
+  return anlasmaIndeks(w).get((tur * w.nC + a) * w.nC + b) ?? -1;
 }
 export function muttefik(w: World, a: number, b: number): boolean {
   return anlasmaVar(w, A.ittifak, a, b) >= 0;
@@ -66,7 +93,21 @@ export function dostBolge(w: World, c: number, r: number): boolean {
 
 export function gorus(w: World, a: number, b: number): number { return w.gorus[cc(w, a, b)]!; }
 /** c, r bölgesi üzerinde iddia sahibi mi (kanonik durum; barışla değişir). */
-export function iddiaVar(w: World, r: number, c: number): boolean { return ((w.R.c.iddia[r]! >> c) & 1) === 1; }
+export function iddiaVar(w: World, r: number, c: number): boolean {
+  for (let i = 0; i < IDDIA_MAX; i++) if (w.iddia[r * IDDIA_MAX + i] === c + 1) return true;
+  return false;
+}
+export function iddiaEkle(w: World, r: number, c: number): void {
+  if (iddiaVar(w, r, c)) return;
+  for (let i = 0; i < IDDIA_MAX; i++) if (w.iddia[r * IDDIA_MAX + i] === 0) { w.iddia[r * IDDIA_MAX + i] = c + 1; return; }
+  // dolu: en eski iddia düşer
+  for (let i = 0; i + 1 < IDDIA_MAX; i++) w.iddia[r * IDDIA_MAX + i] = w.iddia[r * IDDIA_MAX + i + 1]!;
+  w.iddia[r * IDDIA_MAX + IDDIA_MAX - 1] = c + 1;
+}
+export function iddiaSil(w: World, r: number, c: number): void {
+  for (let i = 0; i < IDDIA_MAX; i++) if (w.iddia[r * IDDIA_MAX + i] === c + 1) w.iddia[r * IDDIA_MAX + i] = 0;
+}
+export function pasif(w: World, c: number): boolean { return w.C.c.pasif[c] === 1; }
 
 // ---------- Mevsim ----------
 export function ay(w: World): number { return tarih(w.gun).m - 1; }
@@ -78,9 +119,16 @@ export function hareketMevsim(w: World, r: number): number {
 }
 
 // ---------- Rota ----------
+/** Kenar türü: 0 kara, 1 boğaz, 2 okyanus. */
+export function kenarTur(w: World, a: number, b: number): number {
+  let m = w.onbellek.get('kenarTur') as Map<number, number> | undefined;
+  if (!m) { m = new Map(); for (const k of w.pkg.kenarlar) if (k.tur) m.set(kenarKey(k.a, k.b), k.tur); w.onbellek.set('kenarTur', m); }
+  return m.get(kenarKey(a, b)) ?? 0;
+}
 /** Kenar kapasitesi (milibirim taşıma/gün). */
 export function kenarKapasite(w: World, a: number, b: number): number {
   const R = w.R.c;
+  if (kenarTur(w, a, b) > 0) return mulDiv(K.kenarKapasite, 3, 2).q; // deniz yolu: sabit
   const alt = Math.min(R.altyapi[a]!, R.altyapi[b]!);
   const dy = Math.min(R.demiryolu[a]!, R.demiryolu[b]!);
   const mevsim = Math.min(KIS_KAPASITE[kisDuzey(w, a)]!, KIS_KAPASITE[kisDuzey(w, b)]!);
@@ -92,59 +140,101 @@ export function kenarKapasite(w: World, a: number, b: number): number {
   return Math.max(0, cap);
 }
 
-/** En kısa yol (km), izinli bölgeler üzerinden. Eşitlik kalıcı kimlikle çözülür. */
-export function rota(w: World, kaynak: number, hedef: number, izin: (r: number) => boolean): { yol: number[]; km: number } | null {
-  if (kaynak === hedef) return { yol: [kaynak], km: 0 };
+/** İkili yığınlı Dijkstra; eşitlik (uzaklık, kalıcı kimlik) ile çözülür. izin yalnız ara düğümlere uygulanır. */
+function dijkstra(w: World, kaynak: number, izin: (r: number) => boolean): { dist: Float64Array; prev: Int32Array } {
   const n = w.nR;
-  const dist = new Array<number>(n).fill(Infinity);
+  const dist = new Float64Array(n).fill(Infinity);
   const prev = new Int32Array(n).fill(-1);
   const done = new Uint8Array(n);
-  dist[kaynak] = 0;
-  for (;;) {
-    let u = -1;
-    for (let i = 0; i < n; i++) if (!done[i] && dist[i]! < Infinity && (u < 0 || dist[i]! < dist[u]!)) u = i;
-    if (u < 0) return null;
-    if (u === hedef) break;
+  const hd: number[] = [], hn: number[] = [];
+  const it = (i: number, j: number) => hd[i]! < hd[j]! || (hd[i] === hd[j] && hn[i]! < hn[j]!);
+  const push = (d: number, v: number) => {
+    hd.push(d); hn.push(v);
+    let i = hd.length - 1;
+    while (i > 0) { const p = (i - 1) >> 1; if (!it(i, p)) break; [hd[i], hd[p]] = [hd[p]!, hd[i]!]; [hn[i], hn[p]] = [hn[p]!, hn[i]!]; i = p; }
+  };
+  const pop = (): number => {
+    const v = hn[0]!;
+    const ld = hd.pop()!, ln = hn.pop()!;
+    if (hd.length) {
+      hd[0] = ld; hn[0] = ln;
+      let i = 0;
+      for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < hd.length && it(l, m)) m = l; if (r < hd.length && it(r, m)) m = r; if (m === i) break; [hd[i], hd[m]] = [hd[m]!, hd[i]!]; [hn[i], hn[m]] = [hn[m]!, hn[i]!]; i = m; }
+    }
+    return v;
+  };
+  dist[kaynak] = 0; push(0, kaynak);
+  while (hd.length) {
+    const u = pop();
+    if (done[u]) continue;
     done[u] = 1;
+    if (u !== kaynak && !izin(u)) continue; // izinsiz düğüme varılır ama içinden geçilmez
     for (const v of w.komsuluk[u]!) {
       if (done[v]) continue;
-      if (v !== hedef && !izin(v)) continue;
       const d = dist[u]! + (w.kenarKm.get(kenarKey(u, v)) ?? 150);
-      if (d < dist[v]!) { dist[v] = d; prev[v] = u; }
+      if (d < dist[v]! || (d === dist[v] && u < prev[v]!)) { dist[v] = d; prev[v] = u; push(d, v); }
     }
   }
+  return { dist, prev };
+}
+
+function yolCikar(agac: { dist: Float64Array; prev: Int32Array }, kaynak: number, hedef: number): { yol: number[]; km: number } | null {
+  if (agac.dist[hedef] === Infinity) return null;
   const yol: number[] = [];
-  for (let x = hedef; x >= 0; x = prev[x]!) yol.push(x);
+  for (let x = hedef; x >= 0; x = agac.prev[x]!) { yol.push(x); if (x === kaynak) break; }
   yol.reverse();
-  return { yol, km: dist[hedef]! };
+  return { yol, km: agac.dist[hedef]! };
+}
+
+/** En kısa yol (km), izinli ara bölgeler üzerinden (hedef izinsiz olabilir). Önbelleksiz genel sürüm. */
+export function rota(w: World, kaynak: number, hedef: number, izin: (r: number) => boolean): { yol: number[]; km: number } | null {
+  if (kaynak === hedef) return { yol: [kaynak], km: 0 };
+  return yolCikar(dijkstra(w, kaynak, izin), kaynak, hedef);
+}
+
+/** Önbellekli rota. tip: 0 girebilir (hareket), 1 dost bölge (ikmal), 2 barışçıl intikal (savaş bölgesine girmeden). */
+export function rotaTip(w: World, c: number, tip: number, kaynak: number, hedef: number): { yol: number[]; km: number } | null {
+  if (kaynak === hedef) return { yol: [kaynak], km: 0 };
+  if (w.ayarlar.onbellekKapali) return rota(w, kaynak, hedef, izinFn(w, c, tip));
+  let o = w.onbellek.get('rota') as { e: number; m: Map<number, { dist: Float64Array; prev: Int32Array }> } | undefined;
+  if (!o || o.e !== w.rotaEpoch || o.m.size > 4000) { o = { e: w.rotaEpoch, m: new Map() }; w.onbellek.set('rota', o); }
+  const key = (c * 4 + tip) * 8192 + kaynak;
+  let agac = o.m.get(key);
+  if (!agac) { agac = dijkstra(w, kaynak, izinFn(w, c, tip)); o.m.set(key, agac); }
+  return yolCikar(agac, kaynak, hedef);
+}
+function izinFn(w: World, c: number, tip: number): (r: number) => boolean {
+  if (tip === 0) return (r) => girebilir(w, c, r);
+  if (tip === 1) return (r) => dostBolge(w, c, r);
+  return (r) => girebilir(w, c, r) && !savasta(w, c, w.R.c.kontrolEden[r]!);
 }
 
 /** Yönetim mesafesi (gün): başkentten erişimli ağda taban hız ve demiryoluyla. */
 export function yonetimMesafeleri(w: World, c: number): number[] {
   const n = w.nR;
   const bas = w.pkg.ulkeler[c]!.baskent;
-  const dist = new Array<number>(n).fill(Infinity);
+  if (w.R.c.kontrolEden[bas] !== c) return new Array<number>(n).fill(999);
+  const dist = new Float64Array(n).fill(Infinity);
   const done = new Uint8Array(n);
-  if (w.R.c.kontrolEden[bas] !== c) {
-    // başkent kaybı: en yakın kontrol edilen bölge başkent sayılır
-    return dist.map(() => 999);
-  }
-  dist[bas] = 0;
-  for (;;) {
-    let u = -1;
-    for (let i = 0; i < n; i++) if (!done[i] && dist[i]! < Infinity && (u < 0 || dist[i]! < dist[u]!)) u = i;
-    if (u < 0) break;
+  const hd: number[] = [], hn: number[] = [];
+  const push = (d: number, v: number) => { hd.push(d); hn.push(v); let i = hd.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (hd[p]! < hd[i]! || (hd[p] === hd[i] && hn[p]! <= hn[i]!)) break; [hd[i], hd[p]] = [hd[p]!, hd[i]!]; [hn[i], hn[p]] = [hn[p]!, hn[i]!]; i = p; } };
+  const pop = () => { const v = hn[0]!; const ld = hd.pop()!, ln = hn.pop()!; if (hd.length) { hd[0] = ld; hn[0] = ln; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < hd.length && (hd[l]! < hd[m]! || (hd[l] === hd[m] && hn[l]! < hn[m]!))) m = l; if (r < hd.length && (hd[r]! < hd[m]! || (hd[r] === hd[m] && hn[r]! < hn[m]!))) m = r; if (m === i) break; [hd[i], hd[m]] = [hd[m]!, hd[i]!]; [hn[i], hn[m]] = [hn[m]!, hn[i]!]; i = m; } } return v; };
+  dist[bas] = 0; push(0, bas);
+  while (hd.length) {
+    const u = pop();
+    if (done[u]) continue;
     done[u] = 1;
     for (const v of w.komsuluk[u]!) {
-      if (!dostBolge(w, c, v)) continue;
+      if (done[v] || !dostBolge(w, c, v)) continue;
       const km = w.kenarKm.get(kenarKey(u, v)) ?? 150;
+      const tur = kenarTur(w, u, v);
       const dy = Math.min(w.R.c.demiryolu[u]!, w.R.c.demiryolu[v]!);
-      const hiz = dy >= 1 ? 75 : 25; // km/gün
+      const hiz = tur > 0 ? 200 : dy >= 1 ? 75 : 25; // km/gün
       const d = dist[u]! + Math.floor((km * 1000) / hiz);
-      if (d < dist[v]!) dist[v] = d;
+      if (d < dist[v]!) { dist[v] = d; push(d, v); }
     }
   }
-  return dist.map((d) => (d === Infinity ? 999 : Math.floor(d / 1000)));
+  return Array.from(dist, (d) => (d === Infinity ? 999 : Math.floor(d / 1000)));
 }
 
 // ---------- Birlik istatistikleri ----------

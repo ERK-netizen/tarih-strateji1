@@ -47,7 +47,7 @@ export async function ilerlet(birim: string, adet = 1) {
       if (t === 'dayCommitted') {
         ilerleme.value = { yuzde: p.ilerleme, tarih: p.tarih };
         if (harita.value) {
-          const d = new Int8Array(p.delta);
+          const d = new Int16Array(p.delta);
           const v = harita.value;
           for (let r = 0; r < v.bolgeler.length; r++) v.bolgeler[r]!.k = d[r]!;
           harita.value = { ...v };

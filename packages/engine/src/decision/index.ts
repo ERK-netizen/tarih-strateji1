@@ -8,11 +8,11 @@ import { rng, AMAC, uniformInt } from '../rng/index.ts';
 import { uygula, teklifSonuc, type Emir } from '../orders.ts';
 import { bolgeGozlem } from '../observe/index.ts';
 import {
-  uc, savasta, savastaMi, dusmanlar, anlasmaVar, gorus, birlikIstat, birlikIkmal, girebilir, rota, sinirKomsusu, muttefik, essavasan, iddiaVar,
+  uc, savasta, savastaMi, dusmanlar, anlasmaVar, gorus, birlikIstat, birlikIkmal, girebilir, rota, sinirKomsusu, muttefik, essavasan, iddiaVar, savasUyeleri, pasif, rotaTip,
 } from '../systems/ortak.ts';
 import { insanGucu } from '../systems/nufus.ts';
 import { ulkeGidaStok, zorunluGider, krediLimiti } from '../systems/ekonomi.ts';
-import { TK, ESIK, gerekceVar, gerekceSurecte, barisKabul, savasSkoru, istekliligi, tavizButcesi, bolgeDegeri, bolgelerMaske, teslimKosulu, maskeBolgeler } from '../systems/diplomasi.ts';
+import { TK, ESIK, gerekceVar, gerekceSurecte, barisKabul, savasSkoru, istekliligi, tavizButcesi, bolgeDegeri, teslimKosulu, teklifBolgeleri } from '../systems/diplomasi.ts';
 
 const ESIK_SALDIRI = [1_300_000, 1_800_000, 1_400_000, 1_600_000, 1_500_000]; // kişiliğe göre (Atılgan/Temkinli/...)
 
@@ -73,11 +73,11 @@ export function teklifYanitlari(w: World): void {
       if (w.gun - T.gun[s]! > 30) teklifSonuc(w, s, false);
       continue;
     }
-    teklifSonuc(w, s, kabulEder(w, b, a, T.tur[s]!, T.p1[s]!, T.p2[s]!, T.bolgeMaske[s]!));
+    teklifSonuc(w, s, kabulEder(w, b, a, T.tur[s]!, T.p1[s]!, T.p2[s]!, teklifBolgeleri(w, s)));
   }
 }
 
-function kabulEder(w: World, b: number, a: number, tur: number, p1: number, p2: number, maske: number): boolean {
+function kabulEder(w: World, b: number, a: number, tur: number, p1: number, p2: number, istenen: number[]): boolean {
   const g = gorus(w, b, a);
   const kis = KISILIK[w.pkg.ulkeler[b]!.kisilik]!;
   const tehdit = dusmanlar(w, b).length > 0;
@@ -99,13 +99,12 @@ function kabulEder(w: World, b: number, a: number, tur: number, p1: number, p2: 
       const garanti = anlasmaVar(w, A.garanti, b, a) >= 0;
       if (!ittifak && !garanti) return g >= 70_000;
       // karşı taraf çok güçlüyse ve sınır komşusuysa çekinebilir
-      const karsiMaske = p2 === 1 ? w.SV.c.maskeA[sv]! : w.SV.c.maskeB[sv]!;
       let karsiGuc = 0;
-      for (let d = 0; d < w.nC; d++) if (karsiMaske & (1 << d)) karsiGuc += ulkeGucuGozlem(w, b, d);
+      for (const d of savasUyeleri(w, sv, p2 === 1 ? 1 : 2)) karsiGuc += ulkeGucuGozlem(w, b, d);
       const benim = kendiGuc(w, b) + ulkeGucuGozlem(w, b, a);
       return benim * 10 >= karsiGuc * 6 || g >= 75_000;
     }
-    case TK.baris: return barisKabul(w, b, a, p1, maske).kabul;
+    case TK.baris: return barisKabul(w, b, a, p1, istenen).kabul;
     case TK.ekipman: {
       // satıcı: kendi ihtiyacının iki katı stok varsa
       const k = p1, adet = p2;
@@ -306,7 +305,7 @@ function barisPlan(w: World, c: number): void {
       emir(w, c, 'baris', { kime: d, barisTur: 0, bolgeler: [] });
     }
   }
-  void barisKabul; void maskeBolgeler; void bolgelerMaske;
+  void barisKabul;
 }
 
 // ---------- Oyuncunun kalıcı emirleri ----------

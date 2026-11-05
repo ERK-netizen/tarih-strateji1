@@ -6,7 +6,7 @@ import { S, mulDiv, clamp } from './num/index.ts';
 import { uc, savasta, savastaMi, gorus, anlasmaVar, birlikAdi, girebilir, rota, bildir, anlat, ulkeBirlikleri, iddiaVar } from './systems/ortak.ts';
 import { askerlikAktar, insanGucu, terhis } from './systems/nufus.ts';
 import { tekMaliyetHesapla, krediLimiti, ulkeGidaStok, malStok } from './systems/ekonomi.ts';
-import { TK, TK_AD, ESIK, teklifEkle, anlasmaKur, anlasmaBoz, gerekceBaslat, gerekceSurecte, gerekceVar, savasIlan, savasaKatil, barisKabul, barisUygula, gorusDegis, bolgelerMaske, maskeBolgeler, ekipmanFiyat, BARIS_TUR } from './systems/diplomasi.ts';
+import { TK, TK_AD, ESIK, teklifEkle, anlasmaKur, anlasmaBoz, gerekceBaslat, gerekceSurecte, gerekceVar, savasIlan, savasaKatil, barisKabul, barisUygula, gorusDegis, teklifBolgeleri, ekipmanFiyat, BARIS_TUR } from './systems/diplomasi.ts';
 import { olaySecimUygula, OLAYLAR } from './systems/olaylar.ts';
 
 export type Emir = { tur: string; ulke: number } & Record<string, unknown>;
@@ -258,8 +258,7 @@ export function onizle(w: World, e: Emir): Kart {
       const d = n(e.kime, -1), tur = clamp(n(e.barisTur), 0, 2);
       if (!savasta(w, c, d)) return red('Barış', `${uAd(w, d)} ile savaşta değilsiniz.`);
       const rs = arr(e.bolgeler).filter((r) => r < w.nR);
-      const maske = bolgelerMaske(rs);
-      const sonuc = barisKabul(w, d, c, tur, maske);
+      const sonuc = barisKabul(w, d, c, tur, rs);
       return { gecerli: true, baslik: `${BARIS_TUR[tur]} önerisi`, kapsam: `${uAd(w, d)}${rs.length ? ` · istenen: ${rs.map((r) => bAd(w, r)).join(', ')}` : ''}`, bugun: [], tahmin: [`Tahmini yanıt: ${sonuc.kabul ? 'kabul' : 'ret'} — ${sonuc.neden}`], iptal: 'Yanıttan önce geri çekilebilir' };
     }
     case 'tutum': {
@@ -404,8 +403,7 @@ export function uygula(w: World, e: Emir): { ok: boolean; neden?: string } {
     case 'gerekce': gerekceBaslat(w, c, n(e.hedef)); C.pg[c] = C.pg[c]! - K.gerekcePG; break;
     case 'savasIlan': savasIlan(w, c, n(e.hedef)); break;
     case 'baris': {
-      const s = teklifEkle(w, c, n(e.kime), TK.baris, n(e.barisTur), 0, bolgelerMaske(arr(e.bolgeler)));
-      if (s >= 0) w.TK.c.bolgeMaske[s] = bolgelerMaske(arr(e.bolgeler));
+      teklifEkle(w, c, n(e.kime), TK.baris, n(e.barisTur), 0, arr(e.bolgeler));
       break;
     }
     case 'tutum': w.tutum[c * w.nC + n(e.kime)] = n(e.tutum); w.tutumKilit[c * w.nC + n(e.kime)] = w.gun + 30; break;
@@ -478,7 +476,7 @@ export function teklifSonuc(w: World, s: number, kabul: boolean): void {
     const sv = T.p1[s]!;
     if (w.SV.alive[sv]) savasaKatil(w, sv, b, T.p2[s]! === 1 ? 1 : 0);
   } else if (tur === TK.baris) {
-    barisUygula(w, a, b, T.p1[s]!, T.bolgeMaske[s]!);
+    barisUygula(w, a, b, T.p1[s]!, teklifBolgeleri(w, s));
   } else if (tur === TK.ekipman) {
     const k = T.p1[s]!, adet = T.p2[s]!;
     const f = ekipmanFiyat(k, adet);
@@ -502,4 +500,4 @@ export function kuyrugaAl(w: World, e: Emir): void {
 }
 
 export const EMIR_TURLERI = ['vergi', 'butce', 'harcama', 'askerlik', 'ekonomi', 'karne', 'isgalPol', 'birlikKur', 'hareket', 'saldir', 'dur', 'durus', 'terhis', 'otoCephe', 'otoTakviye', 'uretim', 'arastir', 'insa', 'satinAl', 'sat', 'teklif', 'teklifYanit', 'gerekce', 'savasIlan', 'baris', 'tutum', 'anlasmaBoz', 'borcAl', 'borcOde', 'olaySec', 'kaliciGida', 'sandbox'] as const;
-void BAYRAK; void maskeBolgeler; void ulkeGidaStok; void savastaMi;
+void BAYRAK; void ulkeGidaStok; void savastaMi;

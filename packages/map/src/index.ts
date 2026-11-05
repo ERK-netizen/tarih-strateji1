@@ -65,11 +65,15 @@ export class HaritaCizici {
     requestAnimationFrame(dongu);
   }
 
-  private poli(p: number[]): Path2D {
+  private poli(p: number[] | number[][]): Path2D {
     const y = new Path2D();
-    y.moveTo(p[0]!, p[1]!);
-    for (let i = 2; i < p.length; i += 2) y.lineTo(p[i]!, p[i + 1]!);
-    y.closePath();
+    const halkalar = (typeof p[0] === 'number' ? [p as number[]] : (p as number[][]));
+    for (const h of halkalar) {
+      if (h.length < 4) continue;
+      y.moveTo(h[0]!, h[1]!);
+      for (let i = 2; i < h.length; i += 2) y.lineTo(h[i]!, h[i + 1]!);
+      y.closePath();
+    }
     return y;
   }
 
@@ -113,7 +117,7 @@ export class HaritaCizici {
     this.isaretle();
   }
 
-  kontrolDelta(d: Int8Array): void {
+  kontrolDelta(d: Int16Array): void {
     if (!this.veri) return;
     for (let r = 0; r < this.veri.bolgeler.length; r++) this.veri.bolgeler[r]!.k = d[r]!;
     this.isaretle();

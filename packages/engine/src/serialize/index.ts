@@ -5,7 +5,7 @@ import type { Table } from '../state/table.ts';
 import type { Paket } from '../paket.ts';
 import { hashV1, hashText } from '../hash/index.ts';
 
-export const SEMA_SURUM = 3;
+export const SEMA_SURUM = 4;
 const MAGIC = 0x314b5354; // 'TSK1'
 
 class Yazici {
@@ -26,6 +26,13 @@ class Yazici {
     this.yer(8); this.dv.setFloat64(this.n, v === 0 ? 0 : v, true); this.n += 8;
   }
   arr(a: ArrayLike<number>) { this.u32(a.length); for (let i = 0; i < a.length; i++) this.f64(a[i]!); }
+  /** Seyrek dizi: uzunluk, sıfır olmayan sayısı, (indeks, değer) çiftleri. */
+  arrS(a: ArrayLike<number>) {
+    let k = 0;
+    for (let i = 0; i < a.length; i++) if (a[i] !== 0) k++;
+    this.u32(a.length); this.u32(k);
+    for (let i = 0; i < a.length; i++) if (a[i] !== 0) { this.u32(i); this.f64(a[i]!); }
+  }
   str(s: string) { const b = new TextEncoder().encode(s); this.u32(b.length); this.yer(b.length); new Uint8Array(this.buf, this.n, b.length).set(b); this.n += b.length; }
   etiket(s: string) { this.str(s); }
   bytes(): Uint8Array { return new Uint8Array(this.buf, 0, this.n).slice(); }
@@ -37,6 +44,12 @@ class Okuyucu {
   u32() { const v = this.dv.getUint32(this.n, true); this.n += 4; return v; }
   f64() { const v = this.dv.getFloat64(this.n, true); this.n += 8; return v; }
   arr(): number[] { const k = this.u32(); const a: number[] = []; for (let i = 0; i < k; i++) a.push(this.f64()); return a; }
+  arrS(): number[] {
+    const n = this.u32(), k = this.u32();
+    const a: number[] = new Array<number>(n).fill(0);
+    for (let j = 0; j < k; j++) { const i = this.u32(); a[i] = this.f64(); }
+    return a;
+  }
   str() { const k = this.u32(); const s = new TextDecoder().decode(this.u8.subarray(this.n, this.n + k)); this.n += k; return s; }
 }
 
@@ -50,6 +63,10 @@ export function kanonikJson(v: unknown): string {
   return JSON.stringify(v);
 }
 
+function diziler(w: World): [string, ArrayLike<number>][] {
+  return [['pop', w.pop], ['kim', w.kim], ['ekip', w.ekip], ['tekIlerleme', w.tekIlerleme], ['tekBitti', w.tekBitti], ['tekMaliyet', w.tekMaliyet], ['arastirma', w.arastirma], ['gorus', w.gorus], ['tutum', w.tutum], ['tutumKilit', w.tutumKilit], ['kokenDefter', w.kokenDefter], ['esir', w.esir], ['fiyat', w.fiyat], ['pazarHacim', w.pazarHacim], ['savasTaraf', w.savasTaraf], ['iddia', w.iddia]];
+}
+
 function tablolar(w: World): Table[] {
   return [w.R, w.E, w.C, w.U, w.T, w.AN, w.SV, w.GR, w.HT, w.PR, w.YR, w.KE, w.TK, w.SP, w.OL] as unknown as Table[];
 }
@@ -60,7 +77,7 @@ function tabloYaz(y: Yazici, t: Table): void {
   y.arr([...t.free].sort((a, b) => a - b));
   y.arr(t.gen.subarray(0, t.hw));
   y.arr(t.alive.subarray(0, t.hw));
-  for (const [k] of t.defs) { y.etiket(k); y.arr((t.ci[k] as Float64Array).subarray(0, t.hw)); }
+  for (const [k] of t.defs) { y.etiket(k); y.arrS((t.ci[k] as Float64Array).subarray(0, t.hw)); }
 }
 function tabloOku(o: Okuyucu, t: Table): void {
   const ad = o.str();
@@ -74,7 +91,7 @@ function tabloOku(o: Okuyucu, t: Table): void {
   for (const [k] of t.defs) {
     const kk = o.str();
     if (kk !== k) throw new Error(`kolon sırası bozuk: ${kk}`);
-    const a = o.arr();
+    const a = o.arrS();
     const col = t.ci[k]!;
     for (let i = 0; i < hw; i++) (col as Float64Array)[i] = a[i]!;
   }
@@ -89,9 +106,8 @@ export function serilestir(w: World): Uint8Array {
   y.arr([w.sayac.dogum, w.sayac.dogalOlum, w.sayac.askerOlum, w.sayac.ekOlum]);
   y.arr(w.bayrak); y.arr(w.hasatKademe);
   for (const t of tablolar(w)) tabloYaz(y, t);
-  for (const [ad, a] of [['pop', w.pop], ['kim', w.kim], ['ekip', w.ekip], ['tekIlerleme', w.tekIlerleme], ['tekBitti', w.tekBitti], ['tekMaliyet', w.tekMaliyet], ['arastirma', w.arastirma], ['gorus', w.gorus], ['tutum', w.tutum], ['tutumKilit', w.tutumKilit], ['kokenDefter', w.kokenDefter], ['esir', w.esir], ['fiyat', w.fiyat], ['pazarHacim', w.pazarHacim]] as const) {
-    y.etiket(ad); y.arr(a as ArrayLike<number>);
-  }
+  for (const [ad, a] of diziler(w)) { y.etiket(ad); y.arrS(a); }
+  y.str(kanonikJson(w.teklifBolge));
   y.u32(w.birlikAd.length); for (const s of w.birlikAd) y.str(s);
   y.str(kanonikJson(w.kuyruk));
   return y.bytes();
@@ -114,8 +130,13 @@ export function coz(bytes: Uint8Array, pkg: Paket): World {
   const sy = o.arr(); w.sayac = { dogum: sy[0]!, dogalOlum: sy[1]!, askerOlum: sy[2]!, ekOlum: sy[3]! };
   w.bayrak.set(o.arr()); w.hasatKademe.set(o.arr());
   for (const t of tablolar(w)) tabloOku(o, t);
-  const hedef: Record<string, { set(a: ArrayLike<number>): void }> = { pop: w.pop, kim: w.kim, ekip: w.ekip, tekIlerleme: w.tekIlerleme, tekBitti: w.tekBitti, tekMaliyet: w.tekMaliyet, arastirma: w.arastirma, gorus: w.gorus, tutum: w.tutum, tutumKilit: w.tutumKilit, kokenDefter: w.kokenDefter, esir: w.esir, fiyat: w.fiyat, pazarHacim: w.pazarHacim };
-  for (let i = 0; i < 14; i++) { const ad = o.str(); hedef[ad]!.set(o.arr()); }
+  for (const [ad, a] of diziler(w)) {
+    const k = o.str();
+    if (k !== ad) throw new Error(`dizi sırası bozuk: ${k} ≠ ${ad}`);
+    (a as unknown as { set(x: ArrayLike<number>): void }).set(o.arrS());
+  }
+  w.teklifBolge = JSON.parse(o.str()) as Record<string, number[]>;
+  w.diploSurum++;
   const nb = o.u32(); w.birlikAd = []; for (let i = 0; i < nb; i++) w.birlikAd.push(o.str());
   w.kuyruk = JSON.parse(o.str());
   return w;
