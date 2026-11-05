@@ -1,0 +1,86 @@
+// Bölüm 19.1 ve 19.4: gözlem görünümü ve istihbarat aralığı. Karar modülü yalnız bu katmanı okur.
+import type { World } from '../state/world.ts';
+import { A } from '../state/world.ts';
+import { S, mulDiv, clamp } from '../num/index.ts';
+import { rng, AMAC, uniformInt } from '../rng/index.ts';
+import { tarih } from '../calendar/index.ts';
+import { uc, birlikIstat, anlasmaVar, sinirKomsusu } from '../systems/ortak.ts';
+
+/** İstihbarat düzeyi I (0–100, ×1000). */
+export function istihbaratDuzeyi(w: World, gozlemci: number, hedef: number, bolge = -1): number {
+  if (gozlemci === hedef) return 100_000;
+  let I = 20_000;
+  // güvenlik bütçesi (sosyal/güvenlik kalemi payıyla, 0–30)
+  I += Math.min(30_000, mulDiv(w.C.c.b3[gozlemci]!, 60_000, S).q);
+  if (sinirKomsusu(w, gozlemci, hedef)) I += 20_000;
+  if (anlasmaVar(w, A.ticaret, gozlemci, hedef) >= 0) I += 15_000; // diplomatik misyon
+  if (anlasmaVar(w, A.ittifak, gozlemci, hedef) >= 0) I += 10_000;
+  if (bolge >= 0) {
+    // kendi birliği komşu bölgedeyse keşif +20
+    const U = uc(w);
+    for (const u of w.U.rows()) {
+      if (U.ulke![u] !== gozlemci) continue;
+      const r = U.bolge![u]!;
+      if (r === bolge || w.komsuluk[r]!.includes(bolge)) { I += 20_000; break; }
+    }
+  }
+  return clamp(I, 0, 100_000);
+}
+
+/** Aralık genişliği w = (50 − 0,45 I)/100, S ölçekli. */
+export function aralikGenislik(I: number): number {
+  return Math.floor((50_000 - mulDiv(450_000, I, S).q) * 10);
+}
+
+/**
+ * Gösterilen aralık: merkez = gerçek × (1+δ), δ ∈ [−w/2, +w/2] (anahtarlı, ayda bir değişir);
+ * aralık = [merkez(1−w), merkez(1+w)]. Gerçek değer her zaman içeridedir (T132).
+ */
+export function aralik(w: World, gozlemci: number, hedefVarlik: number, gercek: number, I: number, alan = 0): { alt: number; ust: number; merkez: number } {
+  if (I >= 100_000) return { alt: gercek, ust: gercek, merkez: gercek };
+  const g = aralikGenislik(I);
+  const t = tarih(w.gun);
+  const ayAnahtar = t.y * 12 + t.m;
+  const u = rng(w.tohum, ayAnahtar, 19, hedefVarlik, gozlemci, AMAC.intelNoise, alan, 0);
+  const delta = uniformInt(u, g + 1) - Math.floor(g / 2); // [−w/2, +w/2]
+  const merkez = gercek + mulDiv(gercek, delta, S).q;
+  const alt = Math.min(gercek, merkez - mulDiv(merkez, g, S).q);
+  const ust = Math.max(gercek, merkez + mulDiv(merkez, g, S).q);
+  return { alt: Math.max(0, alt), ust, merkez };
+}
+
+export interface BolgeGozlem { bolge: number; ulke: number; birlik: number; gucAlt: number; gucUst: number; kisiAlt: number; kisiUst: number; kesin: boolean }
+
+/** Bölge başına yabancı birlik özeti (gözlemci için). Kesin değer sis altındaysa sızmaz. */
+export function bolgeGozlem(w: World, gozlemci: number): BolgeGozlem[] {
+  const U = uc(w);
+  const top = new Map<string, { ulke: number; bolge: number; birlik: number; guc: number; kisi: number }>();
+  for (const u of w.U.rows()) {
+    const c = U.ulke![u]!, r = U.bolge![u]!;
+    const key = `${r}:${c}`;
+    const s = birlikIstat(w, u);
+    const o = top.get(key) ?? { ulke: c, bolge: r, birlik: 0, guc: 0, kisi: 0 };
+    o.birlik++; o.guc += s.YS + s.SV; o.kisi += U.kisi![u]!;
+    top.set(key, o);
+  }
+  const out: BolgeGozlem[] = [];
+  for (const o of [...top.values()].sort((a, b) => a.bolge - b.bolge || a.ulke - b.ulke)) {
+    const dost = o.ulke === gozlemci || anlasmaVar(w, A.ittifak, gozlemci, o.ulke) >= 0;
+    if (dost) { out.push({ bolge: o.bolge, ulke: o.ulke, birlik: o.birlik, gucAlt: o.guc, gucUst: o.guc, kisiAlt: o.kisi, kisiUst: o.kisi, kesin: true }); continue; }
+    const I = istihbaratDuzeyi(w, gozlemci, o.ulke, o.bolge);
+    if (I < 25_000) continue; // görülmeyen
+    const g = aralik(w, gozlemci, o.bolge * 16 + o.ulke, o.guc, I, 1);
+    const k = aralik(w, gozlemci, o.bolge * 16 + o.ulke, o.kisi, I, 2);
+    out.push({ bolge: o.bolge, ulke: o.ulke, birlik: o.birlik, gucAlt: g.alt, gucUst: g.ust, kisiAlt: k.alt, kisiUst: k.ust, kesin: false });
+  }
+  return out;
+}
+
+/** Hazine kademesi (sis): zayıf / orta / güçlü. */
+export function hazineKademe(w: World, c: number): string {
+  const h = w.C.c.hazine[c]!;
+  const aylik = Math.max(1, w.C.c.g1[c]!);
+  if (h < aylik) return 'zayıf';
+  if (h < aylik * 4) return 'orta';
+  return 'güçlü';
+}

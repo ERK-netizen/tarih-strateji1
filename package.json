@@ -1,0 +1,43 @@
+{
+  "name": "tarih-strateji",
+  "private": true,
+  "version": "1.4.0",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/android"
+  ],
+  "scripts": {
+    "derle:veri": "node --experimental-strip-types packages/data-compiler/src/index.ts",
+    "dev": "npm run derle:veri && vite --config packages/ui/vite.config.ts",
+    "build": "npm run derle:veri && vite build --config packages/ui/vite.config.ts",
+    "build:tek": "npm run derle:veri && TEK_DOSYA=1 vite build --config packages/ui/vite.config.ts",
+    "test": "vitest run",
+    "lab": "node --experimental-strip-types packages/lab/src/index.ts",
+    "lint": "eslint packages",
+    "tip": "tsc -p tsconfig.json --noEmit",
+    "android:esitle": "npm run build && cd apps/android && npx cap sync android",
+    "android:apk": "npm run android:esitle && cd apps/android/android && ./gradlew assembleDebug"
+  },
+  "devDependencies": {
+    "@fontsource/courier-prime": "^5.3.0",
+    "@fontsource/ibm-plex-sans-condensed": "^5.3.0",
+    "@fontsource/old-standard-tt": "^5.3.0",
+    "@preact/preset-vite": "^2.10.6",
+    "@preact/signals": "^2.11.4",
+    "@types/node": "^26.6.6",
+    "eslint": "^10.14.0",
+    "fast-check": "^4.10.2",
+    "preact": "^11.1.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.1",
+    "vite": "^8.3.5",
+    "vite-plugin-singlefile": "^2.3.4",
+    "vitest": "^5.1.0"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/share": "^8.0.3"
+  }
+}

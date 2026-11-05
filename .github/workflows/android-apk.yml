@@ -1,0 +1,27 @@
+# Bölüm 26: Android teslimi. GitHub'a gönderilen her commit'te testleri koşar ve imzasız hata ayıklama APK'sı üretir.
+name: android-apk
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Tip denetimi, lint ve kabul testleri
+        run: npm run tip && npm run lint && npm test
+      - name: Web paketi ve Capacitor eşitleme
+        run: npm run build && cd apps/android && npx cap sync android
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '21' }
+      - uses: android-actions/setup-android@v3
+      - name: APK derle
+        working-directory: apps/android/android
+        run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tarih-strateji-apk
+          path: apps/android/android/app/build/outputs/apk/debug/app-debug.apk
