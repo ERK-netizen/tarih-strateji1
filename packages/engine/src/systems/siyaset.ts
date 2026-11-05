@@ -5,6 +5,7 @@ import { S, mulDiv, clamp, approach } from '../num/index.ts';
 import { rng, AMAC, bernoulli } from '../rng/index.ts';
 import { yonetimMesafeleri, savastaMi, uc, anlat, bildir, birlikIstat } from './ortak.ts';
 import { ulkeGidaGuvence, butceEtki } from './ekonomi.ts';
+import { trEk } from '../tr.ts';
 
 export interface Bilesen { ad: string; deger: number }
 
@@ -142,7 +143,7 @@ export function aylikKontrol(w: World): void {
         const u = rng(w.tohum, w.gun, 9, r, 0, AMAC.sabotage, 0, 0);
         if (bernoulli(u, 200_000)) {
           R.hasar[r] = Math.min(500_000, R.hasar[r]! + 100_000);
-          anlat(w, `${w.pkg.bolgeler[r]!.ad}'da direnişçiler demiryolu ve fabrikalara sabotaj düzenledi.`, 'isgal', k, 1);
+          anlat(w, `${trEk(w.pkg.bolgeler[r]!.ad, 'de')} direnişçiler demiryolu ve fabrikalara sabotaj düzenledi.`, 'isgal', k, 1);
           w.rotaEpoch++;
         }
       }
@@ -278,11 +279,11 @@ function huzurEtkileri(w: World, c: number): void {
     for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === c && w.R.c.kontrolEden[r] === c && !w.R.c.isyan[r] && (r0 < 0 || w.R.c.kontrol[r]! < w.R.c.kontrol[r0]!)) r0 = r;
     if (r0 >= 0) {
       w.R.c.isyan[r0] = 1;
-      anlat(w, `${ad}: ${w.pkg.bolgeler[r0]!.ad}'da örgütlü isyan başladı; vergi ve asker toplama aksıyor.`, 'ic', c, 3);
-      bildir(w, 'isyan', `${w.pkg.bolgeler[r0]!.ad}'da isyan`, c, true);
+      anlat(w, `${ad}: ${trEk(w.pkg.bolgeler[r0]!.ad, 'de')} örgütlü isyan başladı; vergi ve asker toplama aksıyor.`, 'ic', c, 3);
+      bildir(w, 'isyan', `${trEk(w.pkg.bolgeler[r0]!.ad, 'de')} isyan`, c, true);
     }
   } else if (h > 40_000) {
-    for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === c && w.R.c.isyan[r]) { w.R.c.isyan[r] = 0; anlat(w, `${w.pkg.bolgeler[r]!.ad}'da isyan yatıştı.`, 'ic', c, 1); }
+    for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === c && w.R.c.isyan[r]) { w.R.c.isyan[r] = 0; anlat(w, `${trEk(w.pkg.bolgeler[r]!.ad, 'de')} isyan yatıştı.`, 'ic', c, 1); }
   }
 }
 

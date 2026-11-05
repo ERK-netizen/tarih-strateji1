@@ -8,6 +8,7 @@ import { askerlikAktar, insanGucu, terhis } from './systems/nufus.ts';
 import { tekMaliyetHesapla, krediLimiti, ulkeGidaStok, malStok } from './systems/ekonomi.ts';
 import { TK, TK_AD, ESIK, teklifEkle, anlasmaKur, anlasmaBoz, gerekceBaslat, gerekceSurecte, gerekceVar, savasIlan, savasaKatil, barisKabul, barisUygula, gorusDegis, teklifBolgeleri, ekipmanFiyat, BARIS_TUR } from './systems/diplomasi.ts';
 import { olaySecimUygula, olayTanim } from './systems/olaylar.ts';
+import { trEk, trEkK, trKucuk } from './tr.ts';
 
 export type Emir = { tur: string; ulke: number } & Record<string, unknown>;
 
@@ -118,7 +119,7 @@ export function onizle(w: World, e: Emir): Kart {
       const gun = mulDiv(ih.egitim, ASKERLIK[C.askerlik[c]!]!.egitimSure, S).q;
       const bolge = n(e.bolge, w.pkg.ulkeler[c]!.baskent);
       if (w.R.c.kontrolEden[bolge] !== c) return red('Birlik', `${bAd(w, bolge)} sizin kontrolünüzde değil.`);
-      return { gecerli: true, baslik: `${adet} × ${SABLON[sab]!.ad}`, kapsam: `${bAd(w, bolge)}'da eğitim`, bugun: [`${fmt(kisi)} kişi Y havuzundan A statüsüne`, `${fmt(para)} altın eğitim bedeli`], tahmin: [`Hazır olma: ${gun} gün`, ...(eksik.length ? [`Eksik ekipmanla kurulur (${eksik.join('; ')}); takviye depo doldukça`] : ['Ekipman depodan tam'])], iptal: 'Terhis: personel yedeğe (E), ekipman depoya', uyari: eksik.length ? ['Düşük doluluk muharebe gücünü düşürür.'] : undefined };
+      return { gecerli: true, baslik: `${adet} × ${SABLON[sab]!.ad}`, kapsam: `${trEk(bAd(w, bolge), 'de')} eğitim`, bugun: [`${fmt(kisi)} kişi Y havuzundan A statüsüne`, `${fmt(para)} altın eğitim bedeli`], tahmin: [`Hazır olma: ${gun} gün`, ...(eksik.length ? [`Eksik ekipmanla kurulur (${eksik.join('; ')}); takviye depo doldukça`] : ['Ekipman depodan tam'])], iptal: 'Terhis: personel yedeğe (E), ekipman depoya', uyari: eksik.length ? ['Düşük doluluk muharebe gücünü düşürür.'] : undefined };
     }
     case 'hareket': case 'saldir': {
       const bs = arr(e.birlikler).map((id) => w.U.resolve(id)).filter((u) => u >= 0);
@@ -134,7 +135,7 @@ export function onizle(w: World, e: Emir): Kart {
         if (U.ulke![u] !== c) return red('Hareket', `${birlikAdi(w, u)} size ait değil.`);
         if (U.egitimBitis![u]! > w.gun) return red('Hareket', `${birlikAdi(w, u)} eğitimde (${U.egitimBitis![u]! - w.gun} gün).`);
         const y = rotaTip(w, c, 0, U.bolge![u]!, hedef);
-        if (!y) return red('Hareket', `${birlikAdi(w, u)} için ${bAd(w, hedef)}'a izinli yol yok (geçiş hakkı veya savaş gerekir).`);
+        if (!y) return red('Hareket', `${birlikAdi(w, u)} için ${trEk(bAd(w, hedef), 'e')} izinli yol yok (geçiş hakkı veya savaş gerekir).`);
         const gun = Math.max(1, Math.floor(y.km / 20));
         enUzun = Math.max(enUzun, gun);
         satir.push(`${birlikAdi(w, u)}: ${y.yol.length - 1} bölge, ≈${gun} gün`);
@@ -210,8 +211,8 @@ export function onizle(w: World, e: Emir): Kart {
       for (let d = 0; d < w.nC; d++) if (d !== c && (kim < 0 || kim === d) && gorus(w, d, c) >= (m === MALI.muhimmat ? 60_000 : 20_000) && !savasta(w, c, d)) ortak.push(d);
       if (ortak.length === 0) return red('Ticaret', kim >= 0 ? `${uAd(w, kim)} ile ticaret izni yok: görüşü ${puan(gorus(w, kim, c))}; ${m === MALI.muhimmat ? 60 : 20} gerekiyor.` : 'Ticaret yapılabilecek ülke yok (görüş ≥ 20 gerekir).');
       if (e.tur === 'satinAl' && w.C.c.hazine[c]! < bedel) return red('Satın alma', `Bedel ≈ ${fmt(bedel)} altın; hazine ${fmt(w.C.c.hazine[c]!)}.`);
-      if (e.tur === 'sat' && malStok(w, c, m) < miktar) return red('Satış', `Satılabilir ${MAL[m]!.ad.toLowerCase()} ${fmt(Math.floor(malStok(w, c, m) / 1000))} birim (gıdada 90 günlük ihtiyaç ayrılır).`);
-      return { gecerli: true, baslik: `${e.tur === 'sat' ? 'Satış' : 'Alım'}: ${fmt(miktar / 1000)} ${MAL[m]!.ad.toLowerCase()}`, kapsam: `Dünya pazarı (pazartesi temizlenir) · ortaklar: ${ortak.map((d) => uAd(w, d)).join(', ')}`, bugun: [`Referans fiyat ${fmt(fiyat)} altın/birim · ≈ ${fmt(bedel)} altın`, e.tur === 'satinAl' ? 'Bedel temizlemede emanete alınır' : 'Mal temizlemede yola çıkar'], tahmin: ['Teslim 7 gün; eşleşme garanti değildir', n(e.kalici) ? 'Her hafta yinelenir' : 'Tek seferlik'], iptal: 'Temizlemeden önce bedelsiz' };
+      if (e.tur === 'sat' && malStok(w, c, m) < miktar) return red('Satış', `Satılabilir ${trKucuk(MAL[m]!.ad)} ${fmt(Math.floor(malStok(w, c, m) / 1000))} birim (gıdada 90 günlük ihtiyaç ayrılır).`);
+      return { gecerli: true, baslik: `${e.tur === 'sat' ? 'Satış' : 'Alım'}: ${fmt(miktar / 1000)} ${trKucuk(MAL[m]!.ad)}`, kapsam: `Dünya pazarı (pazartesi temizlenir) · ortaklar: ${ortak.map((d) => uAd(w, d)).join(', ')}`, bugun: [`Referans fiyat ${fmt(fiyat)} altın/birim · ≈ ${fmt(bedel)} altın`, e.tur === 'satinAl' ? 'Bedel temizlemede emanete alınır' : 'Mal temizlemede yola çıkar'], tahmin: ['Teslim 7 gün; eşleşme garanti değildir', n(e.kalici) ? 'Her hafta yinelenir' : 'Tek seferlik'], iptal: 'Temizlemeden önce bedelsiz' };
     }
     case 'teklif': {
       const d = n(e.kime, -1), tip = n(e.tip, -1);
@@ -220,7 +221,7 @@ export function onizle(w: World, e: Emir): Kart {
       if (savasta(w, c, d)) return red('Diplomasi', `${uAd(w, d)} ile savaştasınız; yalnız barış önerilebilir.`);
       const esik = ESIK[tip] ?? 0;
       const g = gorus(w, d, c);
-      if (g < esik) return red(TK_AD[tip]!, `İlişki ${puan(g)}; ${TK_AD[tip]!.toLowerCase()} teklifi için ${puan(esik)} gerekiyor.`);
+      if (g < esik) return red(TK_AD[tip]!, `İlişki ${puan(g)}; ${trKucuk(TK_AD[tip]!)} teklifi için ${puan(esik)} gerekiyor.`);
       if (tip !== TK.ekipman && anlasmaVar(w, tip, c, d) >= 0) return red(TK_AD[tip]!, 'Bu anlaşma zaten yürürlükte.');
       if (tip === TK.ekipman) {
         const k = n(e.ekip, 0), adet = n(e.adet, 100);
@@ -272,7 +273,7 @@ export function onizle(w: World, e: Emir): Kart {
     case 'anlasmaBoz': {
       const d = n(e.kime, -1), tip = n(e.tip, -1);
       if (anlasmaVar(w, tip, c, d) < 0) return red('Anlaşma', 'Böyle bir anlaşma yok.');
-      return { gecerli: true, baslik: `${TK_AD[tip]} bozulur`, kapsam: uAd(w, d), bugun: [tip === A.ittifak ? 'Güvenilirlik −40' : tip === A.saldirmazlik ? 'Güvenilirlik −20' : 'İhbar'], tahmin: [`${uAd(w, d)}'nın görüşü −15`], iptal: 'Geri alınamaz' };
+      return { gecerli: true, baslik: `${TK_AD[tip]} bozulur`, kapsam: uAd(w, d), bugun: [tip === A.ittifak ? 'Güvenilirlik −40' : tip === A.saldirmazlik ? 'Güvenilirlik −20' : 'İhbar'], tahmin: [`${trEkK(uAd(w, d), 'in')} görüşü −15`], iptal: 'Geri alınamaz' };
     }
     case 'borcAl': {
       const m = n(e.miktar);
@@ -460,7 +461,7 @@ export function teklifSonuc(w: World, s: number, kabul: boolean): void {
   T.durum[s] = kabul ? 1 : 2;
   const adA = w.pkg.ulkeler[a]!.kisa, adB = w.pkg.ulkeler[b]!.kisa;
   if (!kabul) {
-    anlat(w, `${adB}, ${adA}'nın ${TK_AD[tur]!.toLowerCase()} teklifini reddetti.`, 'diplomasi', a, 1);
+    anlat(w, `${adB}, ${trEkK(adA, 'in')} ${trKucuk(TK_AD[tur]!)} teklifini reddetti.`, 'diplomasi', a, 1);
     if (a === w.oyuncu) bildir(w, 'teklif', `${adB} reddetti: ${TK_AD[tur]}`, a, false);
     if (tur === TK.cagri) {
       // çağrıya uymamak ittifakı zedeler
@@ -491,7 +492,7 @@ export function teklifSonuc(w: World, s: number, kabul: boolean): void {
     }
   }
   if (tur !== TK.baris && tur !== TK.cagri) { gorusDegis(w, a, b, 5000); gorusDegis(w, b, a, 5000); }
-  anlat(w, `${adB}, ${adA} ile ${TK_AD[tur]!.toLowerCase()} için anlaştı.`, 'diplomasi', a, tur === TK.ittifak || tur === TK.cagri ? 2 : 1);
+  anlat(w, `${adB}, ${adA} ile ${trKucuk(TK_AD[tur]!)} için anlaştı.`, 'diplomasi', a, tur === TK.ittifak || tur === TK.cagri ? 2 : 1);
   if (a === w.oyuncu) bildir(w, 'teklif', `${adB} kabul etti: ${TK_AD[tur]}`, a, tur === TK.baris);
   w.TK.release(s);
 }

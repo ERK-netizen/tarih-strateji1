@@ -60,10 +60,15 @@ export class Table<K extends string = string> {
   alloc(): number {
     let slot: number;
     if (this.free.length > 0) {
-      let bi = 0;
-      for (let i = 1; i < this.free.length; i++) if (this.free[i]! < this.free[bi]!) bi = i;
-      slot = this.free[bi]!;
-      this.free.splice(bi, 1);
+      // serbest liste ikili min-yığındır: en küçük yuva O(log n)
+      const f = this.free;
+      slot = f[0]!;
+      const son = f.pop()!;
+      if (f.length) {
+        f[0] = son;
+        let i = 0;
+        for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < f.length && f[l]! < f[m]!) m = l; if (r < f.length && f[r]! < f[m]!) m = r; if (m === i) break; [f[i], f[m]] = [f[m]!, f[i]!]; i = m; }
+      }
       this.gen[slot] = this.gen[slot]! + 1;
     } else {
       if (this.hw >= this.cap) this.grow();
@@ -79,7 +84,10 @@ export class Table<K extends string = string> {
     if (!this.alive[slot]) return;
     this.alive[slot] = 0;
     for (const [k] of this.defs) (this.ci[k] as Arr)[slot] = 0;
-    this.free.push(slot);
+    const f = this.free;
+    f.push(slot);
+    let i = f.length - 1;
+    while (i > 0) { const p = (i - 1) >> 1; if (f[p]! <= f[i]!) break; [f[i], f[p]] = [f[p]!, f[i]!]; i = p; }
   }
 
   id(slot: number): number { return idOf(slot, this.gen[slot]!); }

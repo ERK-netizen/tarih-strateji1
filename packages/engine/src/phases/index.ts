@@ -153,13 +153,12 @@ export function butunluk(w: World, n0: number): void {
 export function kokenDenetim(w: World): string | null {
   const U = uc(w);
   const birlik = new Array<number>(w.nE).fill(0);
+  const kova = new Array<number>(w.nC).fill(0), def = new Array<number>(w.nC).fill(0);
   for (const u of w.U.rows()) {
     for (let k = 0; k < 8; k++) { const e = U[KOL_OK[k]!]![u]! - 1; if (e >= 0) birlik[e]! += U[KOL_ON[k]!]![u]!; }
-    let kova = 0;
-    kova += U.on8![u]!;
-    void kova;
+    kova[U.ulke![u]!]! += U.on8![u]!;
   }
-  for (let c = 0; c < w.nC; c++) for (let e = 0; e < w.nE; e++) birlik[e]! += w.kokenDefter[c * w.nE + e]!;
+  for (let c = 0; c < w.nC; c++) for (let e = 0; e < w.nE; e++) { const v = w.kokenDefter[c * w.nE + e]!; if (v) { birlik[e]! += v; def[c]! += v; } }
   for (const t of w.T.rows()) if (w.T.c.tur[t] === 3) birlik[w.T.c.alt[t]!]! += w.T.c.miktar[t]!;
   for (let e = 0; e < w.nE; e++) {
     let a = 0;
@@ -167,12 +166,7 @@ export function kokenDenetim(w: World): string | null {
     if (a !== birlik[e]) return `eyalet ${e}: A=${a}, kayıt=${birlik[e]}`;
   }
   // kova toplamı = defter toplamı (ülke bazında)
-  for (let c = 0; c < w.nC; c++) {
-    let kova = 0, def = 0;
-    for (const u of w.U.rows()) if (U.ulke![u] === c) kova += U.on8![u]!;
-    for (let e = 0; e < w.nE; e++) def += w.kokenDefter[c * w.nE + e]!;
-    if (kova !== def) return `ülke ${c}: kova ${kova} ≠ defter ${def}`;
-  }
+  for (let c = 0; c < w.nC; c++) if (kova[c] !== def[c]) return `ülke ${c}: kova ${kova[c]} ≠ defter ${def[c]}`;
   void NHUCRE;
   return null;
 }

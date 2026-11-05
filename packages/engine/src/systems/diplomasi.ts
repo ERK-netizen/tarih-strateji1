@@ -6,6 +6,7 @@ import { S, mulDiv, clamp, approach } from '../num/index.ts';
 import { savasta, savastaMi, anlasmaVar, uc, gorus, anlat, bildir, birlikIstat, tarafi, tarafYaz, savasUyeleri, savasDegisti, anlasmaEklendi, anlasmaSilindi, iddiaEkle, iddiaSil, pasif } from './ortak.ts';
 import { esirIade } from './nufus.ts';
 import { insanGucu } from './nufus.ts';
+import { trEkK, trKucuk } from '../tr.ts';
 
 export const TK = { ticaret: 0, saldirmazlik: 1, gecis: 2, garanti: 3, ittifak: 4, baris: 10, cagri: 11, ekipman: 14 } as const;
 export const TK_AD: Record<number, string> = { 0: 'Ticaret anlaşması', 1: 'Saldırmazlık paktı', 2: 'Askerî geçiş hakkı', 3: 'Bağımsızlık garantisi', 4: 'İttifak', 10: 'Barış', 11: 'Savaşa katılım çağrısı', 14: 'Ekipman satışı' };
@@ -69,16 +70,16 @@ export function gerekceBaslat(w: World, a: number, b: number, sure: number = K.g
   w.GR.c.ulke[s] = a; w.GR.c.hedef[s] = b; w.GR.c.bitis[s] = w.gun + sure; w.GR.c.hazir[s] = sure === 0 ? 1 : 0;
   gorusDegis(w, b, a, -10_000);
   w.C.c.gerginlik[a] = w.C.c.gerginlik[a]! + 3000;
-  anlat(w, `${w.pkg.ulkeler[a]!.ad}, ${w.pkg.ulkeler[b]!.kisa}'ya karşı savaş gerekçesi hazırlamaya başladı.`, 'diplomasi', a, 2);
+  anlat(w, `${w.pkg.ulkeler[a]!.ad}, ${trEkK(w.pkg.ulkeler[b]!.kisa, 'e')} karşı savaş gerekçesi hazırlamaya başladı.`, 'diplomasi', a, 2);
   if (b === w.oyuncu) bildir(w, 'gerekce', `${w.pkg.ulkeler[a]!.kisa} size karşı gerekçe hazırlıyor`, b, true);
-  if (a === w.oyuncu && sure === 0) bildir(w, 'gerekce', `${w.pkg.ulkeler[b]!.kisa}'ya karşı savaş gerekçesi hazır`, a, true);
+  if (a === w.oyuncu && sure === 0) bildir(w, 'gerekce', `${trEkK(w.pkg.ulkeler[b]!.kisa, 'e')} karşı savaş gerekçesi hazır`, a, true);
 }
 export function gerekceGunu(w: World): void {
   for (const s of w.GR.list()) {
     if (!w.GR.c.hazir[s] && w.GR.c.bitis[s]! <= w.gun) {
       w.GR.c.hazir[s] = 1;
       const a = w.GR.c.ulke[s]!, b = w.GR.c.hedef[s]!;
-      if (a === w.oyuncu) bildir(w, 'gerekce', `${w.pkg.ulkeler[b]!.kisa}'ya karşı gerekçe hazır`, a, true);
+      if (a === w.oyuncu) bildir(w, 'gerekce', `${trEkK(w.pkg.ulkeler[b]!.kisa, 'e')} karşı gerekçe hazır`, a, true);
     }
     // 1 yıl kullanılmayan gerekçe düşer
     if (w.GR.c.hazir[s] && w.gun - w.GR.c.bitis[s]! > 365) w.GR.release(s);
@@ -118,7 +119,7 @@ export function savasIlan(w: World, a: number, b: number, cagri = true): number 
   C.saldiriyaUgradi[b] = 20_000;
   gorusDegis(w, b, a, -30_000);
   for (let c = 0; c < w.nC; c++) if (c !== a && c !== b) gorusDegis(w, c, a, gerekceli ? -5000 : -15_000);
-  anlat(w, `${w.pkg.ulkeler[a]!.ad}, ${w.pkg.ulkeler[b]!.ad}'na savaş ilan etti${gerekceli ? '' : ' — hiçbir gerekçe gösterilmeden'}.`, 'savas', a, 3);
+  anlat(w, `${w.pkg.ulkeler[a]!.ad}, ${trEkK(w.pkg.ulkeler[b]!.ad, 'e')} savaş ilan etti${gerekceli ? '' : ' — hiçbir gerekçe gösterilmeden'}.`, 'savas', a, 3);
   bildir(w, 'savas', `${w.pkg.ulkeler[a]!.kisa} → ${w.pkg.ulkeler[b]!.kisa}: savaş ilanı`, w.oyuncu, true);
   if (cagri) {
     cagriGonder(w, s, b, 1);
@@ -146,7 +147,7 @@ export function savasaKatil(w: World, savas: number, c: number, taraf: number): 
   tarafYaz(w, savas, c, benim);
   for (const d of karsi) { anlasmaBoz(w, A.ticaret, c, d, false); anlasmaBoz(w, A.saldirmazlik, c, d, true); anlasmaBoz(w, A.ittifak, c, d, true); gorusDegis(w, d, c, -20_000); }
   const lider = taraf === 0 ? SV.saldiran[savas]! : SV.savunan[savas]!;
-  anlat(w, `${w.pkg.ulkeler[c]!.ad}, ${w.pkg.ulkeler[lider]!.kisa}'nın yanında savaşa girdi.`, 'savas', c, 3);
+  anlat(w, `${w.pkg.ulkeler[c]!.ad}, ${trEkK(w.pkg.ulkeler[lider]!.kisa, 'in')} yanında savaşa girdi.`, 'savas', c, 3);
   bildir(w, 'savas', `${w.pkg.ulkeler[c]!.kisa} savaşa girdi`, w.oyuncu, true);
   // zincirleme çağrı: katılanın müttefikleri de çağrılır
   cagriGonder(w, savas, c, taraf);
@@ -230,6 +231,10 @@ export function teslimKosulu(w: World, c: number): boolean {
 /** Barış teklifi kabul edilir mi? (karşı taraf: kabul eden). */
 export function barisKabul(w: World, kabulEden: number, oneren: number, tur: number, istenen: number[]): { kabul: boolean; neden: string } {
   if (!savasta(w, kabulEden, oneren)) return { kabul: false, neden: 'Savaşta değilsiniz.' };
+  // savaşın ilk aylarında taraflar kolay barışmaz (teslim hariç)
+  let sure = 0;
+  for (const s of w.SV.rows()) { const ta = tarafi(w, s, kabulEden), tb = tarafi(w, s, oneren); if (ta && tb && ta !== tb) sure = Math.max(sure, w.gun - w.SV.c.baslangic[s]!); }
+  if (tur !== 2 && sure < (tur === 0 ? 90 : 150) && !teslimKosulu(w, kabulEden)) return { kabul: false, neden: `Savaş yeni başladı (${sure} gün); ${tur === 0 ? '90' : '150'} günden önce ${tur === 0 ? 'beyaz' : 'tavizli'} barış kabul edilmez.` };
   const W = istekliligi(w, kabulEden, oneren);
   const istek = istenen.filter((r) => w.R.c.sahip[r] === kabulEden).reduce((s, r) => s + bolgeDegeri(w, r), 0);
   if (tur === 0) {
@@ -308,7 +313,7 @@ export function barisUygula(w: World, kazanan: number, kaybeden: number, tur: nu
   const ad = BARIS_TUR[tur]!;
   const kazAd = w.pkg.ulkeler[kazanan]!.ad, kayAd = w.pkg.ulkeler[kaybeden]!.ad;
   const bAd = bolgeler.map((r) => w.pkg.bolgeler[r]!.ad);
-  anlat(w, `${kazAd} ile ${kayAd} arasında ${ad.toLowerCase()} imzalandı${bAd.length ? `: ${bAd.join(', ')} el değiştirdi` : ''}.`, 'baris', kazanan, 3);
+  anlat(w, `${kazAd} ile ${kayAd} arasında ${trKucuk(ad)} imzalandı${bAd.length ? `: ${bAd.join(', ')} el değiştirdi` : ''}.`, 'baris', kazanan, 3);
   bildir(w, 'baris', `${ad}: ${w.pkg.ulkeler[kazanan]!.kisa}–${w.pkg.ulkeler[kaybeden]!.kisa}`, w.oyuncu, true);
   if (tur > 0) { w.C.c.zafer[kazanan] = 15_000; w.C.c.zafer[kaybeden] = -15_000; }
   w.rotaEpoch++;

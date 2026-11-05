@@ -124,6 +124,19 @@ export function iddiaSil(w: World, r: number, c: number): void {
   for (let i = 0; i < IDDIA_MAX; i++) if (w.iddia[r * IDDIA_MAX + i] === c + 1) w.iddia[r * IDDIA_MAX + i] = 0;
 }
 export function pasif(w: World, c: number): boolean { return w.C.c.pasif[c] === 1; }
+
+/** Ülke → kontrol ettiği / sahip olduğu bölgeler (artan sıra). Kontrol ve sahiplik değişimleri rotaEpoch'u artırır. */
+function bolgeGruplari(w: World): { kontrol: number[][]; sahip: number[][] } {
+  const o = w.onbellek.get('bGrup') as { e: number; g: { kontrol: number[][]; sahip: number[][] } } | undefined;
+  if (o && o.e === w.rotaEpoch) return o.g;
+  const kontrol: number[][] = Array.from({ length: w.nC }, () => []), sahip: number[][] = Array.from({ length: w.nC }, () => []);
+  for (let r = 0; r < w.nR; r++) { kontrol[w.R.c.kontrolEden[r]!]!.push(r); sahip[w.R.c.sahip[r]!]!.push(r); }
+  const g = { kontrol, sahip };
+  w.onbellek.set('bGrup', { e: w.rotaEpoch, g });
+  return g;
+}
+export function kontrolB(w: World, c: number): number[] { return bolgeGruplari(w).kontrol[c] ?? []; }
+export function sahipB(w: World, c: number): number[] { return bolgeGruplari(w).sahip[c] ?? []; }
 /** Eyaletin bugünkü sahibi: merkez bölgesinin sahibi (barışla el değiştirir). */
 export function eyaletUlke(w: World, e: number): number { return w.R.c.sahip[w.pkg.eyaletler[e]!.merkez]!; }
 

@@ -5,6 +5,7 @@ import { ST, YB, NHUCRE, NKIMLIK, ASKERLIK, K, tekIdx, NTEK } from '../catalog.t
 import { S, mulDiv, mulRatio, largestRemainder } from '../num/index.ts';
 import { uc, birlikIhtiyac, anlat, fmtSayi } from './ortak.ts';
 import { KOL_E, KOL_OK, KOL_ON } from '../state/world.ts';
+import { trEk, trEkK } from '../tr.ts';
 
 const DOGUM_AY = 2500; // S: yıllık %3 nominal doğum / 12
 const NET_AY = 830; // S: (1,01)^(1/12) − 1
@@ -289,7 +290,7 @@ export function esirIade(w: World, a: number, b: number): void {
       w.pop[hc(r, YB.ASKER, ST.P)] = w.pop[hc(r, YB.ASKER, ST.P)]! - p[i]!;
       w.pop[hc(r, YB.ASKER, ST.E)] = w.pop[hc(r, YB.ASKER, ST.E)]! + p[i]!;
     });
-    anlat(w, `${w.pkg.ulkeler[tutan]!.kisa}, ${fmtSayi(n)} esiri ${w.pkg.ulkeler[koken]!.kisa}'a iade etti.`, 'diplomasi', koken, 1);
+    anlat(w, `${w.pkg.ulkeler[tutan]!.kisa}, ${fmtSayi(n)} esiri ${trEkK(w.pkg.ulkeler[koken]!.kisa, 'e')} iade etti.`, 'diplomasi', koken, 1);
   }
 }
 

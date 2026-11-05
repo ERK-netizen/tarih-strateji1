@@ -20,3 +20,4 @@ export * as nufus from './systems/nufus.ts';
 export * as lojistik from './systems/lojistik.ts';
 export * as kara from './systems/kara.ts';
 export * as olaylar from './systems/olaylar.ts';
+export * from './tr.ts';

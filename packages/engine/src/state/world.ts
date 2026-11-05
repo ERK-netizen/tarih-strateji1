@@ -257,7 +257,7 @@ export function yeniDunya(pkg: Paket, oyuncu: number): World {
 
 export function toplamAskeriFabrika(w: World, c: number): number {
   let n = 0;
-  for (let r = 0; r < w.nR; r++) if (w.R.c.kontrolEden[r] === c) n += w.R.c.askeriF[r]!;
+  for (let r = 0; r < w.nR; r++) if (w.R.c.kontrolEden[r] === c) n += w.R.c.askeriF[r]!; // yalnız hat kurulurken
   return n;
 }
 

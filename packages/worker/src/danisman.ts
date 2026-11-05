@@ -1,5 +1,5 @@
 // Bölüm 21: kural tabanlı danışman. Soru cümleleri emir üretmez; buraya gelir (bölüm 20.3).
-import { type World, acikla, ortak, ekonomi, diplomasi, nufus, TEKNOLOJI } from '@ts/engine';
+import { trEkK, type World, acikla, ortak, ekonomi, diplomasi, nufus, TEKNOLOJI } from '@ts/engine';
 import { ozet } from './gorunum.ts';
 
 export interface Cevap { baslik: string; paragraflar: string[]; oneriler: string[] }
@@ -70,7 +70,7 @@ export function danis(w: World, konu: string, ulke?: number, bolge?: number): Ce
       return {
         baslik: 'Rakip niyetleri',
         paragraflar: kartlar.map(({ c, t }) => `${w.pkg.ulkeler[c]!.kisa}: ${t.puan >= 60_000 ? 'YÜKSEK' : t.puan >= 30_000 ? 'orta' : 'düşük'} tehdit (${t.bilesen.filter((b) => b.deger > 0).map((b) => b.ad.toLowerCase()).join(', ') || 'kamu sinyali yok'}).`),
-        oneriler: kartlar[0] && kartlar[0].t.puan >= 30_000 ? [`${w.pkg.ulkeler[kartlar[0].c]!.kisa}'a saldırmazlık paktı öner`] : [],
+        oneriler: kartlar[0] && kartlar[0].t.puan >= 30_000 ? [`${trEkK(w.pkg.ulkeler[kartlar[0].c]!.kisa, 'e')} saldırmazlık paktı öner`] : [],
       };
     }
     case 'oneri': case 'genel': return oneriler(w);

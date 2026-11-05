@@ -6,9 +6,9 @@ import { KISILIK, SABLON, TEKNOLOJI, NTEK, MALI, ASKERLIK, EKIPMAN, NEKIP } from
 import { S, mulDiv, clamp } from '../num/index.ts';
 import { rng, AMAC, uniformInt } from '../rng/index.ts';
 import { uygula, teklifSonuc, type Emir } from '../orders.ts';
-import { bolgeGozlem, bolgeGozlemBolgeler } from '../observe/index.ts';
+import { bolgeGozlem, bolgeGozlemBolgeler, ulkeGozlem } from '../observe/index.ts';
 import {
-  uc, savasta, savastaMi, dusmanlar, anlasmaVar, gorus, birlikIstat, birlikIkmal, girebilir, rota, sinirKomsusu, muttefik, essavasan, iddiaVar, savasUyeleri, pasif, rotaTip,
+  uc, savasta, savastaMi, dusmanlar, anlasmaVar, gorus, birlikIstat, birlikIkmal, girebilir, rota, sinirKomsusu, muttefik, essavasan, iddiaVar, savasUyeleri, pasif, rotaTip, kontrolB, sahipB,
 } from '../systems/ortak.ts';
 import { insanGucu } from '../systems/nufus.ts';
 import { ulkeGidaStok, zorunluGider, krediLimiti } from '../systems/ekonomi.ts';
@@ -34,7 +34,7 @@ function gozlenenGuc(w: World, c: number, bolgeler?: number[]): Map<number, Map<
 
 function ulkeGucuGozlem(w: World, gozlemci: number, hedef: number): number {
   let t = 0;
-  for (const g of bolgeGozlem(w, gozlemci)) if (g.ulke === hedef) t += Math.floor((g.gucAlt + g.gucUst) / 2);
+  for (const g of ulkeGozlem(w, gozlemci, hedef)) t += Math.floor((g.gucAlt + g.gucUst) / 2);
   return t;
 }
 function kendiGuc(w: World, c: number): number {
@@ -226,7 +226,7 @@ function hatGirdiTalebi(w: World, c: number): { celik: number; komur: number } {
 
 function totalFab(w: World, c: number): number {
   let n = 0;
-  for (let r = 0; r < w.nR; r++) if (w.R.c.kontrolEden[r] === c) n += w.R.c.askeriF[r]!;
+  for (const r of kontrolB(w, c)) n += w.R.c.askeriF[r]!;
   return n * 1000;
 }
 
@@ -239,7 +239,7 @@ function orduPlan(w: World, c: number): void {
   const savas = savastaMi(w, c);
   const tehdit = w.pkg.ulkeler.some((_, d) => d !== c && !pasif(w, d) && (gerekceSurecte(w, d, c) >= 0 || (gorus(w, c, d) < 30_000 && sinirKomsusu(w, c, d))));
   let nufus = 0;
-  for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === c) for (let k = 0; k < 32; k++) nufus += w.pop[r * 32 + k]!;
+  for (const r of sahipB(w, c)) for (let k = 0; k < 32; k++) nufus += w.pop[r * 32 + k]!;
   const hedefPkg = w.pkg.ulkeler[c]!.ordu;
   const taban = hedefPkg !== undefined ? Math.max(1, hedefPkg) : Math.max(3, Math.floor(nufus / 400_000));
   const hedef = savas ? Math.floor((taban * 18) / 10) : tehdit ? Math.floor((taban * 13) / 10) : taban;
@@ -362,8 +362,8 @@ function cepheYonet(w: World, c: number): void {
     if (h === undefined) { h = savasta(w, c, k) || (!pasif(w, k) && (gerekceSurecte(w, k, c) >= 0 || gorus(w, c, k) < 30_000)); sicak.set(k, h); }
     return h;
   };
-  for (let r = 0; r < w.nR; r++) {
-    if (R.kontrolEden[r] !== c) continue;
+  const benimB = kontrolB(w, c);
+  for (const r of benimB) {
     const vs: number[] = [];
     for (const v of w.komsuluk[r]!) {
       const k = R.kontrolEden[v]!;
@@ -375,8 +375,9 @@ function cepheYonet(w: World, c: number): void {
   if (sinirlarHam.length === 0) return;
   // yalnız kendi bölgelerine komşu yabancı bölgeler gözlenir
   const gerek = new Set<number>();
-  for (let r = 0; r < w.nR; r++) if (R.kontrolEden[r] === c) for (const v of w.komsuluk[r]!) if (R.kontrolEden[v] !== c) gerek.add(v);
-  const gozlem = gozlenenGuc(w, c, [...gerek]);
+  for (const r of benimB) for (const v of w.komsuluk[r]!) if (R.kontrolEden[v] !== c) gerek.add(v);
+  const gerekL = [...gerek].sort((a, b) => a - b);
+  const gozlem = gozlenenGuc(w, c, gerekL);
   const tehdit = new Map<number, number>();
   for (const { r, v: vs } of sinirlarHam) {
     let t = 0;
@@ -397,7 +398,7 @@ function cepheYonet(w: World, c: number): void {
   const atanmis = new Set<number>();
   if (savas) {
     const adaylar: { hedef: number; deger: number; kaynak: number[]; oran: number }[] = [];
-    for (let r = 0; r < w.nR; r++) {
+    for (const r of gerekL) {
       const k = R.kontrolEden[r]!;
       if (!savasta(w, c, k)) continue;
       const komsuDost = w.komsuluk[r]!.filter((v) => R.kontrolEden[v] === c);

@@ -1,77 +1,98 @@
 [
  {
-  "kimlik": "s1914",
-  "ad": "Büyük Savaş",
-  "alt": "1914 · Birinci Dünya Savaşı",
-  "aciklama": "28 Haziran 1914. Avusturya-Macaristan veliahdı Arşidük Franz Ferdinand Saraybosna'da vuruldu. Bağlaşmalar zinciri Avrupa'yı savaşa sürüklemek üzere.",
-  "donem": "buyuk",
-  "yil": 1914,
-  "tarih": "28.6.1914",
+  "kimlik": "s2026",
+  "ad": "Modern Dünya",
+  "alt": "2026 · Çok kutuplu düzen",
+  "aciklama": "1 Ocak 2026. Ukrayna'da savaş dördüncü yılını doldurmak üzere; Sudan iç savaşta. Tayvan Boğazı, Ortadoğu ve Kore Yarımadası gergin.",
+  "donem": "modern",
+  "yil": 2026,
+  "tarih": "1.1.2026",
   "oneCikan": [
    {
     "i": 0,
-    "ad": "Alman İmparatorluğu",
-    "kisa": "Almanya",
-    "renk": "#5d6b74",
-    "lider": "II. Wilhelm"
-   },
-   {
-    "i": 4,
-    "ad": "Büyük Britanya ve İrlanda Birleşik Krallığı",
-    "kisa": "Britanya",
-    "renk": "#b5523b",
-    "lider": "V. George (Başbakan H. H. Asquith)"
-   },
-   {
-    "i": 3,
-    "ad": "Fransa Cumhuriyeti",
-    "kisa": "Fransa",
+    "ad": "Amerika Birleşik Devletleri",
+    "kisa": "ABD",
     "renk": "#4f6fa8",
-    "lider": "Raymond Poincaré"
-   },
-   {
-    "i": 2,
-    "ad": "Rus İmparatorluğu",
-    "kisa": "Rusya",
-    "renk": "#5f8a5a",
-    "lider": "II. Nikolay"
+    "lider": "Donald Trump"
    },
    {
     "i": 1,
-    "ad": "Avusturya-Macaristan İmparatorluğu",
-    "kisa": "Avusturya-Macaristan",
-    "renk": "#c9b27a",
-    "lider": "I. Franz Joseph"
+    "ad": "Çin Halk Cumhuriyeti",
+    "kisa": "Çin",
+    "renk": "#c0453b",
+    "lider": "Şi Cinping"
+   },
+   {
+    "i": 2,
+    "ad": "Rusya Federasyonu",
+    "kisa": "Rusya",
+    "renk": "#5f8a5a",
+    "lider": "Vladimir Putin"
+   },
+   {
+    "i": 3,
+    "ad": "Hindistan Cumhuriyeti",
+    "kisa": "Hindistan",
+    "renk": "#d9944a",
+    "lider": "Narendra Modi"
+   },
+   {
+    "i": 10,
+    "ad": "Türkiye Cumhuriyeti",
+    "kisa": "Türkiye",
+    "renk": "#b04848",
+    "lider": "Recep Tayyip Erdoğan"
    },
    {
     "i": 6,
-    "ad": "Osmanlı İmparatorluğu",
-    "kisa": "Osmanlı",
-    "renk": "#a0463c",
-    "lider": "V. Mehmed Reşad (Enver, Talât ve Cemal Paşalar)"
+    "ad": "Almanya Federal Cumhuriyeti",
+    "kisa": "Almanya",
+    "renk": "#6b7680",
+    "lider": "Friedrich Merz"
+   },
+   {
+    "i": 4,
+    "ad": "Birleşik Krallık",
+    "kisa": "Birleşik Krallık",
+    "renk": "#b5523b",
+    "lider": "Keir Starmer"
    },
    {
     "i": 5,
-    "ad": "İtalya Krallığı",
-    "kisa": "İtalya",
-    "renk": "#6e9a63",
-    "lider": "III. Vittorio Emanuele (Başbakan Antonio Salandra)"
+    "ad": "Fransa Cumhuriyeti",
+    "kisa": "Fransa",
+    "renk": "#5a7ac0",
+    "lider": "Emmanuel Macron (Başbakan Sébastien Lecornu)"
    },
    {
-    "i": 37,
-    "ad": "Amerika Birleşik Devletleri",
-    "kisa": "ABD",
-    "renk": "#6b8bb3",
-    "lider": "Woodrow Wilson"
+    "i": 14,
+    "ad": "Ukrayna",
+    "kisa": "Ukrayna",
+    "renk": "#e0c04a",
+    "lider": "Volodimir Zelenski"
    },
    {
     "i": 7,
-    "ad": "Sırbistan Krallığı",
-    "kisa": "Sırbistan",
-    "renk": "#8a5a74",
-    "lider": "I. Petar (Naip Aleksandar)"
+    "ad": "Japonya",
+    "kisa": "Japonya",
+    "renk": "#d7b6b6",
+    "lider": "Takaiçi Sanae"
+   },
+   {
+    "i": 12,
+    "ad": "İran İslam Cumhuriyeti",
+    "kisa": "İran",
+    "renk": "#4f9a8f",
+    "lider": "Ali Hamaney (Cumhurbaşkanı Mesud Pezeşkiyan)"
+   },
+   {
+    "i": 13,
+    "ad": "İsrail Devleti",
+    "kisa": "İsrail",
+    "renk": "#7aa0d6",
+    "lider": "Binyamin Netanyahu"
    }
   ],
-  "ulkeSayi": 62
+  "ulkeSayi": 179
  }
 ]

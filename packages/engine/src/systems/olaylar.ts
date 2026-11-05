@@ -10,6 +10,7 @@ import { gerekceBaslat, gorusDegis, savasIlan, savasaKatil, anlasmaKur, anlasmaB
 import type { PaketEylem, PaketSenaryoOlay, Paket } from '../paket.ts';
 import { clamp } from '../num/index.ts';
 import { ulkeGidaGuvence, ulkeGidaStok, HASAT_KUCUK } from './ekonomi.ts';
+import { trEkK } from '../tr.ts';
 
 export interface Secenek { ad: string; etki: string; uygula: (w: World, c: number, p1: number, p2: number) => void; yz: (w: World, c: number) => number }
 export interface Olay { kod: string; baslik: string; metin: (w: World, c: number, p1: number) => string; secenekler: Secenek[] }
@@ -46,7 +47,7 @@ export const OLAYLAR: Olay[] = [
       { ad: 'Ültimatomu kabul et', etki: 'Huzur −15, meşruiyet −10; savaştan kaçınılır.', uygula: (w, c, p1) => {
         w.C.c.huzur[c] = Math.max(0, w.C.c.huzur[c]! - 15_000); w.C.c.mesru[c] = Math.max(0, w.C.c.mesru[c]! - 10_000);
         w.C.c.pg[p1] = Math.min(500_000, w.C.c.pg[p1]! + 50_000); gorusDegis(w, p1, c, 10_000); w.C.c.krizAsama[p1] = 0;
-        anlat(w, `${kisa(w, c)} ültimatomu kabul etti. ${kisa(w, p1)}'da zafer şenlikleri, ${kisa(w, c)}'da sessiz bir öfke var.`, 'kriz', c, 3);
+        anlat(w, `${kisa(w, c)} ültimatomu kabul etti. ${trEkK(kisa(w, p1), 'de')} zafer şenlikleri, ${trEkK(kisa(w, c), 'de')} sessiz bir öfke var.`, 'kriz', c, 3);
       }, yz: (w, c) => (anlasmaVar(w, A.garanti, 0, c) >= 0 ? 15 : 55) },
       { ad: 'Ültimatomu reddet', etki: 'Demirhan anında savaş gerekçesi kazanır. Garantörler çağrılabilir.', uygula: (w, c, p1) => {
         gerekceBaslat(w, p1, c, 0);

@@ -5,10 +5,11 @@ import { ST, YB, NHUCRE, K, EKONOMI, YONETIM, ISGAL, EKIPMAN, MUHIMMAT, TEKNOLOJ
 import { S, mulDiv, mulRatio, clamp, largestRemainder, sqrtRatio, approach } from '../num/index.ts';
 import { rng, AMAC, uniformInt } from '../rng/index.ts';
 import { tarih, gunNo, haftaGunu } from '../calendar/index.ts';
-import { uc, gorus, savasta, anlat, bildir, savastaMi, dostBolge, rota, eyaletUlke } from './ortak.ts';
+import { uc, gorus, savasta, anlat, bildir, savastaMi, dostBolge, rota, eyaletUlke, kontrolB, sahipB } from './ortak.ts';
 import { tarimIsciIhtiyac } from './nufus.ts';
 import { kapasiteAsimi, kapasiteAsimiHepsi, kontrolErisim } from './siyaset.ts';
 import { KOL_E } from '../state/world.ts';
+import { trEk, trKucuk } from '../tr.ts';
 
 const tek = (w: World, c: number, kod: string) => w.tekBitti[c * NTEK + tekIdx(kod)] === 1;
 
@@ -152,11 +153,19 @@ export function enYakinEyalet(w: World, c: number, r: number): number {
   return b;
 }
 function enYakinEyaletHesap(w: World, c: number, r: number): number {
+  // ülkenin kullanılabilir depoları (rotaEpoch önbellekli): kendi kontrolündeki ve sahibi olduğu depo bölgeleri
+  let o = w.onbellek.get('depoL') as { e: number; m: number[][] } | undefined;
+  if (!o || o.e !== w.rotaEpoch) {
+    const m: number[][] = Array.from({ length: w.nC }, () => []);
+    for (let e = 0; e < w.nE; e++) { const d = w.depo[e]!; if (w.R.c.kontrolEden[d] === w.R.c.sahip[d]) m[w.R.c.sahip[d]!]!.push(e); }
+    o = { e: w.rotaEpoch, m };
+    w.onbellek.set('depoL', o);
+  }
   let best = -1, bd = Infinity;
-  for (let e = 0; e < w.nE; e++) {
+  const [x2, y2] = w.pkg.bolgeler[r]!.merkez;
+  for (const e of o.m[c] ?? []) {
     const d = w.depo[e]!;
-    if (w.R.c.kontrolEden[d] !== c || w.R.c.sahip[d] !== c) continue;
-    const [x1, y1] = w.pkg.bolgeler[d]!.merkez, [x2, y2] = w.pkg.bolgeler[r]!.merkez;
+    const [x1, y1] = w.pkg.bolgeler[d]!.merkez;
     const dd = (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);
     if (dd < bd || (dd === bd && e < best)) { bd = dd; best = e; }
   }
@@ -222,8 +231,7 @@ export function fabrikaDoluluk(w: World, r: number): number {
 }
 export function etkinFabrika(w: World, c: number): { sivil: number; askeri: number } {
   let sivil = 0, askeri = 0; // milifabrika
-  for (let r = 0; r < w.nR; r++) {
-    if (w.R.c.kontrolEden[r] !== c) continue;
+  for (const r of kontrolB(w, c)) {
     const d = mulRatio(fabrikaDoluluk(w, r), S - w.R.c.hasar[r]!).q;
     const erisim = w.R.c.sahip[r] === c ? S : isgalErisim(w, r);
     sivil += mulDiv(w.R.c.sivilF[r]! * 1000, mulRatio(d, erisim).q, S).q;
@@ -235,6 +243,8 @@ export function etkinFabrika(w: World, c: number): { sivil: number; askeri: numb
 /** P5 sanayi: tüketim malı, inşaat, üretim hatları. */
 export function sanayiGunu(w: World): void {
   const C = w.C.c;
+  const hatGrup: number[][] = Array.from({ length: w.nC }, () => []);
+  for (const s of w.HT.list()) hatGrup[w.HT.c.ulke[s]!]!.push(s);
   for (let c = 0; c < w.nC; c++) {
     const law = EKONOMI[C.ekonomi[c]!]!;
     const fc = fabrikaCarpan(w, c);
@@ -244,12 +254,11 @@ export function sanayiGunu(w: World): void {
     const insaat = mulRatio(spSivil - tuketim, law.insaat).q;
     // tüketim malı yeterliliği: ihtiyaç nüfus/100 milipuan
     let nufus = 0;
-    for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === c) for (let k = 0; k < NHUCRE; k++) nufus += w.pop[r * NHUCRE + k]!;
+    for (const r of sahipB(w, c)) for (let k = 0; k < NHUCRE; k++) nufus += w.pop[r * NHUCRE + k]!;
     C.tuketimYet[c] = clamp(mulDiv(tuketim, S, Math.max(1, Math.floor(nufus / 100))).q, 0, 1_500_000);
     // kaynak akışı
     let celik = 0, komur = 0;
-    for (let r = 0; r < w.nR; r++) {
-      if (w.R.c.kontrolEden[r] !== c) continue;
+    for (const r of kontrolB(w, c)) {
       const b = w.pkg.bolgeler[r]!;
       const erisim = w.R.c.sahip[r] === c ? S : isgalErisim(w, r);
       const h = mulRatio(S - w.R.c.hasar[r]!, erisim).q;
@@ -258,7 +267,7 @@ export function sanayiGunu(w: World): void {
     C.celikDun[c] = celik; C.komurDun[c] = komur;
     C.celik[c] = C.celik[c]! + celik; C.komur[c] = C.komur[c]! + komur;
     // hatlar
-    const hatlar = w.HT.list().filter((s) => w.HT.c.ulke[s] === c).sort((a, b) => w.HT.c.oncelik[a]! - w.HT.c.oncelik[b]! || a - b);
+    const hatlar = (hatGrup[c] ?? []).sort((a, b) => w.HT.c.oncelik[a]! - w.HT.c.oncelik[b]! || a - b);
     let atanan = 0;
     for (const s of hatlar) atanan += w.HT.c.fabrika[s]!;
     const olcek = atanan > ef.askeri && atanan > 0 ? mulDiv(ef.askeri, S, atanan).q : S;
@@ -338,7 +347,7 @@ function projeTamamla(w: World, s: number): void {
   else if (kod === 'demiryolu') { R.demiryolu[r] = Math.min(3, R.demiryolu[r]! + 1); w.rotaEpoch++; }
   else if (kod === 'altyapi') { R.altyapi[r] = Math.min(6, R.altyapi[r]! + 1); w.rotaEpoch++; }
   else if (kod === 'valilik') R.valilik[r] = 1;
-  anlat(w, `${w.pkg.bolgeler[r]!.ad}'da ${PROJE[P.tur[s]!]!.ad.toLowerCase()} tamamlandı.`, 'proje', c, 0);
+  anlat(w, `${trEk(w.pkg.bolgeler[r]!.ad, 'de')} ${trKucuk(PROJE[P.tur[s]!]!.ad)} tamamlandı.`, 'proje', c, 0);
   bildir(w, 'proje', `${w.pkg.bolgeler[r]!.ad}: ${PROJE[P.tur[s]!]!.ad} tamamlandı`, c, false);
   w.PR.release(s);
 }
@@ -466,6 +475,8 @@ export function maliyeGunu(w: World): void {
   const grup: number[][] = Array.from({ length: w.nC }, () => []);
   for (let r = 0; r < w.nR; r++) grup[R.kontrolEden[r]!]!.push(r);
   const asim = kapasiteAsimiHepsi(w);
+  const tazminat: number[][] = Array.from({ length: w.nC }, () => []);
+  for (const s of w.AN.list()) if (w.AN.c.tur[s] === 6) tazminat[w.AN.c.a[s]!]!.push(s);
   const tabanG = giderTabani(w);
   for (let c = 0; c < w.nC; c++) {
     let gelir = 0;
@@ -474,10 +485,8 @@ export function maliyeGunu(w: World): void {
       R.vergiDun[r] = v; gelir += v;
     }
     // tazminat gelir/gider anlaşmaları
-    for (const s of w.AN.rows()) {
-      if (w.AN.c.tur[s] !== 6) continue;
-      const odeyen = w.AN.c.a[s]!, alan = w.AN.c.b[s]!;
-      if (odeyen !== c) continue;
+    for (const s of tazminat[c] ?? []) {
+      const alan = w.AN.c.b[s]!;
       const m = Math.min(w.AN.c.miktar[s]!, Math.max(0, C.hazine[c]!));
       C.hazine[c] = C.hazine[c]! - m; C.hazine[alan] = C.hazine[alan]! + m;
       C.giderAy[c] = C.giderAy[c]! + m; C.gelirAy[alan] = C.gelirAy[alan]! + m;
@@ -575,6 +584,9 @@ export function pazarTemizle(w: World): void {
     const istek: number[][] = alis.map(() => satis.map(() => 0));
     alis.forEach((sa, i) => {
       const uygun = satis.map((ss, j) => (ticaretIzni(w, SPc.ulke[sa]!, SPc.ulke[ss]!, m) ? arz[j]! : 0));
+      // her alıcı en çok dört satıcıyla eşleşir (en büyük arz; eşitlikte küçük kimlik)
+      const secili = uygun.map((v, j) => [v, j] as const).filter(([v]) => v > 0).sort((a, b) => b[0] - a[0] || a[1] - b[1]).slice(0, 4).map(([, j]) => j);
+      for (let j = 0; j < uygun.length; j++) if (!secili.includes(j)) uygun[j] = 0;
       const top = uygun.reduce((a, b) => a + b, 0);
       if (top <= 0) return;
       const pay = largestRemainder(Math.min(talep[i]!, top), uygun);

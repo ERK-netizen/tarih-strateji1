@@ -123,6 +123,22 @@ function gozlemYap(w: World, gozlemci: number, o: Topluluk, kesif: Uint8Array): 
   const k = aralik(w, gozlemci, o.bolge * 256 + o.ulke, o.kisi, I, 2);
   return { bolge: o.bolge, ulke: o.ulke, birlik: o.birlik, gucAlt: g.alt, gucUst: g.ust, kisiAlt: k.alt, kisiUst: k.ust, kesin: false };
 }
+function topluUlke(w: World): Map<number, Topluluk[]> {
+  const d = konumDamga(w);
+  const o = w.onbellek.get('topluU') as { d: string; m: Map<number, Topluluk[]> } | undefined;
+  if (o && o.d === d) return o.m;
+  const m = new Map<number, Topluluk[]>();
+  for (const t of topluluklar(w)) (m.get(t.ulke) ?? m.set(t.ulke, []).get(t.ulke)!).push(t);
+  w.onbellek.set('topluU', { d, m });
+  return m;
+}
+/** Bir ülkenin gözlemciye görünen birlikleri (bölge sırasıyla). */
+export function ulkeGozlem(w: World, gozlemci: number, hedef: number): BolgeGozlem[] {
+  const kesif = kesifMenzili(w, gozlemci);
+  const out: BolgeGozlem[] = [];
+  for (const o of topluUlke(w).get(hedef) ?? []) { const g = gozlemYap(w, gozlemci, o, kesif); if (g) out.push(g); }
+  return out;
+}
 /** Yalnız verilen bölgelerdeki gözlem (bölge sırasıyla). */
 export function bolgeGozlemBolgeler(w: World, gozlemci: number, bolgeler: number[]): BolgeGozlem[] {
   const tb = topluBolge(w), kesif = kesifMenzili(w, gozlemci);

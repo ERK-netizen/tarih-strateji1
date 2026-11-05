@@ -136,8 +136,10 @@ export function derle(t: SenaryoTanim): { paket: Paket; ozet: string } {
   const bos = H.bolgeler.map((b, r) => ({ b, r })).filter(({ r }) => sahip[r]! < 0);
   if (bos.length) throw new Error(`${t.kimlik}: sahipsiz bölgeler: ${bos.map(({ b }) => `${b.iso}:${b.ad}`).join(', ')}`);
   // başkentler
-  const baskent = devletler.map((d) => {
-    const r = bolgeAd(d.bas, `${t.kimlik}/${d.k} başkent`);
+  const baskent = devletler.map((d, c) => {
+    // '*': devletin ilk ISO'sunun ilk bölgesi (harita derleyicisi başkenti öne koyar)
+    const r = d.bas === '*' ? H.bolgeler.findIndex((b, i) => sahip[i] === c && b.iso === (d.t ?? '').trim().split(/\s+/)[0]!.slice(0, 2)) : bolgeAd(d.bas, `${t.kimlik}/${d.k} başkent`);
+    if (r < 0) throw new Error(`${t.kimlik}: ${d.k} başkenti bulunamadı`);
     if (sahip[r] !== devletler.indexOf(d)) throw new Error(`${t.kimlik}: ${d.k} başkenti ${d.bas} kendi toprağında değil (${devletler[sahip[r]!]?.k})`);
     return r;
   });
@@ -320,11 +322,24 @@ export function derle(t: SenaryoTanim): { paket: Paket; ozet: string } {
   const sab = donem.sablon;
   const birlikler: Paket['birlikler'] = [];
   const sayac = new Array<number>(nC).fill(0);
+  // kara bağlantısı: başkentten kendi toprağı üzerinden kara kenarlarıyla ulaşılan bölgeler (denizaşırı olmayan)
+  const karaKomsu: number[][] = H.bolgeler.map(() => []);
+  for (const k of H.kenarlar) if (!k.tur) { karaKomsu[k.a]!.push(k.b); karaKomsu[k.b]!.push(k.a); }
   devletler.forEach((d, c) => {
-    const rs = dBolge[c]!.filter((r) => (bolgeler[r]!.kontrol ?? c) === c);
+    const tum = dBolge[c]!.filter((r) => (bolgeler[r]!.kontrol ?? c) === c);
+    const bagli = new Set<number>([baskent[c]!]);
+    const yig = [baskent[c]!];
+    while (yig.length) { const x = yig.pop()!; for (const y of karaKomsu[x]!) if (!bagli.has(y) && sahip[y] === c && (bolgeler[y]!.kontrol ?? c) === c) { bagli.add(y); yig.push(y); } }
+    const denizasiri = tum.filter((r) => !bagli.has(r));
+    const rs = tum.filter((r) => bagli.has(r));
+    // denizaşırı topraklara milis garnizonları
+    if (!d.pasif) {
+      const ms = sab[3]!;
+      for (let i = 0; i < denizasiri.length; i += 3) { sayac[c]!++; birlikler.push({ ulke: c, sablon: ms.kod, bolge: [...denizasiri].sort((a, b) => nufus[b]! - nufus[a]! || a - b)[Math.floor(i / 3)]!, ad: `${sayac[c]}. ${ms.ad}` }); }
+    }
     const isgalci = bolgeler.map((b, r) => ({ b, r })).filter(({ b }) => b.kontrol === c).map(({ r }) => r);
     const savasVar = [...savasta].some((x) => Math.floor(x / 1000) === c);
-    const n = d.pasif ? hedefOrdu[c]! : Math.max(1, Math.round(hedefOrdu[c]! * (savasVar ? 1 : 0.85)));
+    const n = d.pasif ? hedefOrdu[c]! : Math.max(1, Math.round(hedefOrdu[c]! * (savasVar ? 1 : 0.85)) - Math.ceil(denizasiri.length / 3));
     // cephe: düşman veya soğuk komşuya bakan bölgeler
     const dusmanMi = (k: number) => k !== c && !devletler[k]!.pasif && (savasta.has(c * 1000 + k) || G[c]![k]! < 40_000);
     const cephe = [...rs, ...isgalci].filter((r) => H.bolgeler[r]!.komsu.some((v) => { const k = bolgeler[v]!.kontrol ?? sahip[v]!; return dusmanMi(k); }));
@@ -341,7 +356,7 @@ export function derle(t: SenaryoTanim): { paket: Paket; ozet: string } {
       sayac[c]!++;
       let r: number;
       const havuz = savasVar && cephe.length ? cephe : sinir.length ? sinir : buyuk;
-      if (tip === sab[3]!.kod || d.pasif) r = (d.pasif ? rs : buyuk)[i % Math.max(1, (d.pasif ? rs : buyuk).length)]!;
+      if (tip === sab[3]!.kod || d.pasif) r = (d.pasif ? tum : buyuk)[i % Math.max(1, (d.pasif ? tum : buyuk).length)]!;
       else if (i % 3 === 2 && !savasVar) r = buyuk[i % Math.min(3, buyuk.length)]!;
       else r = (cephe.length ? cephe : havuz)[(i * 7 + c) % (cephe.length ? cephe : havuz).length]!;
       if (r === undefined) r = baskent[c]!;

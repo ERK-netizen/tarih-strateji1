@@ -12,6 +12,7 @@ import { kayipYaz, birlikKisiCikar } from './nufus.ts';
 import { baslangicItaat } from './siyaset.ts';
 import { kenarKey } from '../state/world.ts';
 import { KOL_E } from '../state/world.ts';
+import { trEk } from '../tr.ts';
 
 export const DURUS = ['Hattı tut', 'Esnek savunma', 'Saldırı', 'Garnizon'] as const;
 
@@ -247,7 +248,7 @@ function geriCekil(w: World, u: number, saldiranlar: number[]): void {
   }
   if (hedef >= 0) {
     U.bolge![u] = hedef; U.hedef![u] = -1; U.sonraki![u] = -1; U.ilerleme![u] = 0;
-    anlat(w, `${birlikAdi(w, u)} ${w.pkg.bolgeler[r]!.ad}'dan ${w.pkg.bolgeler[hedef]!.ad}'a geri çekildi.`, 'muharebe', c, 1);
+    anlat(w, `${birlikAdi(w, u)} ${trEk(w.pkg.bolgeler[r]!.ad, 'den')} ${trEk(w.pkg.bolgeler[hedef]!.ad, 'e')} geri çekildi.`, 'muharebe', c, 1);
     return;
   }
   // teslim: kuşatmada personel esir, ekipmanın yarısı ele geçer
@@ -258,7 +259,7 @@ function geriCekil(w: World, u: number, saldiranlar: number[]): void {
     const e = U[KOL_E[k]!]![u]!;
     w.ekip[ck(dusman, k)] = w.ekip[ck(dusman, k)]! + Math.floor(e / 2);
   }
-  anlat(w, `${ad} ${w.pkg.bolgeler[r]!.ad}'da kuşatıldı ve ${fmtSayi(n)} askeriyle teslim oldu.`, 'muharebe', c, 3);
+  anlat(w, `${ad} ${trEk(w.pkg.bolgeler[r]!.ad, 'de')} kuşatıldı ve ${fmtSayi(n)} askeriyle teslim oldu.`, 'muharebe', c, 3);
   bildir(w, 'teslim', `${ad} teslim oldu`, c, true);
   w.U.release(u);
   void birlikKisiCikar;
