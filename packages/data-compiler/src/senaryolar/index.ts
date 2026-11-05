@@ -3,7 +3,9 @@ import { yaz } from '../senaryo.ts';
 import { S1914 } from './s1914.ts';
 import { S1939 } from './s1939.ts';
 import { S2026 } from './s2026.ts';
+import { S1600 } from './s1600.ts';
+import { S750 } from './s750.ts';
 
 const sec = process.argv.slice(2);
-const hepsi = [S1914, S1939, S2026];
+const hepsi = [S750, S1600, S1914, S1939, S2026];
 yaz(sec.length ? hepsi.filter((s) => sec.includes(s.kimlik)) : hepsi);

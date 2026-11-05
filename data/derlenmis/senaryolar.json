@@ -1,5 +1,333 @@
 [
  {
+  "kimlik": "s750",
+  "ad": "Halifeler ve Krallar",
+  "alt": "750 · Erken Orta Çağ",
+  "aciklama": "1 Ocak 750. Siyah sancaklı Horasan ordusu Irak'ta; II. Mervan son Emevî ordusunu Büyük Zap kıyısında topluyor. Batıda Franklar, Doğuda Tang Çin'i ve Tibet zirvede.",
+  "donem": "orta",
+  "yil": 750,
+  "tarih": "1.1.750",
+  "oneCikan": [
+   {
+    "i": 0,
+    "ad": "Abbâsî Halifeliği",
+    "kisa": "Abbâsîler",
+    "renk": "#3a3a3a",
+    "lider": "Ebu'l-Abbas es-Seffah"
+   },
+   {
+    "i": 1,
+    "ad": "Emevî Halifeliği",
+    "kisa": "Emevîler",
+    "renk": "#e0e0e0",
+    "lider": "II. Mervan"
+   },
+   {
+    "i": 13,
+    "ad": "Bizans İmparatorluğu",
+    "kisa": "Bizans",
+    "renk": "#7a3a8a",
+    "lider": "V. Konstantinos"
+   },
+   {
+    "i": 7,
+    "ad": "Frank Krallığı",
+    "kisa": "Franklar",
+    "renk": "#4f6fa8",
+    "lider": "Kısa Pepin (Kral III. Childeric adına)"
+   },
+   {
+    "i": 23,
+    "ad": "Tang Hanedanı",
+    "kisa": "Tang",
+    "renk": "#c9a066",
+    "lider": "Xuanzong"
+   },
+   {
+    "i": 24,
+    "ad": "Tibet İmparatorluğu",
+    "kisa": "Tibet",
+    "renk": "#c98a5a",
+    "lider": "Me Agtsom"
+   },
+   {
+    "i": 17,
+    "ad": "Hazar Kağanlığı",
+    "kisa": "Hazarlar",
+    "renk": "#4a8ab0",
+    "lider": "Bağatur Kağan"
+   },
+   {
+    "i": 10,
+    "ad": "Lombard Krallığı",
+    "kisa": "Lombardlar",
+    "renk": "#6e9a63",
+    "lider": "Aistulf"
+   },
+   {
+    "i": 26,
+    "ad": "Uygur Kağanlığı",
+    "kisa": "Uygurlar",
+    "renk": "#5ab0c0",
+    "lider": "Bayançur Kağan"
+   },
+   {
+    "i": 5,
+    "ad": "Endülüs Valiliği",
+    "kisa": "Endülüs",
+    "renk": "#2f7a4a",
+    "lider": "Yusuf bin Abdurrahman el-Fihrî"
+   }
+  ],
+  "ulkeSayi": 50
+ },
+ {
+  "kimlik": "s1600",
+  "ad": "Barut ve Keşifler",
+  "alt": "1600 · İmparatorluklar çağı",
+  "aciklama": "1 Ocak 1600. Osmanlı ile Habsburglar Macaristan'da savaşıyor; İspanya hem Felemenk isyanını hem İngiltere'yi bastırmaya çalışıyor. Ekber Şah Dekken'e yürüyor, Şah Abbas Özbeklerle çarpışıyor.",
+  "donem": "barut",
+  "yil": 1600,
+  "tarih": "1.1.1600",
+  "oneCikan": [
+   {
+    "i": 0,
+    "ad": "Osmanlı Devleti",
+    "kisa": "Osmanlı",
+    "renk": "#a0463c",
+    "lider": "III. Mehmed"
+   },
+   {
+    "i": 54,
+    "ad": "İspanya Monarşisi (İberya Birliği)",
+    "kisa": "İspanya",
+    "renk": "#c89c3a",
+    "lider": "III. Felipe (Lerma Dükü)"
+   },
+   {
+    "i": 40,
+    "ad": "Habsburg Monarşisi",
+    "kisa": "Habsburg",
+    "renk": "#c9b27a",
+    "lider": "II. Rudolf"
+   },
+   {
+    "i": 56,
+    "ad": "Fransa Krallığı",
+    "kisa": "Fransa",
+    "renk": "#4f6fa8",
+    "lider": "IV. Henri"
+   },
+   {
+    "i": 57,
+    "ad": "İngiltere Krallığı",
+    "kisa": "İngiltere",
+    "renk": "#b5523b",
+    "lider": "I. Elizabeth"
+   },
+   {
+    "i": 1,
+    "ad": "Safevî Devleti",
+    "kisa": "Safevî",
+    "renk": "#4f9a8f",
+    "lider": "I. Abbas"
+   },
+   {
+    "i": 2,
+    "ad": "Babür İmparatorluğu",
+    "kisa": "Babür",
+    "renk": "#3f8a5a",
+    "lider": "Celaleddin Ekber"
+   },
+   {
+    "i": 3,
+    "ad": "Büyük Ming",
+    "kisa": "Ming",
+    "renk": "#c9a066",
+    "lider": "Wanli İmparatoru"
+   },
+   {
+    "i": 34,
+    "ad": "Lehistan-Litvanya Birliği",
+    "kisa": "Lehistan",
+    "renk": "#c7a1a8",
+    "lider": "III. Zygmunt Waza"
+   },
+   {
+    "i": 33,
+    "ad": "Moskova Çarlığı",
+    "kisa": "Moskova",
+    "renk": "#5f8a5a",
+    "lider": "Boris Godunov"
+   },
+   {
+    "i": 5,
+    "ad": "Japonya (Toyotomi naipliği)",
+    "kisa": "Japonya",
+    "renk": "#d7b6b6",
+    "lider": "Tokugawa İeyasu (Toyotomi Hideyori adına)"
+   },
+   {
+    "i": 49,
+    "ad": "Venedik Cumhuriyeti",
+    "kisa": "Venedik",
+    "renk": "#c86a5a",
+    "lider": "Doj Marino Grimani"
+   }
+  ],
+  "ulkeSayi": 70
+ },
+ {
+  "kimlik": "s1914",
+  "ad": "Büyük Savaş",
+  "alt": "1914 · Birinci Dünya Savaşı",
+  "aciklama": "28 Haziran 1914. Avusturya-Macaristan veliahdı Arşidük Franz Ferdinand Saraybosna'da vuruldu. Bağlaşmalar zinciri Avrupa'yı savaşa sürüklemek üzere.",
+  "donem": "buyuk",
+  "yil": 1914,
+  "tarih": "28.6.1914",
+  "oneCikan": [
+   {
+    "i": 0,
+    "ad": "Alman İmparatorluğu",
+    "kisa": "Almanya",
+    "renk": "#5d6b74",
+    "lider": "II. Wilhelm"
+   },
+   {
+    "i": 4,
+    "ad": "Büyük Britanya ve İrlanda Birleşik Krallığı",
+    "kisa": "Britanya",
+    "renk": "#b5523b",
+    "lider": "V. George (Başbakan H. H. Asquith)"
+   },
+   {
+    "i": 3,
+    "ad": "Fransa Cumhuriyeti",
+    "kisa": "Fransa",
+    "renk": "#4f6fa8",
+    "lider": "Raymond Poincaré"
+   },
+   {
+    "i": 2,
+    "ad": "Rus İmparatorluğu",
+    "kisa": "Rusya",
+    "renk": "#5f8a5a",
+    "lider": "II. Nikolay"
+   },
+   {
+    "i": 1,
+    "ad": "Avusturya-Macaristan İmparatorluğu",
+    "kisa": "Avusturya-Macaristan",
+    "renk": "#c9b27a",
+    "lider": "I. Franz Joseph"
+   },
+   {
+    "i": 6,
+    "ad": "Osmanlı İmparatorluğu",
+    "kisa": "Osmanlı",
+    "renk": "#a0463c",
+    "lider": "V. Mehmed Reşad (Enver, Talât ve Cemal Paşalar)"
+   },
+   {
+    "i": 5,
+    "ad": "İtalya Krallığı",
+    "kisa": "İtalya",
+    "renk": "#6e9a63",
+    "lider": "III. Vittorio Emanuele (Başbakan Antonio Salandra)"
+   },
+   {
+    "i": 37,
+    "ad": "Amerika Birleşik Devletleri",
+    "kisa": "ABD",
+    "renk": "#6b8bb3",
+    "lider": "Woodrow Wilson"
+   },
+   {
+    "i": 7,
+    "ad": "Sırbistan Krallığı",
+    "kisa": "Sırbistan",
+    "renk": "#8a5a74",
+    "lider": "I. Petar (Naip Aleksandar)"
+   }
+  ],
+  "ulkeSayi": 62
+ },
+ {
+  "kimlik": "s1939",
+  "ad": "İkinci Dünya Savaşı",
+  "alt": "1939 · Avrupa ve Asya'da savaş",
+  "aciklama": "1 Eylül 1939. Wehrmacht şafakta Polonya sınırını geçti. Japonya iki yıldır Çin'de savaşıyor. Britanya ve Fransa'nın Polonya'ya verdiği güvence sınanmak üzere.",
+  "donem": "ikinci",
+  "yil": 1939,
+  "tarih": "1.9.1939",
+  "oneCikan": [
+   {
+    "i": 0,
+    "ad": "Alman Reich'ı",
+    "kisa": "Almanya",
+    "renk": "#5d6b74",
+    "lider": "Adolf Hitler"
+   },
+   {
+    "i": 4,
+    "ad": "Büyük Britanya ve Kuzey İrlanda Birleşik Krallığı",
+    "kisa": "Britanya",
+    "renk": "#b5523b",
+    "lider": "VI. George (Başbakan Neville Chamberlain)"
+   },
+   {
+    "i": 3,
+    "ad": "Fransa Cumhuriyeti",
+    "kisa": "Fransa",
+    "renk": "#4f6fa8",
+    "lider": "Albert Lebrun (Başbakan Édouard Daladier)"
+   },
+   {
+    "i": 10,
+    "ad": "Sovyet Sosyalist Cumhuriyetler Birliği",
+    "kisa": "Sovyetler Birliği",
+    "renk": "#a3443b",
+    "lider": "Josef Stalin"
+   },
+   {
+    "i": 16,
+    "ad": "İtalya Krallığı",
+    "kisa": "İtalya",
+    "renk": "#6e9a63",
+    "lider": "III. Vittorio Emanuele (Duçe Benito Mussolini)"
+   },
+   {
+    "i": 43,
+    "ad": "Japonya İmparatorluğu",
+    "kisa": "Japonya",
+    "renk": "#d7b6b6",
+    "lider": "Hirohito (Başbakan Abe Nobuyuki)"
+   },
+   {
+    "i": 47,
+    "ad": "Amerika Birleşik Devletleri",
+    "kisa": "ABD",
+    "renk": "#6b8bb3",
+    "lider": "Franklin D. Roosevelt"
+   },
+   {
+    "i": 2,
+    "ad": "Polonya Cumhuriyeti",
+    "kisa": "Polonya",
+    "renk": "#c7a1a8",
+    "lider": "Ignacy Mościcki (Mareşal Edward Rydz-Śmigły)"
+   },
+   {
+    "i": 40,
+    "ad": "Çin Cumhuriyeti",
+    "kisa": "Çin",
+    "renk": "#c9a066",
+    "lider": "Çan Kay-şek"
+   }
+  ],
+  "ulkeSayi": 68
+ },
+ {
   "kimlik": "s2026",
   "ad": "Modern Dünya",
   "alt": "2026 · Çok kutuplu düzen",

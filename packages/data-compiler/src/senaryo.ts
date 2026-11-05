@@ -157,6 +157,8 @@ export function derle(t: SenaryoTanim): { paket: Paket; ozet: string } {
     return halk[b.iso] ?? ['Yerli', 'yerel'];
   });
   const devletHalk: [string, string][] = devletler.map((d, c): [string, string] => [d.kultur ?? bolgeHalk[baskent[c]!]![0], d.inanc ?? bolgeHalk[baskent[c]!]![1]]);
+  // pasif toplulukların (yerli halklar) bölgeleri kendi halkındandır
+  devletler.forEach((d, c) => { if (d.pasif && d.kultur) H.bolgeler.forEach((_, r) => { if (sahip[r] === c && !t.halkBolge?.[H.bolgeler[r]!.ad]) bolgeHalk[r] = [d.kultur!, d.inanc ?? 'yerel']; }); });
   const kulturler: string[] = [], inanclar: string[] = [];
   const kI = (k: string) => { let i = kulturler.indexOf(k); if (i < 0) { i = kulturler.length; kulturler.push(k); } return i; };
   const iI = (k: string) => { if (!INANC_AD[k]) throw new Error(`${t.kimlik}: bilinmeyen inanç ${k}`); let i = inanclar.indexOf(k); if (i < 0) { i = inanclar.length; inanclar.push(k); } return i; };
