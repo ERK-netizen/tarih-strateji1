@@ -33,10 +33,10 @@ export interface PaketKenar { a: number; b: number; km: number; sinir: number; t
 export interface PaketBirlik { ulke: number; sablon: string; bolge: number; ad: string }
 export interface PaketAnlasma { tur: string; a: number; b: number }
 export interface PaketOlay { kod: string; gun: number }
-export interface PaketEylem { t: string; a?: number; b?: number; v?: number; olay?: string; gecikme?: number; cagri?: boolean }
+export interface PaketEylem { t: string; a?: number; b?: number; d?: number; v?: number; olay?: string; gecikme?: number; cagri?: boolean }
 export interface PaketSenaryoOlay {
   kod: string; gun: number; ulke: number; baslik: string; metin: string; tekrar?: boolean;
-  kosul?: { savasta?: [number, number]; barista?: [number, number] };
+  kosul?: { savasta?: [number, number]; barista?: [number, number]; kontrol?: [number, number]; kontrolDegil?: [number, number] };
   secenekler: { ad: string; etki: string; yz: number; e: PaketEylem[] }[];
 }
 

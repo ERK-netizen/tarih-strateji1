@@ -5,8 +5,10 @@ import { KISILIK, MALI } from '../catalog.ts';
 import { S, mulDiv } from '../num/index.ts';
 import { rng, AMAC, uniformInt } from '../rng/index.ts';
 import { tarih } from '../calendar/index.ts';
-import { anlat, bildir, savastaMi, anlasmaVar } from './ortak.ts';
-import { gerekceBaslat, gorusDegis } from './diplomasi.ts';
+import { anlat, bildir, savastaMi, anlasmaVar, savasta, tarafi, diploDegisti } from './ortak.ts';
+import { gerekceBaslat, gorusDegis, savasIlan, savasaKatil, anlasmaKur, anlasmaBoz, barisUygula } from './diplomasi.ts';
+import type { PaketEylem, PaketSenaryoOlay, Paket } from '../paket.ts';
+import { clamp } from '../num/index.ts';
 import { ulkeGidaGuvence, ulkeGidaStok, HASAT_KUCUK } from './ekonomi.ts';
 
 export interface Secenek { ad: string; etki: string; uygula: (w: World, c: number, p1: number, p2: number) => void; yz: (w: World, c: number) => number }
@@ -96,16 +98,133 @@ export const OLAYLAR: Olay[] = [
     ],
   },
 ];
+
+// ---------- Senaryo paketinin veriyle tanımlı olayları (indeks ≥ 1000) ----------
+export const PAKET_OLAY = 1000;
+const paketOlayOnbellek = new WeakMap<Paket, Olay[]>();
+
+function ulkeVar(w: World, c: number): boolean {
+  if (c < 0 || c >= w.nC) return false;
+  for (let r = 0; r < w.nR; r++) if (w.R.c.kontrolEden[r] === c) return true;
+  return false;
+}
+
+/** Olay koşulu: savaşta/barışta/bölge kontrolü. Koşul tutmazsa olay düşer. */
+export function kosulTutar(w: World, o: PaketSenaryoOlay): boolean {
+  if (!ulkeVar(w, o.ulke)) return false;
+  const k = o.kosul;
+  if (!k) return true;
+  if (k.savasta && !savasta(w, k.savasta[0], k.savasta[1])) return false;
+  if (k.barista && savasta(w, k.barista[0], k.barista[1])) return false;
+  const kk = k as { kontrol?: [number, number]; kontrolDegil?: [number, number] };
+  if (kk.kontrol && w.R.c.kontrolEden[kk.kontrol[0]] !== kk.kontrol[1]) return false;
+  if (kk.kontrolDegil && w.R.c.kontrolEden[kk.kontrolDegil[0]] === kk.kontrolDegil[1]) return false;
+  return true;
+}
+
+const art = (v: number, d: number, ust = 100_000) => clamp(v + d, 0, ust);
+/** Olayla gelen savaş: sessiz, hazır gerekçe (tarihî casus belli). */
+function sessizGerekce(w: World, a: number, b: number): void {
+  const g = w.GR.alloc();
+  w.GR.c.ulke[g] = a; w.GR.c.hedef[g] = b; w.GR.c.bitis[g] = w.gun; w.GR.c.hazir[g] = 1;
+}
+
+/** Veri eylemini uygular. Bilinmeyen eylem yok sayılır. */
+export function eylemUygula(w: World, e: PaketEylem): void {
+  const C = w.C.c;
+  const a = e.a ?? -1, b = e.b ?? -1, v = e.v ?? 0;
+  switch (e.t) {
+    case 'gerekce': if (a >= 0 && b >= 0 && ulkeVar(w, a) && ulkeVar(w, b)) gerekceBaslat(w, a, b, 0); break;
+    case 'savas': {
+      if (a < 0 || b < 0 || !ulkeVar(w, a) || !ulkeVar(w, b) || savasta(w, a, b)) break;
+      anlasmaBoz(w, A.ateskes, a, b, false);
+      anlasmaBoz(w, A.ittifak, a, b, false);
+      sessizGerekce(w, a, b);
+      savasIlan(w, a, b, e.cagri !== false);
+      break;
+    }
+    case 'katil': {
+      // a, b'nin yanında b'nin d ile savaşına katılır (d verilmezse b'nin ilk savaşı)
+      const d = e.d ?? -1;
+      if (a < 0 || b < 0 || !ulkeVar(w, a)) break;
+      let bulundu = false;
+      for (const s of w.SV.list()) {
+        const tb = tarafi(w, s, b);
+        if (tb === 0 || tarafi(w, s, a) !== 0) continue;
+        if (d >= 0 && tarafi(w, s, d) !== (tb === 1 ? 2 : 1)) continue;
+        if (d >= 0) anlasmaBoz(w, A.ateskes, a, d, false);
+        savasaKatil(w, s, a, tb === 1 ? 0 : 1);
+        bulundu = true;
+        break;
+      }
+      if (!bulundu && d >= 0 && ulkeVar(w, d) && !savasta(w, a, d)) { sessizGerekce(w, a, d); savasIlan(w, a, d, true); }
+      break;
+    }
+    case 'baris': if (a >= 0 && b >= 0 && savasta(w, a, b)) barisUygula(w, a, b, 0, []); break;
+    case 'gorus': if (a >= 0 && b >= 0) { gorusDegis(w, a, b, v); if (e.olay === 'karsilikli') gorusDegis(w, b, a, v); } break;
+    case 'huzur': if (a >= 0) C.huzur[a] = art(C.huzur[a]!, v); break;
+    case 'mesru': if (a >= 0) C.mesru[a] = art(C.mesru[a]!, v); break;
+    case 'destek': if (a >= 0) C.destek[a] = art(C.destek[a]!, v); break;
+    case 'pg': if (a >= 0) C.pg[a] = art(C.pg[a]!, v, 500_000); break;
+    case 'hazine': if (a >= 0) C.hazine[a] = C.hazine[a]! + v; break;
+    case 'gerginlik': if (a >= 0) C.gerginlik[a] = Math.max(0, C.gerginlik[a]! + v); break;
+    case 'ittifak': case 'ticaret': case 'saldirmazlik': case 'garanti': case 'gecis':
+      if (a >= 0 && b >= 0 && !savasta(w, a, b)) anlasmaKur(w, (A as Record<string, number>)[e.t]!, a, b);
+      break;
+    case 'boz': if (a >= 0 && b >= 0) anlasmaBoz(w, v, a, b, false); break;
+    case 'bolge': {
+      // a: bölge, b: yeni sahip (ilhak/devir)
+      if (a < 0 || a >= w.nR || b < 0) break;
+      const R = w.R.c;
+      R.sahip[a] = b; R.kontrolEden[a] = b; R.itaat[a] = 0; R.direnis[a] = 10_000; R.kontrol[a] = 30_000; R.anaYurtGun[a] = 0;
+      diploDegisti(w);
+      break;
+    }
+    case 'olay': {
+      if (!e.olay) break;
+      const i = w.pkg.olaylar?.findIndex((o) => o.kod === e.olay) ?? -1;
+      if (i >= 0) olayPlanlaIdx(w, PAKET_OLAY + i, w.pkg.olaylar![i]!.ulke, w.gun + (e.gecikme ?? 0));
+      break;
+    }
+  }
+}
+
+function paketOlaylari(w: World): Olay[] {
+  let l = paketOlayOnbellek.get(w.pkg);
+  if (l) return l;
+  l = (w.pkg.olaylar ?? []).map((o) => ({
+    kod: o.kod, baslik: o.baslik,
+    metin: () => o.metin,
+    secenekler: o.secenekler.map((x) => ({
+      ad: x.ad, etki: x.etki,
+      uygula: (ww: World) => { for (const e of x.e) eylemUygula(ww, e); },
+      yz: () => x.yz,
+    })),
+  }));
+  paketOlayOnbellek.set(w.pkg, l);
+  return l;
+}
+
+/** Olay tanımı (yerleşik ya da paket). */
+export function olayTanim(w: World, idx: number): Olay {
+  if (idx >= PAKET_OLAY) return paketOlaylari(w)[idx - PAKET_OLAY]!;
+  return OLAYLAR[idx]!;
+}
+
 export const olayIdx = (kod: string) => OLAYLAR.findIndex((o) => o.kod === kod);
+
+function olayPlanlaIdx(w: World, idx: number, c: number, gun: number, p1 = 0, p2 = 0): void {
+  const s = w.OL.alloc();
+  w.OL.c.olay[s] = idx; w.OL.c.ulke[s] = c; w.OL.c.gun[s] = gun; w.OL.c.p1[s] = p1; w.OL.c.p2[s] = p2; w.OL.c.secim[s] = -1;
+}
 
 /** Olay kaydı: oyuncu için bekleyen seçim; YZ için P11'de anahtarlı seçim. */
 export function olayPlanla(w: World, kod: string, c: number, gun: number, p1 = 0, p2 = 0): void {
-  const s = w.OL.alloc();
-  w.OL.c.olay[s] = olayIdx(kod); w.OL.c.ulke[s] = c; w.OL.c.gun[s] = gun; w.OL.c.p1[s] = p1; w.OL.c.p2[s] = p2; w.OL.c.secim[s] = -1;
+  olayPlanlaIdx(w, olayIdx(kod), c, gun, p1, p2);
 }
 
 export function olaySecimUygula(w: World, s: number, secim: number): void {
-  const o = OLAYLAR[w.OL.c.olay[s]!]!;
+  const o = olayTanim(w, w.OL.c.olay[s]!);
   const c = w.OL.c.ulke[s]!;
   const sec = o.secenekler[secim] ?? o.secenekler[0]!;
   sec.uygula(w, c, w.OL.c.p1[s]!, w.OL.c.p2[s]!);
@@ -114,7 +233,7 @@ export function olaySecimUygula(w: World, s: number, secim: number): void {
 }
 
 function yzSecim(w: World, s: number): number {
-  const o = OLAYLAR[w.OL.c.olay[s]!]!;
+  const o = olayTanim(w, w.OL.c.olay[s]!);
   const c = w.OL.c.ulke[s]!;
   const puan = o.secenekler.map((x) => Math.max(1, x.yz(w, c)));
   const top = puan.reduce((a, b) => a + b, 0);
@@ -130,10 +249,13 @@ export function olayGunu(w: World): void {
     const g = w.OL.c.gun[s]!;
     if (g > w.gun) continue;
     const c = w.OL.c.ulke[s]!;
+    const idx = w.OL.c.olay[s]!;
+    if (idx >= PAKET_OLAY && g === w.gun && !kosulTutar(w, w.pkg.olaylar![idx - PAKET_OLAY]!)) { w.OL.release(s); continue; }
     if (c === w.oyuncu && w.mod !== 2) {
       if (g === w.gun) {
-        const o = OLAYLAR[w.OL.c.olay[s]!]!;
+        const o = olayTanim(w, idx);
         bildir(w, 'olay', o.baslik, c, true);
+        if (idx >= PAKET_OLAY) anlat(w, `${o.baslik}: ${o.metin(w, c, 0)}`, 'kriz', c, 3);
       }
       if (w.gun - g >= 30) olaySecimUygula(w, s, yzSecim(w, s));
       continue;
@@ -163,6 +285,12 @@ export function hasatAnlat(w: World): void {
 }
 
 export function acilisOlaylari(w: World): void {
+  if (w.pkg.olaylar) {
+    // veri olayları: tarihi belli olanlar planlanır (gun < 0: yalnız zincirle tetiklenir)
+    w.pkg.olaylar.forEach((o, i) => { if (o.gun >= w.gun) olayPlanlaIdx(w, PAKET_OLAY + i, o.ulke, o.gun); });
+    if (w.pkg.aciklama) anlat(w, w.pkg.aciklama, 'kriz', -1, 2);
+    return;
+  }
   olayPlanla(w, 'suikast', DMR, w.gun);
   anlat(w, `28 Haziran 1914. Dört taht arasındaki eski hesaplar yeniden açılmak üzere.`, 'kriz', -1, 2);
 }

@@ -3,7 +3,7 @@ import type { World } from '../state/world.ts';
 import { ck, kenarKey, T_GIDA, T_MUH, T_EKIP, T_KISI, T_PARA, T_MAL, H_EYALET, H_BIRLIK, H_ULKE, hc } from '../state/world.ts';
 import { EKIPMAN, AILE_EKIP, K, ST, YB, MUHIMMAT } from '../catalog.ts';
 import { S, mulDiv, mulRatio, largestRemainder, clamp } from '../num/index.ts';
-import { uc, rota, dostBolge, kenarKapasite, birlikGidaGun, birlikMuhimmatGunU, birlikIhtiyac, anlat } from './ortak.ts';
+import { uc, rotaTip, dostBolge, kenarKapasite, birlikGidaGun, birlikMuhimmatGunU, birlikIhtiyac, anlat } from './ortak.ts';
 import { askerCek, kokenEkle } from '../state/world.ts';
 import { malEkle, eyaletDengeTalepleri, enYakinEyalet } from './ekonomi.ts';
 import { hashV1 } from '../hash/index.ts';
@@ -160,7 +160,7 @@ export interface TahsisSonuc { olcek: number[]; rotalar: ({ yol: number[]; km: n
 /** Tek rota tahsisi (14.2): sınıf sırası, kaynak stoğu ve kenar darboğazıyla orantılı küçültme, atomik rezervasyon. */
 export function tahsis(w: World, talepler: Talep[]): TahsisSonuc {
   const n = talepler.length;
-  const rotalar = talepler.map((t) => rota(w, t.kaynakBolge, t.hedefBolge, (r) => dostBolge(w, t.ulke, r)));
+  const rotalar = talepler.map((t) => rotaTip(w, t.ulke, 1, t.kaynakBolge, t.hedefBolge));
   // önbellek anahtarı (7.4): rota epoch'u, talep vektörü, kapasite vektörü, stok uygunluğu
   let anahtar = '';
   if (!w.ayarlar.onbellekKapali) {

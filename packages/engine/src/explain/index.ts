@@ -3,6 +3,7 @@ import type { World } from '../state/world.ts';
 import { huzurHedefi, mesruHedefi, destekHedefi, pgGeliri, kontrolHedefi, yonetimKapasitesi, yasamDuzeyi } from '../systems/siyaset.ts';
 import { bolgeVergi, zorunluGider, ulkeGidaStok, ulkeGidaGuvence, isgalErisim, tarimUretim } from '../systems/ekonomi.ts';
 import { ISGAL } from '../catalog.ts';
+import { eyaletUlke } from '../systems/ortak.ts';
 import { fmt } from '../orders.ts';
 
 export interface Aciklama { baslik: string; deger: string; satirlar: { ad: string; deger: string; isaret?: number }[]; not?: string }
@@ -53,7 +54,7 @@ export function acikla(w: World, kimlik: string, gozlemci: number): Aciklama {
     }
     case 'gida': {
       const { stok, gunluk } = ulkeGidaStok(w, n);
-      const sat = w.pkg.eyaletler.map((e, i) => ({ e, i })).filter(({ e }) => e.ulke === n).map(({ e, i }) => ({ ad: e.ad, deger: `${fmt(Math.floor(w.E.c.gida[i]! / 1000))} birim · ${w.E.c.ihtiyacDun[i]! > 0 ? Math.floor(w.E.c.gida[i]! / w.E.c.ihtiyacDun[i]!) : '∞'} gün · güvence ${yz(w.E.c.guvence[i]!)}` }));
+      const sat = w.pkg.eyaletler.map((e, i) => ({ e, i })).filter(({ i }) => eyaletUlke(w, i) === n).map(({ e, i }) => ({ ad: e.ad, deger: `${fmt(Math.floor(w.E.c.gida[i]! / 1000))} birim · ${w.E.c.ihtiyacDun[i]! > 0 ? Math.floor(w.E.c.gida[i]! / w.E.c.ihtiyacDun[i]!) : '∞'} gün · güvence ${yz(w.E.c.guvence[i]!)}` }));
       let uretim = 0;
       for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === n && w.R.c.kontrolEden[r] === n) uretim += w.R.c.uretimDun[r]!;
       sat.unshift({ ad: 'Günlük üretim / ihtiyaç', deger: `${fmt(Math.floor(uretim / 1000))} / ${fmt(Math.floor(gunluk / 1000))} birim` });

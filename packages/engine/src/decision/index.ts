@@ -38,15 +38,28 @@ function ulkeGucuGozlem(w: World, gozlemci: number, hedef: number): number {
   return t;
 }
 function kendiGuc(w: World, c: number): number {
-  const U = uc(w);
   let t = 0;
-  for (const u of w.U.rows()) if (U.ulke![u] === c) { const s = birlikIstat(w, u); t += s.YS + s.SV; }
+  for (const u of ulkeBirimleri(w, c)) { const s = birlikIstat(w, u); t += s.YS + s.SV; }
   return t;
+}
+/** Ülkenin birlikleri (faz içinde önbellekli; birlik kurulup dağıtılınca yenilenir). */
+function ulkeBirimleri(w: World, c: number): number[] {
+  const d = `${w.gun}|${w.U.hw}|${w.U.free.length}|${(w.onbellek.get('faz') as number | undefined) ?? 0}`;
+  let o = w.onbellek.get('ulkeBirim') as { d: string; m: number[][] } | undefined;
+  if (!o || o.d !== d) {
+    const U = uc(w);
+    const m: number[][] = Array.from({ length: w.nC }, () => []);
+    for (const u of w.U.list()) m[U.ulke![u]!]!.push(u);
+    o = { d, m };
+    w.onbellek.set('ulkeBirim', o);
+  }
+  return o.m[c]!;
 }
 
 /** P2: her YZ ülkesi için acil (günlük) ve planlama kararları. */
 export function kararGunu(w: World): void {
   for (let c = 0; c < w.nC; c++) {
+    if (pasif(w, c) && c !== w.oyuncu) continue; // pasif topluluklar karar vermez
     const oyuncu = c === w.oyuncu && w.mod !== 2;
     if (!oyuncu || w.C.c.otoCephe[c]) cepheYonet(w, c);
     if (oyuncu) { oyuncuKalici(w, c); continue; }
@@ -78,6 +91,7 @@ export function teklifYanitlari(w: World): void {
 }
 
 function kabulEder(w: World, b: number, a: number, tur: number, p1: number, p2: number, istenen: number[]): boolean {
+  if (pasif(w, b) && tur !== TK.baris) return false;
   const g = gorus(w, b, a);
   const kis = KISILIK[w.pkg.ulkeler[b]!.kisilik]!;
   const tehdit = dusmanlar(w, b).length > 0;
@@ -219,10 +233,10 @@ function totalFab(w: World, c: number): number {
 function orduPlan(w: World, c: number): void {
   const C = w.C.c;
   const U = uc(w);
-  const birlik = w.U.list().filter((u) => U.ulke![u] === c).length;
+  const birlik = ulkeBirimleri(w, c).length;
   const ig = insanGucu(w, c);
   const savas = savastaMi(w, c);
-  const tehdit = w.pkg.ulkeler.some((_, d) => d !== c && (gerekceSurecte(w, d, c) >= 0 || (gorus(w, c, d) < 30_000 && sinirKomsusu(w, c, d))));
+  const tehdit = w.pkg.ulkeler.some((_, d) => d !== c && !pasif(w, d) && (gerekceSurecte(w, d, c) >= 0 || (gorus(w, c, d) < 30_000 && sinirKomsusu(w, c, d))));
   let nufus = 0;
   for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === c) for (let k = 0; k < 32; k++) nufus += w.pop[r * 32 + k]!;
   const taban = Math.max(3, Math.floor(nufus / 400_000));
@@ -243,7 +257,7 @@ function diplomasiPlan(w: World, c: number): void {
   const kis = KISILIK[w.pkg.ulkeler[c]!.kisilik]!;
   // anlaşma önerileri
   for (let d = 0; d < w.nC; d++) {
-    if (d === c || savasta(w, c, d)) continue;
+    if (d === c || savasta(w, c, d) || pasif(w, d)) continue;
     const g = gorus(w, d, c), benim = gorus(w, c, d);
     if (benim < 25_000) continue;
     if (g >= ESIK[TK.ticaret]! && anlasmaVar(w, A.ticaret, c, d) < 0) { emir(w, c, 'teklif', { kime: d, tip: TK.ticaret }); continue; }
@@ -252,7 +266,7 @@ function diplomasiPlan(w: World, c: number): void {
   }
   // tutum
   for (let d = 0; d < w.nC; d++) {
-    if (d === c) continue;
+    if (d === c || (pasif(w, d) && !savasta(w, c, d))) continue;
     const istenen = savasta(w, c, d) || gerekceSurecte(w, d, c) >= 0 ? 3 : gorus(w, c, d) >= 70_000 ? 0 : gorus(w, c, d) < 30_000 ? 2 : 1;
     if (w.tutum[c * w.nC + d] !== istenen) emir(w, c, 'tutum', { kime: d, tutum: istenen });
   }
@@ -261,7 +275,7 @@ function diplomasiPlan(w: World, c: number): void {
   if (savastaMi(w, c)) return;
   if (w.C.c.yorgunluk[c]! > 25_000) return;
   for (let d = 0; d < w.nC; d++) {
-    if (d === c || anlasmaVar(w, A.ateskes, c, d) >= 0 || anlasmaVar(w, A.ittifak, c, d) >= 0) continue;
+    if (d === c || pasif(w, d) || anlasmaVar(w, A.ateskes, c, d) >= 0 || anlasmaVar(w, A.ittifak, c, d) >= 0) continue;
     if (!sinirKomsusu(w, c, d)) continue;
     let onunGuc = ulkeGucuGozlem(w, c, d);
     // garantör ve müttefiklerin gücü
@@ -321,30 +335,42 @@ function cepheYonet(w: World, c: number): void {
   const U = uc(w);
   const kis = w.pkg.ulkeler[c]!.kisilik;
   const esik = c === w.oyuncu ? 1_500_000 : ESIK_SALDIRI[kis]!;
-  const birimler = w.U.list().filter((u) => U.ulke![u] === c && U.egitimBitis![u]! <= w.gun);
+  const birimler = ulkeBirimleri(w, c).filter((u) => U.egitimBitis![u]! <= w.gun);
   if (birimler.length === 0) return;
-  const gozlem = gozlenenGuc(w, c);
   const dusman = dusmanlar(w, c);
   const savas = dusman.length > 0;
   const R = w.R.c;
-  // sınır bölgeleri ve tehdit
-  const tehdit = new Map<number, number>();
+  // sınır bölgeleri: önce gözlemsiz tarama (barış içindeki ülkeler için erken çıkış)
+  const sinirlarHam: { r: number; v: number[] }[] = [];
+  const sicak = new Map<number, boolean>();
+  const hasim = (k: number): boolean => {
+    let h = sicak.get(k);
+    if (h === undefined) { h = savasta(w, c, k) || (!pasif(w, k) && (gerekceSurecte(w, k, c) >= 0 || gorus(w, c, k) < 30_000)); sicak.set(k, h); }
+    return h;
+  };
   for (let r = 0; r < w.nR; r++) {
-    if (R.kontrolEden[r] !== c && !(R.sahip[r] === c && !savasta(w, c, R.kontrolEden[r]!))) continue;
     if (R.kontrolEden[r] !== c) continue;
-    let t = 0, sinir = false;
+    const vs: number[] = [];
     for (const v of w.komsuluk[r]!) {
       const k = R.kontrolEden[v]!;
       if (k === c || essavasan(w, c, k)) continue;
+      if (hasim(k)) vs.push(v);
+    }
+    if (vs.length) sinirlarHam.push({ r, v: vs });
+  }
+  if (sinirlarHam.length === 0) return;
+  const gozlem = gozlenenGuc(w, c);
+  const tehdit = new Map<number, number>();
+  for (const { r, v: vs } of sinirlarHam) {
+    let t = 0;
+    for (const v of vs) {
+      const k = R.kontrolEden[v]!;
       const dus = savasta(w, c, k);
-      const soguk = !dus && (gerekceSurecte(w, k, c) >= 0 || gorus(w, c, k) < 30_000);
-      if (!dus && !soguk) continue;
-      sinir = true;
       const o = gozlem.get(v);
       if (o) for (const [u2, gg] of o) if (u2 === k || savasta(w, c, u2)) t += gg;
       t += dus ? 20_000 : 5000;
     }
-    if (sinir) tehdit.set(r, t);
+    tehdit.set(r, t);
   }
   if (tehdit.size === 0) {
     // barış ve tehdit yok: birlikler başkent ve eyalet merkezlerinde beklesin
@@ -413,7 +439,7 @@ function cepheYonet(w: World, c: number): void {
     for (const [s, ih] of ihtiyac) {
       const acik = ih - (mevcut.get(s) ?? 0);
       if (acik > bestAcik || (acik === bestAcik && acik > 0 && s < best)) {
-        if (!rota(w, U.bolge![u]!, s, (x) => girebilir(w, c, x) && !savasta(w, c, w.R.c.kontrolEden[x]!))) continue;
+        if (!rotaTip(w, c, 2, U.bolge![u]!, s)) continue;
         best = s; bestAcik = acik;
       }
     }

@@ -13,8 +13,9 @@ import { aylikSiyaset, aylikKontrol } from '../systems/siyaset.ts';
 import { aylikDiplomasi, gerekceGunu } from '../systems/diplomasi.ts';
 import { olayGunu, aylikOlaylar, hasatAnlat, acilisOlaylari } from '../systems/olaylar.ts';
 import { serilestir } from '../serialize/index.ts';
+import { fazDegisti } from '../observe/index.ts';
 import { hashV1 } from '../hash/index.ts';
-import { uc, anlat, savasta as ortakSavasta } from '../systems/ortak.ts';
+import { uc, anlat, savasta as ortakSavasta, eyaletUlke } from '../systems/ortak.ts';
 import { sayac } from '../num/index.ts';
 import { yeniDunya } from '../state/world.ts';
 import type { Paket } from '../paket.ts';
@@ -69,10 +70,13 @@ export function gunIlerle(w: World): GunSonuc {
     const r = uygula(w, k.emir as Emir);
     if (!r.ok && (k.emir as Emir).ulke === w.oyuncu) anlat(w, `Emir uygulanamadı: ${r.neden ?? ''}`, 'emir', w.oyuncu, 1);
   }
+  fazDegisti(w);
   kararGunu(w);
+  fazDegisti(w);
   // P3: diplomasi
   teklifYanitlari(w);
   gerekceGunu(w);
+  fazDegisti(w);
   // P4: varışlar
   varislar(w);
   // P5–P6: üretim, sivil gıda, sanayi, araştırma, lojistik
@@ -86,16 +90,19 @@ export function gunIlerle(w: World): GunSonuc {
   birlikTuketim(w);
   pazarTemizle(w);
   yaraliIyilestir(w);
+  fazDegisti(w);
   // P8–P10: kara
   const muh = hareketGunu(w);
   muharebeGunu(w, muh);
   sonucGunu(w, muh);
+  fazDegisti(w);
   // P11: olaylar ve durma koşulları
   olayGunu(w);
   durmaKosullari(w);
   // P12: bütünlük, hash, yayımla
   butunluk(w, n0);
   w.surum += 1;
+  fazDegisti(w);
   const bayt = serilestir(w);
   const hash = hashV1(bayt);
   const durmalar = w.bildirim.filter((b) => b.durdur && (b.ulke === w.oyuncu || b.ulke < 0 || ['savas', 'baris'].includes(b.tur)));
@@ -108,7 +115,7 @@ function durmaKosullari(w: World): void {
   const ui = (w.onbellek.get('ui') as { gidaUyari: boolean } | undefined) ?? { gidaUyari: false };
   // gıda: son 7 günün oranı 0,50 altına geçiş; 0,60 üstüne çıkmadan yeniden kurulmaz (histerezis)
   let ih = 0, k = 0;
-  for (let e = 0; e < w.nE; e++) if (w.pkg.eyaletler[e]!.ulke === c) { ih += w.E.c.ihtiyacDun[e]!; k += w.E.c.karsilananDun[e]!; }
+  for (let e = 0; e < w.nE; e++) if (eyaletUlke(w, e) === c) { ih += w.E.c.ihtiyacDun[e]!; k += w.E.c.karsilananDun[e]!; }
   const oran = ih > 0 ? Math.floor((k * 1_000_000) / ih) : 1_000_000;
   if (!ui.gidaUyari && oran < 500_000) { ui.gidaUyari = true; w.bildirim.push({ tur: 'gida', metin: 'Kritik gıda açığı: halkın yarısından fazlası aç', ulke: c, durdur: true, gun: w.gun, kimlik: w.bildirim.length }); }
   else if (ui.gidaUyari && oran > 600_000) ui.gidaUyari = false;

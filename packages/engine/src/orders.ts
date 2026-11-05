@@ -3,11 +3,11 @@ import type { World } from './state/world.ts';
 import { A, ck, birlikKur, sablonIhtiyac, hatEkle, URUN_MUH, toplamAskeriFabrika } from './state/world.ts';
 import { ASKERLIK, EKONOMI, ISGAL, YONETIM, SABLON, TEKNOLOJI, NTEK, PROJE, MAL, BUTCE, TUTUM, EKIPMAN, MALI, K, BAYRAK, NEKIP } from './catalog.ts';
 import { S, mulDiv, clamp } from './num/index.ts';
-import { uc, savasta, savastaMi, gorus, anlasmaVar, birlikAdi, girebilir, rota, bildir, anlat, ulkeBirlikleri, iddiaVar } from './systems/ortak.ts';
+import { uc, savasta, savastaMi, gorus, anlasmaVar, birlikAdi, girebilir, rota, rotaTip, bildir, anlat, ulkeBirlikleri, iddiaVar } from './systems/ortak.ts';
 import { askerlikAktar, insanGucu, terhis } from './systems/nufus.ts';
 import { tekMaliyetHesapla, krediLimiti, ulkeGidaStok, malStok } from './systems/ekonomi.ts';
 import { TK, TK_AD, ESIK, teklifEkle, anlasmaKur, anlasmaBoz, gerekceBaslat, gerekceSurecte, gerekceVar, savasIlan, savasaKatil, barisKabul, barisUygula, gorusDegis, teklifBolgeleri, ekipmanFiyat, BARIS_TUR } from './systems/diplomasi.ts';
-import { olaySecimUygula, OLAYLAR } from './systems/olaylar.ts';
+import { olaySecimUygula, olayTanim } from './systems/olaylar.ts';
 
 export type Emir = { tur: string; ulke: number } & Record<string, unknown>;
 
@@ -133,7 +133,7 @@ export function onizle(w: World, e: Emir): Kart {
       for (const u of bs) {
         if (U.ulke![u] !== c) return red('Hareket', `${birlikAdi(w, u)} size ait değil.`);
         if (U.egitimBitis![u]! > w.gun) return red('Hareket', `${birlikAdi(w, u)} eğitimde (${U.egitimBitis![u]! - w.gun} gün).`);
-        const y = rota(w, U.bolge![u]!, hedef, (x) => girebilir(w, c, x));
+        const y = rotaTip(w, c, 0, U.bolge![u]!, hedef);
         if (!y) return red('Hareket', `${birlikAdi(w, u)} için ${bAd(w, hedef)}'a izinli yol yok (geçiş hakkı veya savaş gerekir).`);
         const gun = Math.max(1, Math.floor(y.km / 20));
         enUzun = Math.max(enUzun, gun);
@@ -287,7 +287,7 @@ export function onizle(w: World, e: Emir): Kart {
     case 'olaySec': {
       const s = w.OL.resolve(n(e.olay, -1));
       if (s < 0 || w.OL.c.ulke[s] !== c) return red('Olay', 'Bekleyen olay yok.');
-      const o = OLAYLAR[w.OL.c.olay[s]!]!;
+      const o = olayTanim(w, w.OL.c.olay[s]!);
       const sec = o.secenekler[n(e.secim)];
       if (!sec) return red('Olay', 'Seçenek yok.');
       return { gecerli: true, baslik: o.baslik, kapsam: sec.ad, bugun: [sec.etki], tahmin: [], iptal: 'Geri alınamaz' };

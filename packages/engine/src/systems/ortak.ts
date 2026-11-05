@@ -108,6 +108,8 @@ export function iddiaSil(w: World, r: number, c: number): void {
   for (let i = 0; i < IDDIA_MAX; i++) if (w.iddia[r * IDDIA_MAX + i] === c + 1) w.iddia[r * IDDIA_MAX + i] = 0;
 }
 export function pasif(w: World, c: number): boolean { return w.C.c.pasif[c] === 1; }
+/** Eyaletin bugünkü sahibi: merkez bölgesinin sahibi (barışla el değiştirir). */
+export function eyaletUlke(w: World, e: number): number { return w.R.c.sahip[w.pkg.eyaletler[e]!.merkez]!; }
 
 // ---------- Mevsim ----------
 export function ay(w: World): number { return tarih(w.gun).m - 1; }
@@ -348,12 +350,21 @@ export function kuvvet(w: World, c: number): number {
   return t;
 }
 
-export function sinirKomsusu(w: World, a: number, b: number): boolean {
+/** nC × nC kontrol komşuluğu (rotaEpoch ile önbellekli; kontrol devri epoch'u artırır). */
+function komsuMatris(w: World): Uint8Array {
+  const o = w.onbellek.get('komsuM') as { e: number; m: Uint8Array } | undefined;
+  if (o && o.e === w.rotaEpoch) return o.m;
+  const n = w.nC, m = new Uint8Array(n * n), K_ = w.R.c.kontrolEden;
   for (let r = 0; r < w.nR; r++) {
-    if (w.R.c.kontrolEden[r] !== a) continue;
-    for (const v of w.komsuluk[r]!) if (w.R.c.kontrolEden[v] === b) return true;
+    const a = K_[r]!;
+    for (const v of w.komsuluk[r]!) { const b = K_[v]!; if (a !== b) { m[a * n + b] = 1; m[b * n + a] = 1; } }
   }
-  return false;
+  w.onbellek.set('komsuM', { e: w.rotaEpoch, m });
+  return m;
+}
+export function sinirKomsusu(w: World, a: number, b: number): boolean {
+  if (a < 0 || b < 0 || a === b) return false;
+  return komsuMatris(w)[a * w.nC + b] === 1;
 }
 
 export function ulkeBolgeleri(w: World, c: number, kontrol = true): number[] {

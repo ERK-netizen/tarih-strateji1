@@ -183,6 +183,9 @@ export const K = {
   idariGider: 120, // mili-altın / kişi / yıl → günlük idari gider tabanı
   bozulmaAylik: 5000, // gıda aylık bozulma S ölçekli %0,5
   kenarKapasite: 600_000, // milibirim taşıma / gün taban
+  bogazHiz: 100, // km/gün boğaz geçişi (VARSAYILAN, Ek A K-21)
+  okyanusHiz: 250, // km/gün açık deniz nakliyesi
+  cikarmaCarpan: 600_000, // denizden çıkarma saldırı çarpanı
   birlikErzakGun: 7,
   yaraliGun: 60,
   dogumYillik: 30_000, // nominal yıllık doğum %3 (S)

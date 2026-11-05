@@ -29,7 +29,7 @@ export function ozet(w: World) {
     otoCephe: C.otoCephe[P]!, otoTakviye: C.otoTakviye[P]!, kaliciGida: C.kaliciGida[P]!, harcamaOran: C.harcamaOran[P]!,
     borc: C.borc[P]!, krediLimit: ekonomi.krediLimiti(w, P), faiz: C.faiz[P]!, muhimmat: C.muhimmat[P]!, yasam: siyaset.yasamDuzeyi(w, P),
     olaylar: w.OL.list().filter((s) => w.OL.c.ulke[s] === P && w.OL.c.gun[s]! <= w.gun).map((s) => {
-      const o = olaylar.OLAYLAR[w.OL.c.olay[s]!]!;
+      const o = olaylar.olayTanim(w, w.OL.c.olay[s]!);
       return { id: w.OL.id(s), baslik: o.baslik, metin: o.metin(w, P, w.OL.c.p1[s]!), secenekler: o.secenekler.map((x) => ({ ad: x.ad, etki: x.etki })), kalan: 30 - (w.gun - w.OL.c.gun[s]!) };
     }),
     teklifler: w.TK.list().filter((s) => w.TK.c.kime[s] === P && w.TK.c.durum[s] === 0).map((s) => teklifOzet(w, s)),

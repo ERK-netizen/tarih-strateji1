@@ -5,7 +5,7 @@ import { ARAZI, K, EKIPMAN, NEKIP, ST, YB, NTEK, tekIdx } from '../catalog.ts';
 import { S, mulDiv, mulRatio, clamp, largestRemainder } from '../num/index.ts';
 import { rng, AMAC, combatR } from '../rng/index.ts';
 import {
-  uc, rota, girebilir, savasta, essavasan, muttefik, birlikIstat, birlikIkmal, birlikGidaGun, birlikMuhimmatGunU,
+  uc, rotaTip, kenarTur, girebilir, savasta, essavasan, muttefik, birlikIstat, birlikIkmal, birlikGidaGun, birlikMuhimmatGunU,
   deneyimCarpan, hareketMevsim, camurDuzey, kisDuzey, birlikAdi, anlat, bildir, fmtSayi,
 } from './ortak.ts';
 import { kayipYaz, birlikKisiCikar } from './nufus.ts';
@@ -38,7 +38,7 @@ export function hareketGunu(w: World): Muharebe[] {
     const c = U.ulke![u]!;
     const r = U.bolge![u]!;
     if (r === hedef) { U.hedef![u] = -1; U.sonraki![u] = -1; continue; }
-    const y = rota(w, r, hedef, (x) => girebilir(w, c, x));
+    const y = rotaTip(w, c, 0, r, hedef);
     if (!y || y.yol.length < 2) { U.hedef![u] = -1; continue; }
     const sonraki = y.yol[1]!;
     if (U.sonraki![u] !== sonraki) { U.sonraki![u] = sonraki; U.ilerleme![u] = 0; }
@@ -52,12 +52,18 @@ export function hareketGunu(w: World): Muharebe[] {
     }
     // ilerleme
     const ist = birlikIstat(w, u);
+    const deniz = kenarTur(w, r, sonraki);
     let hiz = ist.hiz * 1000;
-    hiz = mulRatio(hiz, hareketMevsim(w, sonraki)).q;
-    hiz = mulRatio(hiz, ARAZI[w.pkg.bolgeler[sonraki]!.arazi]!.hareket).q;
-    const demir = w.R.c.demiryolu[r]! >= 1 && w.R.c.demiryolu[sonraki]! >= 1 && w.R.c.kontrolEden[r] === c && w.R.c.kontrolEden[sonraki] === c;
-    if (demir) hiz *= 3;
-    if (U.org![u]! < mulDiv(ist.orgMax, 100_000, S).q) hiz = Math.floor(hiz / 2);
+    if (deniz > 0) {
+      // deniz intikali: sabit hız (boğaz geçişi / açık deniz nakliyesi)
+      hiz = (deniz === 1 ? K.bogazHiz : K.okyanusHiz) * 1000;
+    } else {
+      hiz = mulRatio(hiz, hareketMevsim(w, sonraki)).q;
+      hiz = mulRatio(hiz, ARAZI[w.pkg.bolgeler[sonraki]!.arazi]!.hareket).q;
+      const demir = w.R.c.demiryolu[r]! >= 1 && w.R.c.demiryolu[sonraki]! >= 1 && w.R.c.kontrolEden[r] === c && w.R.c.kontrolEden[sonraki] === c;
+      if (demir) hiz *= 3;
+      if (U.org![u]! < mulDiv(ist.orgMax, 100_000, S).q) hiz = Math.floor(hiz / 2);
+    }
     U.ilerleme![u] = U.ilerleme![u]! + hiz;
     const km = (w.kenarKm.get(kenarKey(r, sonraki)) ?? 150) * 1000;
     if (U.ilerleme![u]! >= km) {
@@ -125,6 +131,7 @@ export function muharebeGunu(w: World, list: Muharebe[]): void {
       v = mulRatio(v, S - sGen.ceza).q;
       v = mulRatio(v, r(u, 0)).q;
       if (birlikIkmal(w, u).muh <= 0) v = mulRatio(v, 500_000).q;
+      if (kenarTur(w, U.bolge![u]!, b) > 0) v = mulRatio(v, K.cikarmaCarpan).q; // denizden çıkarma
       return { u, v, k: s.YR, gen: Math.max(1, s.genislik), orgMax: s.orgMax };
     });
     const sav: Taraf[] = dGen.aktif.map((u) => {

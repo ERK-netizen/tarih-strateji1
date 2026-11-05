@@ -5,7 +5,7 @@ import { ST, YB, NHUCRE, K, EKONOMI, YONETIM, ISGAL, EKIPMAN, MUHIMMAT, TEKNOLOJ
 import { S, mulDiv, mulRatio, clamp, largestRemainder, sqrtRatio, approach } from '../num/index.ts';
 import { rng, AMAC, uniformInt } from '../rng/index.ts';
 import { tarih, gunNo, haftaGunu } from '../calendar/index.ts';
-import { uc, gorus, savasta, anlat, bildir, savastaMi, dostBolge, rota } from './ortak.ts';
+import { uc, gorus, savasta, anlat, bildir, savastaMi, dostBolge, rota, eyaletUlke } from './ortak.ts';
 import { tarimIsciIhtiyac } from './nufus.ts';
 import { kapasiteAsimi, kontrolErisim } from './siyaset.ts';
 
@@ -182,7 +182,7 @@ export function aylikGida(w: World): void {
 export function ulkeGidaGuvence(w: World, c: number, gunluk = false): number {
   let ih = 0, k = 0;
   for (let e = 0; e < w.nE; e++) {
-    if (w.pkg.eyaletler[e]!.ulke !== c) continue;
+    if (eyaletUlke(w, e) !== c) continue;
     if (gunluk) { ih += w.E.c.ihtiyacDun[e]!; k += w.E.c.karsilananDun[e]!; }
     else { ih += S; k += w.E.c.guvence[e]!; }
   }
@@ -191,7 +191,7 @@ export function ulkeGidaGuvence(w: World, c: number, gunluk = false): number {
 export function ulkeGidaStok(w: World, c: number): { stok: number; gunluk: number } {
   let stok = 0, gunluk = 0;
   for (let e = 0; e < w.nE; e++) {
-    if (w.pkg.eyaletler[e]!.ulke !== c) continue;
+    if (eyaletUlke(w, e) !== c) continue;
     stok += w.E.c.gida[e]!; gunluk += w.E.c.ihtiyacDun[e]!;
   }
   return { stok, gunluk };
@@ -596,7 +596,7 @@ export function malStok(w: World, c: number, m: number): number {
 function malDus(w: World, c: number, m: number, n: number): void {
   if (m === MALI.gida) {
     let kalan = n;
-    const ey = w.pkg.eyaletler.map((e, i) => ({ e, i })).filter(({ e }) => e.ulke === c);
+    const ey = w.pkg.eyaletler.map((e, i) => ({ e, i })).filter(({ i }) => eyaletUlke(w, i) === c);
     const ag = ey.map(({ i }) => w.E.c.gida[i]!);
     const p = largestRemainder(kalan, ag);
     ey.forEach(({ i }, k) => { const d = Math.min(p[k]!, w.E.c.gida[i]!); w.E.c.gida[i] = w.E.c.gida[i]! - d; kalan -= d; });
@@ -616,8 +616,11 @@ export function malEkle(w: World, c: number, m: number, n: number): void {
 /** Ülke içi eyaletler arası gıda dengeleme talebi üretir (lojistik fazına girdi). */
 export function eyaletDengeTalepleri(w: World): { c: number; kaynakE: number; hedefE: number; miktar: number }[] {
   const out: { c: number; kaynakE: number; hedefE: number; miktar: number }[] = [];
+  const grup: number[][] = Array.from({ length: w.nC }, () => []);
+  for (let e = 0; e < w.nE; e++) { const c = eyaletUlke(w, e); if (w.R.c.kontrolEden[w.depo[e]!] === c) grup[c]!.push(e); }
   for (let c = 0; c < w.nC; c++) {
-    const eys = w.pkg.eyaletler.map((e, i) => i).filter((i) => w.pkg.eyaletler[i]!.ulke === c && w.R.c.kontrolEden[w.depo[i]!] === c);
+    const eys = grup[c]!;
+    if (eys.length < 2) continue;
     const gun = (i: number) => (w.E.c.ihtiyacDun[i]! <= 0 ? 999 : Math.floor(w.E.c.gida[i]! / w.E.c.ihtiyacDun[i]!));
     const fakir = eys.filter((i) => gun(i) < 20).sort((a, b) => gun(a) - gun(b) || a - b);
     const zengin = eys.filter((i) => gun(i) > 45).sort((a, b) => gun(b) - gun(a) || a - b);

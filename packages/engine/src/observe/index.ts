@@ -6,6 +6,32 @@ import { rng, AMAC, uniformInt } from '../rng/index.ts';
 import { tarih } from '../calendar/index.ts';
 import { uc, birlikIstat, anlasmaVar, sinirKomsusu } from '../systems/ortak.ts';
 
+/** Önbellek damgası: aynı faz içinde birlik/diplomasi değişmedikçe gözlem aynıdır. */
+function damga(w: World): string {
+  return `${w.gun}|${w.surum}|${(w.onbellek.get('faz') as number | undefined) ?? 0}|${w.U.hw}|${w.U.free.length}|${w.diploSurum}|${w.rotaEpoch}`;
+}
+/** Faz sınırında çağrılır: gözlem önbelleklerini geçersiz kılar. */
+export function fazDegisti(w: World): void { w.onbellek.set('faz', ((w.onbellek.get('faz') as number | undefined) ?? 0) + 1); }
+
+/** Gözlemcinin birliklerinin bulunduğu ve komşu bölgeler (keşif menzili). */
+function kesifMenzili(w: World, gozlemci: number): Uint8Array {
+  const d = damga(w);
+  let o = w.onbellek.get('kesif') as { d: string; m: Map<number, Uint8Array> } | undefined;
+  if (!o || o.d !== d) { o = { d, m: new Map() }; w.onbellek.set('kesif', o); }
+  let k = o.m.get(gozlemci);
+  if (k) return k;
+  k = new Uint8Array(w.nR);
+  const U = uc(w);
+  for (const u of w.U.rows()) {
+    if (U.ulke![u] !== gozlemci) continue;
+    const r = U.bolge![u]!;
+    k[r] = 1;
+    for (const v of w.komsuluk[r]!) k[v] = 1;
+  }
+  o.m.set(gozlemci, k);
+  return k;
+}
+
 /** İstihbarat düzeyi I (0–100, ×1000). */
 export function istihbaratDuzeyi(w: World, gozlemci: number, hedef: number, bolge = -1): number {
   if (gozlemci === hedef) return 100_000;
@@ -15,15 +41,8 @@ export function istihbaratDuzeyi(w: World, gozlemci: number, hedef: number, bolg
   if (sinirKomsusu(w, gozlemci, hedef)) I += 20_000;
   if (anlasmaVar(w, A.ticaret, gozlemci, hedef) >= 0) I += 15_000; // diplomatik misyon
   if (anlasmaVar(w, A.ittifak, gozlemci, hedef) >= 0) I += 10_000;
-  if (bolge >= 0) {
-    // kendi birliği komşu bölgedeyse keşif +20
-    const U = uc(w);
-    for (const u of w.U.rows()) {
-      if (U.ulke![u] !== gozlemci) continue;
-      const r = U.bolge![u]!;
-      if (r === bolge || w.komsuluk[r]!.includes(bolge)) { I += 20_000; break; }
-    }
-  }
+  // kendi birliği aynı ya da komşu bölgedeyse keşif +20
+  if (bolge >= 0 && kesifMenzili(w, gozlemci)[bolge]) I += 20_000;
   return clamp(I, 0, 100_000);
 }
 
@@ -52,27 +71,48 @@ export function aralik(w: World, gozlemci: number, hedefVarlik: number, gercek: 
 export interface BolgeGozlem { bolge: number; ulke: number; birlik: number; gucAlt: number; gucUst: number; kisiAlt: number; kisiUst: number; kesin: boolean }
 
 /** Bölge başına yabancı birlik özeti (gözlemci için). Kesin değer sis altındaysa sızmaz. */
-export function bolgeGozlem(w: World, gozlemci: number): BolgeGozlem[] {
+interface Topluluk { ulke: number; bolge: number; birlik: number; guc: number; kisi: number }
+/** Bölge × ülke birlik toplamları (bütün gözlemciler için ortak). */
+function topluluklar(w: World): Topluluk[] {
+  const d = damga(w);
+  const o = w.onbellek.get('toplu') as { d: string; l: Topluluk[] } | undefined;
+  if (o && o.d === d) return o.l;
   const U = uc(w);
-  const top = new Map<string, { ulke: number; bolge: number; birlik: number; guc: number; kisi: number }>();
+  const top = new Map<number, Topluluk>();
   for (const u of w.U.rows()) {
     const c = U.ulke![u]!, r = U.bolge![u]!;
-    const key = `${r}:${c}`;
+    const key = r * 4096 + c;
     const s = birlikIstat(w, u);
-    const o = top.get(key) ?? { ulke: c, bolge: r, birlik: 0, guc: 0, kisi: 0 };
-    o.birlik++; o.guc += s.YS + s.SV; o.kisi += U.kisi![u]!;
-    top.set(key, o);
+    let t = top.get(key);
+    if (!t) { t = { ulke: c, bolge: r, birlik: 0, guc: 0, kisi: 0 }; top.set(key, t); }
+    t.birlik++; t.guc += s.YS + s.SV; t.kisi += U.kisi![u]!;
   }
+  const l = [...top.values()].sort((a, b) => a.bolge - b.bolge || a.ulke - b.ulke);
+  w.onbellek.set('toplu', { d, l });
+  return l;
+}
+
+export function bolgeGozlem(w: World, gozlemci: number): BolgeGozlem[] {
+  const d = damga(w);
+  let oc = w.onbellek.get('gozlem') as { d: string; m: Map<number, BolgeGozlem[]> } | undefined;
+  if (!oc || oc.d !== d) { oc = { d, m: new Map() }; w.onbellek.set('gozlem', oc); }
+  const hazir = oc.m.get(gozlemci);
+  if (hazir) return hazir;
   const out: BolgeGozlem[] = [];
-  for (const o of [...top.values()].sort((a, b) => a.bolge - b.bolge || a.ulke - b.ulke)) {
+  const taban = new Map<number, number>();
+  const kesif = kesifMenzili(w, gozlemci);
+  for (const o of topluluklar(w)) {
     const dost = o.ulke === gozlemci || anlasmaVar(w, A.ittifak, gozlemci, o.ulke) >= 0;
     if (dost) { out.push({ bolge: o.bolge, ulke: o.ulke, birlik: o.birlik, gucAlt: o.guc, gucUst: o.guc, kisiAlt: o.kisi, kisiUst: o.kisi, kesin: true }); continue; }
-    const I = istihbaratDuzeyi(w, gozlemci, o.ulke, o.bolge);
+    let I0 = taban.get(o.ulke);
+    if (I0 === undefined) { I0 = istihbaratDuzeyi(w, gozlemci, o.ulke); taban.set(o.ulke, I0); }
+    const I = Math.min(100_000, I0 + (kesif[o.bolge] ? 20_000 : 0));
     if (I < 25_000) continue; // görülmeyen
-    const g = aralik(w, gozlemci, o.bolge * 16 + o.ulke, o.guc, I, 1);
-    const k = aralik(w, gozlemci, o.bolge * 16 + o.ulke, o.kisi, I, 2);
+    const g = aralik(w, gozlemci, o.bolge * 256 + o.ulke, o.guc, I, 1);
+    const k = aralik(w, gozlemci, o.bolge * 256 + o.ulke, o.kisi, I, 2);
     out.push({ bolge: o.bolge, ulke: o.ulke, birlik: o.birlik, gucAlt: g.alt, gucUst: g.ust, kisiAlt: k.alt, kisiUst: k.ust, kesin: false });
   }
+  oc.m.set(gozlemci, out);
   return out;
 }
 
