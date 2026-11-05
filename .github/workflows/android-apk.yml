@@ -5,19 +5,23 @@ on:
   workflow_dispatch:
 jobs:
   apk:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with: { node-version: 22, cache: npm }
       - run: npm ci
       - name: Tip denetimi, lint ve kabul testleri
         run: npm run tip && npm run lint && npm test
       - name: Web paketi ve Capacitor eşitleme
         run: npm run build && cd apps/android && npx cap sync android
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with: { distribution: temurin, java-version: '21' }
-      - uses: android-actions/setup-android@v3
+      - name: Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          # eski 'tools' paketi kaldırıldı; yalnız gerekenler kurulur
+          packages: 'platform-tools platforms;android-36 build-tools;35.0.0'
       - name: APK derle
         working-directory: apps/android/android
         run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
@@ -25,3 +29,4 @@ jobs:
         with:
           name: tarih-strateji-apk
           path: apps/android/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

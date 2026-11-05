@@ -3,7 +3,7 @@ import type { World } from '../state/world.ts';
 import { A, cc, hc } from '../state/world.ts';
 import { NHUCRE, YONETIM, K, ST, YB, EKIPMAN } from '../catalog.ts';
 import { S, mulDiv, clamp, approach } from '../num/index.ts';
-import { savasta, savastaMi, anlasmaVar, uc, gorus, anlat, bildir, birlikIstat, ulkeBolgeleri } from './ortak.ts';
+import { savasta, savastaMi, anlasmaVar, uc, gorus, anlat, bildir, birlikIstat } from './ortak.ts';
 import { esirIade } from './nufus.ts';
 import { insanGucu } from './nufus.ts';
 

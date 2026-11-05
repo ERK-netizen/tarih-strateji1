@@ -19,7 +19,7 @@ const MVK = 1, DMR = 2;
 export const OLAYLAR: Olay[] = [
   {
     kod: 'suikast', baslik: 'Tunçkale Suikastı',
-    metin: (w) => `Demirhan veliahdı, sınır kenti Tunçkale'de bir Mavikıyılı milliyetçinin kurşunuyla öldürüldü. Saray öfkeli, kalabalıklar intikam istiyor. Bütün başkentler İmparatorluğun yanıtını bekliyor.`,
+    metin: () => `Demirhan veliahdı, sınır kenti Tunçkale'de bir Mavikıyılı milliyetçinin kurşunuyla öldürüldü. Saray öfkeli, kalabalıklar intikam istiyor. Bütün başkentler İmparatorluğun yanıtını bekliyor.`,
     secenekler: [
       { ad: 'Mavikıyı\'ya ültimatom ver', etki: 'Mavikıyı 10 gün içinde yanıt vermek zorunda; red savaş gerekçesi doğurur. Dünya gerginliği artar.', uygula: (w, c) => {
         w.C.c.krizAsama[c] = 1; w.C.c.gerginlik[c] = w.C.c.gerginlik[c]! + 10_000;
