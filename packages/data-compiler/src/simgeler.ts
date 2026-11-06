@@ -8,7 +8,9 @@ import { DONEMLER } from '../../engine/src/donem.ts';
 const require = createRequire(import.meta.url);
 const set = require('@iconify-json/game-icons/icons.json') as { icons: Record<string, { body: string }> };
 const ARAYUZ = ['crown', 'crossed-swords', 'anvil', 'dove', 'scroll-unfurled', 'histogram', 'quill-ink', 'save', 'castle', 'factory', 'railway', 'road', 'hourglass', 'play-button', 'pause-button',
-  'fast-forward-button', 'next-button', 'coins', 'wheat', 'three-friends', 'scales', 'magnifying-glass', 'globe', 'barracks', 'flag-objective', 'shield', 'cancel', 'check-mark', 'help', 'exit-door', 'telescope'];
+  'fast-forward-button', 'next-button', 'coins', 'wheat', 'three-friends', 'scales', 'magnifying-glass', 'globe', 'barracks', 'flag-objective', 'shield', 'cancel', 'check-mark', 'help', 'exit-door', 'telescope',
+  'battleship', 'submarine', 'anchor', 'galleon', 'jet-fighter', 'biplane', 'bomber', 'vote', 'village', 'modern-city', 'mining', 'oil-drum', 'oil-pump', 'person', 'skull-crossed-bones',
+  'megaphone', 'podium', 'cow', 'barn', 'trade', 'shaking-hands', 'cash', 'bank', 'gears', 'atom', 'rocket', 'radar-dish', 'world', 'greek-temple', 'handcuffs', 'scroll-quill'];
 const ad = new Set<string>(ARAYUZ);
 for (const d of Object.values(DONEMLER)) for (const s of Object.values(d.simge)) ad.add(s);
 const out: Record<string, string> = {};

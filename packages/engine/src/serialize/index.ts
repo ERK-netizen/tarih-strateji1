@@ -1,17 +1,27 @@
 // Bölüm 6.6: kanonik serileştirme (küçük-endian, şema sırası) ve hash. Görsel durum ve önbellek dışarıda kalır.
 import type { World } from '../state/world.ts';
-import { yeniDunya, BAKAN_VARSAYILAN } from '../state/world.ts';
+import { yeniDunya, BAKAN_VARSAYILAN, partiBaslat, kuvvetBaslat } from '../state/world.ts';
+import { MAL } from '../catalog.ts';
 import type { Table } from '../state/table.ts';
 import type { Paket } from '../paket.ts';
 import { hashV1, hashText } from '../hash/index.ts';
 
-export const SEMA_SURUM = 6;
+export const SEMA_SURUM = 7;
 /** Şema 6'da eklenen kolonlar: 5 sürümlü kayıt okunurken atlanır, varsayılanla doldurulur. */
 const YENI6: Record<string, string[]> = {
   ulke: ['bakan', 'bazBolge', 'bazYasam', 'bazTek', 'bazNufus', 'savasGunu', 'tekSay', 'maas'],
   birlik: ['elle'],
 };
 /** Şema 5'te teknoloji yuvası sayısı (dönem başına 12). */
+/** Şema 7'de eklenen kolonlar: eski kayıtta yoktur, varsayılanla doldurulur. */
+const YENI7: Record<string, string[]> = {
+  bolge: ['kent', 'maden', 'demPol', 'demKim'],
+  ulke: ['gs0', 'gs1', 'gs2', 'gs3', 'gs4', 'gHasar', 'donGorev', 'h0', 'h1', 'h2', 'hHasar', 'havaGorev', 'havaBolge', 'abluka', 'akinKayip', 'denizK',
+    'rejim', 'parti0', 'parti1', 'parti2', 'parti3', 'parti4', 'iktidar', 'secim', 'gecis', 'nufusPol', 'zulum', 'model', 'tarife', 'subTarim', 'subSanayi', 'tarimOdak', 'petrol', 'petrolDun', 'petrolIht'],
+  proje: ['alt', 'adet'],
+  birlik: ['t6', 't7', 't8', 't9', 't10', 't11'],
+};
+const NYUVA6 = 3, NMAL6 = 4;
 const NTEK5 = 12;
 const MAGIC = 0x314b5354; // 'TSK1'
 
@@ -116,7 +126,7 @@ function tabloYaz(y: Yazici, t: Table): void {
   for (const [k] of t.defs) { y.etiket(k); y.arrS((t.ci[k] as Float64Array).subarray(0, t.hw)); }
 }
 function tabloOku(o: Okuyucu, t: Table, sv = SEMA_SURUM): void {
-  const atla = sv < 6 ? new Set(YENI6[t.name] ?? []) : new Set<string>();
+  const atla = new Set<string>([...(sv < 6 ? YENI6[t.name] ?? [] : []), ...(sv < 7 ? YENI7[t.name] ?? [] : [])]);
   const ad = o.str();
   if (ad !== t.name) throw new Error(`tablo sırası bozuk: ${ad} ≠ ${t.name}`);
   const hw = o.u32();
@@ -170,7 +180,7 @@ export function coz(bytes: Uint8Array, pkg: Paket): World {
   const o = new Okuyucu(bytes);
   if (o.u32() !== MAGIC) throw new Error('kayıt dosyası değil');
   const sv = o.u32();
-  if (sv !== SEMA_SURUM && sv !== 5) throw new Error(`şema sürümü uyumsuz: ${sv}`);
+  if (sv !== SEMA_SURUM && sv !== 5 && sv !== 6) throw new Error(`şema sürümü uyumsuz: ${sv}`);
   const pid = o.str(), psur = o.str();
   if (pid !== pkg.kimlik || psur !== pkg.surum) throw new Error(`paket uyumsuz: ${pid}@${psur}`);
   const gun = o.f64(), surum = o.f64(), tohum = o.f64(), oyuncu = o.f64(), mod = o.f64(), emirSira = o.f64(), rotaEpoch = o.f64();
@@ -191,6 +201,15 @@ export function coz(bytes: Uint8Array, pkg: Paket): World {
       const nt = hedef.length / w.nC;
       hedef.fill(0);
       for (let c = 0; c < w.nC; c++) for (let t = 0; t < NTEK5; t++) hedef[c * nt + t] = v[c * NTEK5 + t]!;
+    } else if (sv < 7 && ad === 'arastirma') {
+      // şema 6: ülke başına 3 araştırma yuvası → NYUVA
+      const hedef = a as unknown as Int32Array;
+      hedef.fill(-1);
+      for (let c = 0; c < w.nC; c++) for (let k = 0; k < NYUVA6; k++) hedef[c * (hedef.length / w.nC) + k] = v[c * NYUVA6 + k]!;
+    } else if (sv < 7 && (ad === 'fiyat' || ad === 'pazarHacim')) {
+      // şema 6: 4 mal → petrol eklendi
+      const hedef = a as unknown as Float64Array;
+      for (let m = 0; m < NMAL6; m++) hedef[m] = v[m]!;
     } else (a as unknown as { set(x: ArrayLike<number>): void }).set(v);
   }
   w.teklifBolge = JSON.parse(o.str()) as Record<string, number[]>;
@@ -199,6 +218,7 @@ export function coz(bytes: Uint8Array, pkg: Paket): World {
   w.kuyruk = JSON.parse(o.str());
   if (sv >= 6) w.olayBayrak = JSON.parse(o.str()) as string[];
   else gocDoldur5(w);
+  if (sv < 7) gocDoldur6(w);
   return w;
 }
 
@@ -213,6 +233,19 @@ function gocDoldur5(w: World): void {
     let t = 0; for (let k = 0; k < NTEK5; k++) t += w.tekBitti[c * (w.tekBitti.length / w.nC) + k]!;
     C.tekSay[c] = t; C.bazTek[c] = t;
   }
+}
+
+/** Şema 6 → 7 göçü: rejim, partiler, donanma/hava kuvvetleri, kent düzeyleri ve ekonomi ayarları senaryo başlangıcından. */
+function gocDoldur6(w: World): void {
+  const C = w.C.c, R = w.R.c;
+  for (let c = 0; c < w.nC; c++) {
+    const u = w.pkg.ulkeler[c]!;
+    C.rejim[c] = u.yonetim; C.model[c] = 1; C.tarife[c] = 100_000; C.petrol[c] = 20_000; C.havaBolge[c] = -1;
+    partiBaslat(w, c);
+    kuvvetBaslat(w, c);
+  }
+  w.pkg.bolgeler.forEach((b, r) => { R.kent[r] = Math.min(6, 1 + b.yerlesim + Math.floor((R.sivilF[r]! + R.askeriF[r]!) / 3)); });
+  MAL.forEach((m, i) => { if (i >= NMAL6) w.fiyat[i] = m.p0; });
 }
 
 /** Boş dünya iskeleti (başlangıç birlikleri ve hatlar olmadan) — çözümleme için. */

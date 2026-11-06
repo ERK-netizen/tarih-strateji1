@@ -34,6 +34,8 @@ export interface PaketBolge {
   kimlikAnahtar: [number, number][]; // her kimlik hücresi için (kültür, inanç); diğer = [-1,-1]
   kis: number[]; camur: number[]; // 12 aylık
   anaYurt: number[]; iddia: number[]; iklim: number;
+  /** şema 7: kıyı bölgesi (donanma ve tersane) ve petrol yatağı [günlük milibirim, keşif yılı] */
+  kiyi?: number; petrol?: [number, number];
 }
 export interface PaketKenar { a: number; b: number; km: number; sinir: number; tur?: number }
 export interface PaketBirlik { ulke: number; sablon: string; bolge: number; ad: string }

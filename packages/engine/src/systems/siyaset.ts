@@ -34,7 +34,7 @@ export function kontrolErisim(w: World, r: number): number {
 
 // ---------- Yönetim kapasitesi (17.2) ----------
 export function yonetimKapasitesi(w: World, c: number): { kapasite: number; kullanim: number } {
-  const y = YONETIM[w.pkg.ulkeler[c]!.yonetim]!;
+  const y = YONETIM[w.C.c.rejim[c]!]!;
   const tekIdare = w.tekBitti[c * NTEK + tekIdx('idare')] ? 10_000 : 0;
   const kapasite = 30_000 + mulDiv(y.idari, 50_000, S).q + tekIdare; // puan ×1000
   let kullanim = 0;
@@ -57,7 +57,7 @@ export function kapasiteAsimiHepsi(w: World): number[] {
     else { kul[s]! += 500; kul[k]! += 1500; }
   }
   return kul.map((kullanim, c) => {
-    const y = YONETIM[w.pkg.ulkeler[c]!.yonetim]!;
+    const y = YONETIM[w.C.c.rejim[c]!]!;
     const tekIdare = w.tekBitti[c * NTEK + tekIdx('idare')] ? 10_000 : 0;
     const kapasite = 30_000 + mulDiv(y.idari, 50_000, S).q + tekIdare;
     return Math.max(0, mulDiv(kullanim, S, Math.max(1, kapasite)).q - S);
@@ -159,7 +159,7 @@ export function aylikKontrol(w: World): void {
 // ---------- Siyaset (17.1–17.3) ----------
 export function huzurHedefi(w: World, c: number): { hedef: number; bilesen: Bilesen[] } {
   const C = w.C.c;
-  const y = YONETIM[w.pkg.ulkeler[c]!.yonetim]!;
+  const y = YONETIM[w.C.c.rejim[c]!]!;
   const b: Bilesen[] = [{ ad: `Yönetim tabanı (${y.ad})`, deger: y.huzur }];
   const g = ulkeGidaGuvence(w, c);
   let gida = 0;
@@ -207,7 +207,7 @@ export function yasamDuzeyi(w: World, c: number): number {
 
 export function mesruHedefi(w: World, c: number): { hedef: number; bilesen: Bilesen[] } {
   const C = w.C.c;
-  const y = YONETIM[w.pkg.ulkeler[c]!.yonetim]!;
+  const y = YONETIM[w.C.c.rejim[c]!]!;
   const b: Bilesen[] = [{ ad: 'Yönetim tabanı', deger: y.mesru }, { ad: 'Düzenli yönetim', deger: 5000 }];
   b.push({ ad: 'Huzur', deger: Math.floor((C.huzur[c]! - 50_000) / 5) });
   if (C.zafer[c]) b.push({ ad: 'Zafer/yenilgi', deger: C.zafer[c]! });
@@ -220,7 +220,7 @@ export function mesruHedefi(w: World, c: number): { hedef: number; bilesen: Bile
 
 export function destekHedefi(w: World, c: number): { hedef: number; bilesen: Bilesen[] } {
   const C = w.C.c;
-  const y = YONETIM[w.pkg.ulkeler[c]!.yonetim]!;
+  const y = YONETIM[w.C.c.rejim[c]!]!;
   const b: Bilesen[] = [{ ad: 'Yönetim tabanı', deger: y.destek }, { ad: 'Yorgunluk', deger: -Math.floor(C.yorgunluk[c]! / 2) }];
   if (C.saldiriyaUgradi[c]! > 0) b.push({ ad: 'Saldırıya uğradık', deger: C.saldiriyaUgradi[c]! });
   if (C.zafer[c]) b.push({ ad: 'Zafer/propaganda', deger: Math.floor(C.zafer[c]! / 2) });
@@ -233,7 +233,7 @@ export function destekHedefi(w: World, c: number): { hedef: number; bilesen: Bil
 
 export function pgGeliri(w: World, c: number): { gelir: number; bilesen: Bilesen[] } {
   const C = w.C.c;
-  const y = YONETIM[w.pkg.ulkeler[c]!.yonetim]!;
+  const y = YONETIM[w.C.c.rejim[c]!]!;
   const mesruC = 800_000 + mulDiv(400_000, C.mesru[c]!, 100_000).q;
   let huzurC = S;
   if (C.huzur[c]! < 60_000 && C.huzur[c]! >= 40_000) huzurC = 750_000;

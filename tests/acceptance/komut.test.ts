@@ -90,3 +90,35 @@ describe('T123 her menü eyleminin eşdeğer komutu aynı emre geri çözülür'
     for (const key of Object.keys(e).filter((x) => !['ulke', 'birlikler', 'kalici', 'bolgeler'].includes(x))) expect(t![key], `${m}: ${key}`).toEqual((e as Record<string, unknown>)[key]);
   });
 });
+
+describe('T123b şema 7 emirlerinin eşdeğer komutu aynı emre geri çözülür', () => {
+  const ws = dunya(0, 0); diplomasi.savasIlan(ws, 0, 2); gunIlerle(ws);
+  const k = katalogKur(ws);
+  const u = k.birlikler[0]!.id;
+  const kiyi = ws.pkg.bolgeler.findIndex((b, i) => ws.R.c.sahip[i] === 0 && b.kiyi);
+  const kizil = ws.pkg.bolgeler.map((_, i) => i).filter((i) => ws.R.c.sahip[i] === 3 && i !== ws.pkg.ulkeler[3]!.baskent).slice(0, 2);
+  const emirler: Record<string, unknown>[] = [
+    { tur: 'gemiInsa', sinif: 2, adet: 3, bolge: kiyi < 0 ? 0 : kiyi }, { tur: 'ucakUret', tip: 1, adet: 2 },
+    { tur: 'donanmaGorev', gorev: 0 }, { tur: 'donanmaGorev', gorev: 1 }, { tur: 'donanmaGorev', gorev: 2 }, { tur: 'donanmaGorev', gorev: 3 }, { tur: 'donanmaGorev', gorev: 4 },
+    { tur: 'havaGorev', gorev: 0, bolge: -1 }, { tur: 'havaGorev', gorev: 1, bolge: 12 }, { tur: 'havaGorev', gorev: 2, bolge: 13 }, { tur: 'havaGorev', gorev: 3, bolge: 14 }, { tur: 'havaGorev', gorev: 4, bolge: 12 },
+    { tur: 'taburEkle', birlikler: [u], tabur: 1, adet: 2 }, { tur: 'taburCikar', birlikler: [u], tabur: 0 },
+    { tur: 'rejim', rejim: 2 }, { tur: 'rejim', rejim: 4 }, { tur: 'partiDestek', parti: 3 }, { tur: 'partiDestek', parti: 0 }, { tur: 'secimErken' },
+    { tur: 'nufusPol', pol: 0 }, { tur: 'nufusPol', pol: 1 }, { tur: 'nufusPol', pol: 2 }, { tur: 'nufusPol', pol: 3 },
+    { tur: 'demografi', bolge: 2, eylem: 1, kimlik: 1 }, { tur: 'demografi', bolge: 2, eylem: 2, kimlik: 0 }, { tur: 'demografi', bolge: 2, eylem: 0, kimlik: 0 },
+    { tur: 'surgun', bolge: 2, kimlik: 1 }, { tur: 'soykirim', bolge: 3, kimlik: 2 },
+    { tur: 'ekoModel', model: 0 }, { tur: 'ekoModel', model: 3 }, { tur: 'tarife', oran: 250_000 }, { tur: 'sub', alan: 0, oran: 50_000 }, { tur: 'sub', alan: 1, oran: 100_000 },
+    { tur: 'tarimOdak', odak: 1 }, { tur: 'tarimOdak', odak: 2 },
+    { tur: 'ambargo', kime: 3, acik: 1 }, { tur: 'ambargo', kime: 3, acik: 0 }, { tur: 'sinirOlayi', hedef: 3 }, { tur: 'yardim', kime: 1, miktar: 50_000 },
+    { tur: 'darbe', hedef: 3 }, { tur: 'ayrilikci', hedef: 2, bolge: 12 }, { tur: 'bagimsizlik' },
+    { tur: 'baris', kime: 2, barisTur: 3, bolgeler: [] }, { tur: 'baris', kime: 2, barisTur: 4, bolgeler: [12] }, { tur: 'baris', kime: 2, barisTur: 5, bolgeler: [2] },
+    { tur: 'teklif', kime: 3, tip: 15, bolgeler: kizil, bedel: 100_000 }, { tur: 'teklif', kime: 3, tip: 16, bolgeler: kizil }, { tur: 'teklif', kime: 1, tip: 17 },
+  ];
+  for (const [i, e0] of emirler.entries()) test(`${String(e0.tur)} #${i}`, () => {
+    const e = { ulke: 0, ...e0 } as { tur: string; ulke: number } & Record<string, unknown>;
+    const m = emirMetni(e, k);
+    const s = ayristir(m, k);
+    const t = s.tur === 'emir' ? s.yorum.emir : s.tur === 'belirsiz' ? s.secenekler.find((x) => x.emir.tur === e.tur)?.emir : null;
+    expect(t, `${m} → ${s.tur}${s.tur === 'ret' ? `: ${s.neden}` : ''}`).toBeTruthy();
+    for (const key of Object.keys(e)) expect(t![key], `${m}: ${key}`).toEqual(e[key]);
+  });
+});

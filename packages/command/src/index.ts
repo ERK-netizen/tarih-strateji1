@@ -1,13 +1,15 @@
 // Bölüm 20: Türkçe komut sistemi. Kapalı katalog + plan şablonu + önizleme; sınırsız serbest dil anlama iddiası yoktur.
 // Saf fonksiyon: yalnız katalog ve görünür varlık adlarını okur. Doğrulama ve bedel Worker'dadır.
 import { sozcukler, katla, kipCoz, halCoz, ekle, type Token, type Hal, type KipSonuc } from './turkce.ts';
+import { yapiliAyristir, yapiliMetin } from './yapili.ts';
 export { ekle, katla, kucuk } from './turkce.ts';
+export { yapiliMetin, NUFUS_POL } from './yapili.ts';
 
 export interface KatalogBirlik { id: number; ad: string; bolge: number; sablon: number; hedef: number }
 export interface Katalog {
   oyuncu: number;
   ulkeler: { kod: string; ad: string; kisa: string; sifat: string }[];
-  bolgeler: { ad: string; kontrol: number; sahip: number; komsu: number[]; merkez: [number, number] }[];
+  bolgeler: { ad: string; kontrol: number; sahip: number; komsu: number[]; merkez: [number, number]; kimlik?: string[] }[];
   eyaletler: { ad: string; bolgeler: number[] }[];
   birlikler: KatalogBirlik[];
   savastaki: number[];
@@ -23,6 +25,16 @@ export interface Katalog {
   vergi: number; // S ölçekli mevcut oran
   butce: number[];
   askerlikMevcut: number;
+  // şema 7 adları (dönemin kataloğundan; eksikse ilgili kalıplar devre dışı)
+  gemiler?: { ad: string; kisa: string }[];
+  ucaklar?: { ad: string; kisa: string }[];
+  denizGorev?: string[];
+  havaGorev?: string[];
+  taburlar?: string[];
+  rejimler?: string[];
+  partiler?: string[];
+  ekoModeller?: string[];
+  tarimOdaklar?: string[];
 }
 
 export type Emir = { tur: string; ulke: number } & Record<string, unknown>;
@@ -264,6 +276,14 @@ export function ayristir(metin: string, k: Katalog): Sonuc {
     const adet = b === 'olay' ? 1 : Math.max(1, Math.min(b === 'gun' ? 365 : b === 'hafta' ? 52 : b === 'ay' ? 12 : 3, Math.floor(sayilar[0] ?? 1)));
     const bAd = { gun: 'gün', hafta: 'hafta', ay: 'ay', yil: 'yıl', olay: '' }[b];
     return { tur: 'zaman', birim: b as 'gun', adet, esdeger: b === 'olay' ? 'Sonraki önemli olaya kadar ilerle' : `${adet} ${bAd} ilerle` };
+  }
+  // şema 7 kalıpları (donanma, hava, tabur, siyaset, demografi, ekonomi ayarları, örtülü diplomasi)
+  {
+    const has0 = (t: string) => v.some((x) => x.tur === t);
+    const c0 = { k, v, toks, sayilar, yuzde, olumsuz: false, fiil: null, has: has0, get: (t: string) => v.filter((x) => x.tur === t), metin } as Baglam;
+    const yp = yapiliAyristir({ k, toks, v, sayilar, yuzde, birlikler: () => birlikSec(c0).ids });
+    if (typeof yp === 'string') return { tur: 'ret', neden: yp, oneriler: enYakinUc(metin), tanimsiz: true };
+    if (yp) return { tur: 'emir', yorum: yp, alternatif: [] };
   }
   const fiil = fiilBul(toks, dolu);
   const niyetler = new Set<string>(fiil?.fiil.niyet ?? []);
@@ -581,6 +601,8 @@ function niyetKur(n: string, c: Baglam): Yorum | Yorum[] | string | null {
 
 // ---------- Eşdeğer komut metni (C04) ----------
 export function emirMetni(e: Emir, k: Katalog): string {
+  const yp = yapiliMetin(e, k);
+  if (yp !== null) return yp;
   const u = (i: unknown) => k.ulkeler[Number(i)]?.kisa ?? '?';
   const b = (i: unknown) => k.bolgeler[Number(i)]?.ad ?? '?';
   const birl = (ids: unknown) => {

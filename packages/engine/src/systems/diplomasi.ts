@@ -3,15 +3,16 @@ import type { World } from '../state/world.ts';
 import { A, cc, hc, SV_MAX } from '../state/world.ts';
 import { NHUCRE, YONETIM, K, ST, YB, EKIPMAN } from '../catalog.ts';
 import { S, mulDiv, clamp, approach } from '../num/index.ts';
-import { savasta, savastaMi, anlasmaVar, uc, gorus, anlat, bildir, birlikIstat, tarafi, tarafYaz, savasUyeleri, savasDegisti, anlasmaEklendi, anlasmaSilindi, iddiaEkle, iddiaSil, pasif } from './ortak.ts';
-import { esirIade } from './nufus.ts';
+import { savasta, savastaMi, anlasmaVar, uc, gorus, anlat, bildir, birlikIstat, tarafi, tarafYaz, savasUyeleri, savasDegisti, anlasmaEklendi, anlasmaSilindi, iddiaEkle, iddiaSil, pasif, essavasan, kuklalar, efendi } from './ortak.ts';
+import { esirIade, terhis } from './nufus.ts';
 import { insanGucu } from './nufus.ts';
 import { trEkK, trKucuk } from '../tr.ts';
 
-export const TK = { ticaret: 0, saldirmazlik: 1, gecis: 2, garanti: 3, ittifak: 4, baris: 10, cagri: 11, ekipman: 14 } as const;
-export const TK_AD: Record<number, string> = { 0: 'Ticaret anlaşması', 1: 'Saldırmazlık paktı', 2: 'Askerî geçiş hakkı', 3: 'Bağımsızlık garantisi', 4: 'İttifak', 10: 'Barış', 11: 'Savaşa katılım çağrısı', 14: 'Ekipman satışı' };
-export const ESIK: Record<number, number> = { 0: 20_000, 1: 40_000, 2: 60_000, 3: 60_000, 4: 80_000, 14: 60_000 };
-export const BARIS_TUR = ['Beyaz barış', 'Tavizli barış', 'Teslim'] as const;
+export const TK = { ticaret: 0, saldirmazlik: 1, gecis: 2, garanti: 3, ittifak: 4, baris: 10, cagri: 11, ekipman: 14, devir: 15, ultimatom: 16, kuklaOl: 17 } as const;
+export const TK_AD: Record<number, string> = { 0: 'Ticaret anlaşması', 1: 'Saldırmazlık paktı', 2: 'Askerî geçiş hakkı', 3: 'Bağımsızlık garantisi', 4: 'İttifak', 10: 'Barış', 11: 'Savaşa katılım çağrısı', 14: 'Ekipman satışı', 15: 'Toprak devri', 16: 'Ültimatom', 17: 'Himaye (kukla) antlaşması' };
+export const ESIK: Record<number, number> = { 0: 20_000, 1: 40_000, 2: 60_000, 3: 60_000, 4: 80_000, 14: 60_000, 15: 30_000, 17: 50_000 };
+/** 0 beyaz, 1 tavizli, 2 teslim (işgal edilenlerin ilhakı + tazminat), 3 tam ilhak, 4 kukla devlet, 5 teslim önerisi (öneren teslim olur). */
+export const BARIS_TUR = ['Beyaz barış', 'Tavizli barış', 'Teslim', 'Tam ilhak', 'Kukla devlet', 'Teslim önerisi'] as const;
 
 export function gorusDegis(w: World, a: number, b: number, d: number): void {
   const i = cc(w, a, b);
@@ -125,25 +126,30 @@ export function savasIlan(w: World, a: number, b: number, cagri = true): number 
     cagriGonder(w, s, b, 1);
     cagriGonder(w, s, a, 0);
   }
+  kuklaCagir(w, s, a); kuklaCagir(w, s, b);
   return s;
 }
 
 /** c'nin müttefiklerine ve (savunan taraftaysa) garantörlerine katılım çağrısı. taraf: 0 saldıran tarafı, 1 savunan tarafı. */
 export function cagriGonder(w: World, s: number, c: number, taraf: number): void {
   for (let d = 0; d < w.nC; d++) {
-    if (d === c || tarafi(w, s, d) !== 0 || pasif(w, d)) continue;
+    if (d === c || tarafi(w, s, d) !== 0 || pasif(w, d) || dusmanSafta(w, s, d, taraf)) continue;
     const ittifak = anlasmaVar(w, A.ittifak, c, d) >= 0;
     const garanti = taraf === 1 && anlasmaVar(w, A.garanti, d, c) >= 0;
     if (ittifak || garanti) teklifEkle(w, c, d, TK.cagri, s, taraf);
   }
 }
 
+/** c, verilen savaş tarafındaki bir devletle (başka bir savaşta) savaşıyor mu? Düşmanın safına katılınmaz. */
+export function dusmanSafta(w: World, savas: number, c: number, taraf: number): boolean {
+  return savasUyeleri(w, savas, taraf === 0 ? 1 : 2).some((x) => x !== c && savasta(w, c, x));
+}
 export function savasaKatil(w: World, savas: number, c: number, taraf: number): void {
   if (tarafi(w, savas, c) !== 0) return;
+  if (dusmanSafta(w, savas, c, taraf)) return;
   const SV = w.SV.c;
   const benim = taraf === 0 ? 1 : 2;
   const karsi = savasUyeleri(w, savas, benim === 1 ? 2 : 1);
-  // aynı anda karşı tarafla başka bir savaşta da olmamalı: yine de taraf yazılır
   tarafYaz(w, savas, c, benim);
   for (const d of karsi) { anlasmaBoz(w, A.ticaret, c, d, false); anlasmaBoz(w, A.saldirmazlik, c, d, true); anlasmaBoz(w, A.ittifak, c, d, true); gorusDegis(w, d, c, -20_000); }
   const lider = taraf === 0 ? SV.saldiran[savas]! : SV.savunan[savas]!;
@@ -151,6 +157,7 @@ export function savasaKatil(w: World, savas: number, c: number, taraf: number): 
   bildir(w, 'savas', `${w.pkg.ulkeler[c]!.kisa} savaşa girdi`, w.oyuncu, true);
   // zincirleme çağrı: katılanın müttefikleri de çağrılır
   cagriGonder(w, savas, c, taraf);
+  kuklaCagir(w, savas, c);
 }
 
 // ---------- Savaş skoru (18.4) ----------
@@ -165,11 +172,15 @@ export function bolgeDegeri(w: World, r: number): number {
 export function savasSkoru(w: World, a: number, b: number): number {
   // a'nın b'ye karşı skoru (−100…100, ×1000)
   let aDeger = 0, aKayip = 0, bDeger = 0, bKayip = 0;
+  // ittifak savaşı: karşı tarafın müttefiklerinin işgalleri de sayılır
+  const bTaraf = (k: number) => k === b || (k >= 0 && k !== a && essavasan(w, b, k) && savasta(w, a, k));
+  const aTaraf = (k: number) => k === a || (k >= 0 && k !== b && essavasan(w, a, k) && savasta(w, b, k));
   for (let r = 0; r < w.nR; r++) {
     const s = w.R.c.sahip[r]!, k = w.R.c.kontrolEden[r]!;
+    if (s !== a && s !== b) continue;
     const v = bolgeDegeri(w, r);
-    if (s === a) { aDeger += v; if (k === b) aKayip += v; }
-    if (s === b) { bDeger += v; if (k === a) bKayip += v; }
+    if (s === a) { aDeger += v; if (k !== a && bTaraf(k)) aKayip += v; }
+    if (s === b) { bDeger += v; if (k !== b && aTaraf(k)) bKayip += v; }
   }
   const hedefFark = mulDiv(bKayip, S, Math.max(1, bDeger)).q - mulDiv(aKayip, S, Math.max(1, aDeger)).q;
   const ba = w.pkg.ulkeler[a]!.baskent, bb = w.pkg.ulkeler[b]!.baskent;
@@ -223,6 +234,8 @@ export function teslimKosulu(w: World, c: number): boolean {
   }
   // ana yurdun dörtte üçü düştüyse başkent elde olsa da direniş biter
   if (top > 0 && kayip * 4 >= top * 3) return true;
+  // ana yurdun yarısı düştü ve halk tükendi
+  if (top > 0 && kayip * 2 >= top && w.C.c.yorgunluk[c]! > 70_000) return true;
   if (!baskentDustu) return false;
   // başkent düştü ve halk savaştan bıktı: iç çöküş
   if (w.C.c.huzur[c]! < 20_000 && w.C.c.yorgunluk[c]! > 60_000) return true;
@@ -242,6 +255,12 @@ export function barisKabul(w: World, kabulEden: number, oneren: number, tur: num
   if (tur !== 2 && sure < (tur === 0 ? 90 : 150) && !teslimKosulu(w, kabulEden)) return { kabul: false, neden: `Savaş yeni başladı (${sure} gün); ${tur === 0 ? '90' : '150'} günden önce ${tur === 0 ? 'beyaz' : 'tavizli'} barış kabul edilmez.` };
   const W = istekliligi(w, kabulEden, oneren);
   const istek = istenen.filter((r) => w.R.c.sahip[r] === kabulEden).reduce((s, r) => s + bolgeDegeri(w, r), 0);
+  // ayrı barış: başka büyük düşmanlarla savaş sürerken beyaz/tavizli barış ittifaktan kopmak demektir; ancak savaştan bıkmış devlet imzalar
+  if ((tur === 0 || tur === 1) && W < 500_000) {
+    const ben = ulkeBuyuklugu(w, kabulEden);
+    const diger = savasta(w, kabulEden, oneren) ? [...Array(w.nC).keys()].filter((d) => d !== oneren && d !== kabulEden && !pasif(w, d) && savasta(w, kabulEden, d) && efendi(w, d) !== oneren && ulkeBuyuklugu(w, d) * 4 >= ben) : [];
+    if (diger.length) return { kabul: false, neden: `Ayrı barış yok: ${w.pkg.ulkeler[diger[0]!]!.kisa} ile savaş sürüyor (isteklilik %${Math.floor(W / 10_000)}; ayrı barış için %50 gerekir).` };
+  }
   if (tur === 0) {
     // beyaz barış: W ≥ 0,15 veya kabul edenin skoru negatif değil ve öneren de yorgun
     const skor = savasSkoru(w, kabulEden, oneren);
@@ -250,7 +269,25 @@ export function barisKabul(w: World, kabulEden: number, oneren: number, tur: num
   }
   if (tur === 2) {
     if (teslimKosulu(w, kabulEden)) return { kabul: true, neden: 'Teslim koşulları oluştu.' };
-    return { kabul: false, neden: 'Teslim koşulu yok: başkent, ana yurdun yarısı ve organize ordu düşmeli.' };
+    return { kabul: false, neden: 'Teslim koşulu yok: başkent, ana yurdun yarısı ve organize ordu düşmeli (ya da ana yurdun ¾\'ü).' };
+  }
+  if (tur === 3) {
+    // tam ilhak: teslim + başkent ve ana yurdun %60'ı karşı tarafın elinde
+    // sömürge imparatorluğu: işgal edilmemiş denizaşırı topraklar sürdükçe (toplamın %60'ı düşmedikçe) devlet sürgünde direnir
+    const oran = anaYurtKayipOrani(w, kabulEden), toplam = toplamKayipOrani(w, kabulEden);
+    if (teslimKosulu(w, kabulEden) && oran >= 600_000 && toplam >= 600_000 && w.R.c.kontrolEden[w.pkg.ulkeler[kabulEden]!.baskent] !== kabulEden) return { kabul: true, neden: 'Devlet çöktü: ilhak kabul edildi.' };
+    return { kabul: false, neden: `Tam ilhak için teslim, başkentin düşmesi, ana yurdun ve bütün toprakların %60'ı gerekir (ana yurt %${Math.floor(oran / 10_000)}, toplam %${Math.floor(toplam / 10_000)}).` };
+  }
+  if (tur === 4) {
+    // kukla: teslim ya da yüksek isteklilik (rejim korunur, egemenlik gider); efendi en az kukla kadar büyük olmalı
+    if (ulkeBuyuklugu(w, oneren) < ulkeBuyuklugu(w, kabulEden)) return { kabul: false, neden: 'Kendinizden büyük bir devleti kukla yapamazsınız (toprak ve nüfus değeri).' };
+    if (teslimKosulu(w, kabulEden) || W >= 600_000) return { kabul: true, neden: 'Himaye şartları kabul edildi.' };
+    return { kabul: false, neden: `Kukla devlet için teslim ya da %60 isteklilik gerekir (şimdi %${Math.floor(W / 10_000)}).` };
+  }
+  if (tur === 5) {
+    // teslim önerisi: kabul eden kazanan taraftır
+    if (savasSkoru(w, kabulEden, oneren) >= 0) return { kabul: true, neden: 'Teslim kabul edildi.' };
+    return { kabul: false, neden: 'Savaşı kaybetmekte olan taraf teslim kabul etmez.' };
   }
   const butce = tavizButcesi(w, kabulEden, oneren);
   if (W < 250_000) return { kabul: false, neden: `İsteklilik %${Math.floor(W / 10_000)}; tavizli barış için %25 gerekiyor.` };
@@ -258,10 +295,40 @@ export function barisKabul(w: World, kabulEden: number, oneren: number, tur: num
   return { kabul: true, neden: 'Tavizli barış kabul edildi.' };
 }
 
+/** Devletin büyüklüğü: sahip olduğu bölgelerin toplam değeri (kukla ilişkisinde efendi en az kukla kadar büyük olmalı). */
+export function ulkeBuyuklugu(w: World, c: number): number {
+  let v = 0;
+  for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === c) v += bolgeDegeri(w, r);
+  return v;
+}
+/** Bütün toprakların (değerce) karşı tarafın elindeki oranı (S). */
+export function toplamKayipOrani(w: World, c: number): number {
+  let top = 0, kayip = 0;
+  for (let r = 0; r < w.nR; r++) {
+    if (w.R.c.sahip[r] !== c) continue;
+    const v = bolgeDegeri(w, r); top += v; if (w.R.c.kontrolEden[r] !== c) kayip += v;
+  }
+  return top > 0 ? mulDiv(kayip, S, top).q : 0;
+}
+export function anaYurtKayipOrani(w: World, c: number): number {
+  let top = 0, kayip = 0;
+  for (let r = 0; r < w.nR; r++) {
+    if (w.R.c.sahip[r] !== c || !w.pkg.bolgeler[r]!.anaYurt.includes(c)) continue;
+    const v = bolgeDegeri(w, r); top += v; if (w.R.c.kontrolEden[r] !== c) kayip += v;
+  }
+  return top > 0 ? mulDiv(kayip, S, top).q : 0;
+}
+
 /** Barış paketini tek atomik işlemle uygular (18.5). kazanan maskeli bölgeleri alır. */
 export function barisUygula(w: World, kazanan: number, kaybeden: number, tur: number, istenen: number[]): void {
   const R = w.R.c;
-  const bolgeler = tur === 0 ? [] : istenen.filter((r) => R.sahip[r] === kaybeden);
+  if (tur === 5) tur = 2; // teslim önerisi = teslim
+  // tam ilhak: kaybedenin bütün toprakları
+  const tum: number[] = [];
+  if (tur === 3) for (let r = 0; r < w.nR; r++) if (R.sahip[r] === kaybeden) tum.push(r);
+  // başkent yalnız tam ilhakla el değiştirir (tavizli barış, teslim ve kukla antlaşması başkenti devretmez)
+  const bas = w.pkg.ulkeler[kaybeden]!.baskent;
+  const bolgeler = tur === 0 ? [] : (tur === 3 ? tum : istenen).filter((r) => R.sahip[r] === kaybeden && (tur === 3 || r !== bas));
   for (const r of bolgeler) {
     R.sahip[r] = kazanan; R.kontrolEden[r] = kazanan; R.kontrol[r] = 20_000; R.itaat[r] = 0; R.direnis[r] = 10_000; R.anaYurtGun[r] = 0;
     R.isyan[r] = 0;
@@ -280,8 +347,16 @@ export function barisUygula(w: World, kazanan: number, kaybeden: number, tur: nu
     if (ta === 0 || tb === 0 || ta === tb) continue;
     const liderler = [SV.saldiran[s]!, SV.savunan[s]!];
     if (liderler.includes(kazanan) && liderler.includes(kaybeden)) {
-      // liderler barıştı: savaş biter (diğer üyeler de çıkar)
-      savasKapat(w, s);
+      // liderler barıştı: kaybeden çıkar; tarafında müttefik kalmışsa savaş en güçlü kalan üyeyle sürer (ör. Polonya düşse de
+      // Britanya ve Fransa savaşmayı sürdürür), kimse kalmadıysa savaş biter
+      tarafYaz(w, s, kaybeden, 0);
+      const kalan = savasUyeleri(w, s, tb).filter((x) => x !== kaybeden && !pasif(w, x));
+      if (kalan.length === 0 || savasUyeleri(w, s, ta).length === 0) savasKapat(w, s);
+      else {
+        let lider = kalan[0]!, g = -1;
+        for (const x of kalan) { const v = ulkeBuyuklugu(w, x); if (v > g) { g = v; lider = x; } }
+        if (SV.saldiran[s] === kaybeden) SV.saldiran[s] = lider; else SV.savunan[s] = lider;
+      }
     } else {
       // ayrı barış: lider olmayan taraf çıkar
       const cikan = liderler.includes(kaybeden) ? kazanan : kaybeden;
@@ -291,6 +366,8 @@ export function barisUygula(w: World, kazanan: number, kaybeden: number, tur: nu
     }
   }
   anlasmaKur(w, A.ateskes, kazanan, kaybeden, w.gun + K.ateskesGun);
+  if (tur === 4) kuklaKur(w, kazanan, kaybeden);
+  if (tur === 3) { yikilis(w, kaybeden, kazanan); }
   if (tur === 2) {
     // tazminat: kaybedenin aylık gelirinin %10'u, 5 yıl
     const aylik = Math.max(1, w.C.c.g1[kaybeden]!);
@@ -322,6 +399,82 @@ export function barisUygula(w: World, kazanan: number, kaybeden: number, tur: nu
   bildir(w, 'baris', `${ad}: ${w.pkg.ulkeler[kazanan]!.kisa}–${w.pkg.ulkeler[kaybeden]!.kisa}`, w.oyuncu, true);
   if (tur > 0) { w.C.c.zafer[kazanan] = 15_000; w.C.c.zafer[kaybeden] = -15_000; }
   w.rotaEpoch++;
+}
+
+/** Himaye: kaybeden, kazananın kukla devleti olur (savaşlarına katılır, gelirinin %10'unu öder, kendi başına savaş açamaz). */
+export function kuklaKur(w: World, efendiC: number, kuklaC: number): void {
+  if (anlasmaVar(w, A.kukla, efendiC, kuklaC) >= 0) return;
+  for (const t of [A.ittifak, A.saldirmazlik, A.garanti]) for (let d = 0; d < w.nC; d++) if (d !== efendiC) anlasmaBoz(w, t, kuklaC, d, false);
+  anlasmaKur(w, A.kukla, efendiC, kuklaC);
+  anlasmaKur(w, A.gecis, kuklaC, efendiC);
+  const aylik = Math.max(1, w.C.c.g1[kuklaC]!);
+  anlasmaKur(w, A.tazminat, kuklaC, efendiC, w.gun + 20 * 365, Math.floor(mulDiv(aylik, 100_000, S).q / 30));
+  w.gorus[cc(w, kuklaC, efendiC)] = Math.max(w.gorus[cc(w, kuklaC, efendiC)]!, 55_000);
+  anlat(w, `${w.pkg.ulkeler[kuklaC]!.ad}, ${trEkK(w.pkg.ulkeler[efendiC]!.kisa, 'in')} himayesine girdi (kukla devlet).`, 'diplomasi', efendiC, 3);
+}
+/** Kukla bağımsızlığını ilan eder (efendi zayıfsa). */
+export function kuklaBagimsizlik(w: World, kuklaC: number): void {
+  const e = efendi(w, kuklaC);
+  if (e < 0) return;
+  anlasmaBoz(w, A.kukla, e, kuklaC, false);
+  for (const s of w.AN.list()) if (w.AN.c.tur[s] === A.tazminat && w.AN.c.a[s] === kuklaC && w.AN.c.b[s] === e) anlasmaSil(w, s);
+  gorusDegis(w, e, kuklaC, -40_000);
+  anlat(w, `${w.pkg.ulkeler[kuklaC]!.ad}, ${trEkK(w.pkg.ulkeler[e]!.kisa, 'in')} himayesinden çıkarak bağımsızlığını ilan etti.`, 'diplomasi', kuklaC, 3);
+  if (e === w.oyuncu) bildir(w, 'diplomasi', `${w.pkg.ulkeler[kuklaC]!.kisa} bağımsızlığını ilan etti`, e, true);
+}
+/** Efendi savaşa girince kuklaları aynı tarafta katılır. */
+export function kuklaCagir(w: World, s: number, c: number): void {
+  const t = tarafi(w, s, c);
+  if (t === 0) return;
+  for (const k of kuklalar(w, c)) if (tarafi(w, s, k) === 0 && !pasif(w, k)) savasaKatil(w, s, k, t === 1 ? 0 : 1);
+}
+
+/**
+ * Devletin çöküşü: kontrol ettiği bölge kalmayınca (ya da tam ilhakla) devlet yıkılır. Sahip olduğu bölgeler onları
+ * işgal edenlere geçer; savaşlardan çıkar, birlikleri dağılır, anlaşmaları düşer.
+ */
+export function yikilis(w: World, c: number, varsayilanKazanan = -1): void {
+  if (pasif(w, c)) return;
+  const R = w.R.c;
+  const alanlar = new Map<number, number>();
+  for (let r = 0; r < w.nR; r++) {
+    if (R.sahip[r] !== c) continue;
+    let yeni = R.kontrolEden[r]!;
+    if (yeni === c || yeni < 0) yeni = varsayilanKazanan;
+    if (yeni < 0) continue;
+    R.sahip[r] = yeni; R.kontrolEden[r] = yeni; R.kontrol[r] = Math.min(R.kontrol[r]!, 25_000); R.itaat[r] = 0; R.direnis[r] = 15_000; R.anaYurtGun[r] = 0; R.isyan[r] = 0;
+    iddiaEkle(w, r, c); iddiaSil(w, r, yeni);
+    alanlar.set(yeni, (alanlar.get(yeni) ?? 0) + 1);
+  }
+  for (const s of w.SV.list()) {
+    if (tarafi(w, s, c) === 0) continue;
+    tarafYaz(w, s, c, 0);
+    if (w.SV.c.saldiran[s] === c || w.SV.c.savunan[s] === c || savasUyeleri(w, s, 1).length === 0 || savasUyeleri(w, s, 2).length === 0) {
+      // lider çöktüyse savaş, en güçlü kalan üyeyle sürer; taraf boşsa biter
+      const k1 = savasUyeleri(w, s, 1), k2 = savasUyeleri(w, s, 2);
+      if (k1.length === 0 || k2.length === 0) savasKapat(w, s);
+      else { if (w.SV.c.saldiran[s] === c) w.SV.c.saldiran[s] = k1[0]!; if (w.SV.c.savunan[s] === c) w.SV.c.savunan[s] = k2[0]!; }
+    }
+  }
+  for (const s of w.AN.list()) if (w.AN.c.a[s] === c || w.AN.c.b[s] === c) anlasmaSil(w, s);
+  for (const s of w.GR.list()) if (w.GR.c.ulke[s] === c || w.GR.c.hedef[s] === c) w.GR.release(s);
+  // ordu dağılır: askerler köken eyaletlerine döner (köken muhasebesi korunur)
+  for (const u of w.U.list()) if (w.U.c.ulke[u] === c) terhis(w, u);
+  w.C.c.pasif[c] = 1;
+  const kim = [...alanlar.entries()].sort((x, y) => y[1] - x[1] || x[0] - y[0]).map(([k, n]) => `${w.pkg.ulkeler[k]!.kisa} (${n})`);
+  anlat(w, `${w.pkg.ulkeler[c]!.ad} yıkıldı${kim.length ? `; toprakları ilhak edildi: ${kim.join(', ')}` : ''}.`, 'baris', c, 3);
+  bildir(w, 'baris', `${w.pkg.ulkeler[c]!.kisa} yıkıldı`, w.oyuncu, true);
+  if (c === w.oyuncu) bildir(w, 'oyunSonu', 'Devletiniz yıkıldı. Kronikten seferi inceleyebilir ya da yeni bir sefere başlayabilirsiniz.', c, true);
+  w.rotaEpoch++;
+}
+/** Haftalık: hiçbir bölgeyi kontrol etmeyen savaştaki devletler çöker. */
+export function cokusDenetle(w: World): void {
+  const kontrol = new Int32Array(w.nC), sahip = new Int32Array(w.nC);
+  for (let r = 0; r < w.nR; r++) { const k = w.R.c.kontrolEden[r]!; if (k >= 0) kontrol[k]!++; const s = w.R.c.sahip[r]!; if (s >= 0) sahip[s]!++; }
+  for (let c = 0; c < w.nC; c++) {
+    if (pasif(w, c) || kontrol[c]! > 0) continue;
+    if (savastaMi(w, c) || sahip[c]! > 0) yikilis(w, c);
+  }
 }
 
 // ---------- Aylık görüş ----------

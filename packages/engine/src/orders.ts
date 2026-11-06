@@ -1,13 +1,16 @@
 // Emir doğrulama, önizleme (plan kartı) ve uygulama. Oyuncu ve karar modülü aynı kuralları kullanır.
 import type { World } from './state/world.ts';
 import { BAKAN, BAKAN_AD, BK } from './state/world.ts';
-import { A, ck, birlikKur, sablonIhtiyac, hatEkle, URUN_MUH, toplamAskeriFabrika } from './state/world.ts';
-import { ASKERLIK, EKONOMI, ISGAL, YONETIM, SABLON, TEKNOLOJI, NTEK, PROJE, MAL, BUTCE, TUTUM, EKIPMAN, MALI, K, BAYRAK, NEKIP, tekVar } from './catalog.ts';
+import { A, ck, birlikKur, sablonIhtiyac, hatEkle, URUN_MUH, toplamAskeriFabrika, NYUVA } from './state/world.ts';
+import { ASKERLIK, EKONOMI, ISGAL, YONETIM, SABLON, TEKNOLOJI, NTEK, PROJE, MAL, BUTCE, TUTUM, EKIPMAN, MALI, K, BAYRAK, NEKIP, tekVar, kademe, AKTIF } from './catalog.ts';
 import { S, mulDiv, clamp } from './num/index.ts';
-import { uc, savasta, savastaMi, gorus, anlasmaVar, birlikAdi, rotaTip, bildir, anlat, ulkeBirlikleri, iddiaVar } from './systems/ortak.ts';
+import { uc, savasta, savastaMi, gorus, anlasmaVar, birlikAdi, rotaTip, bildir, anlat, ulkeBirlikleri, iddiaVar, efendi } from './systems/ortak.ts';
 import { askerlikAktar, insanGucu, terhis } from './systems/nufus.ts';
-import { tekMaliyetHesapla, krediLimiti, ulkeGidaStok, malStok, arastirmaHizi } from './systems/ekonomi.ts';
-import { TK, TK_AD, ESIK, teklifEkle, anlasmaKur, anlasmaBoz, gerekceBaslat, gerekceSurecte, gerekceVar, savasIlan, savasaKatil, barisKabul, barisUygula, gorusDegis, teklifBolgeleri, ekipmanFiyat, BARIS_TUR } from './systems/diplomasi.ts';
+import { tekMaliyetHesapla, krediLimiti, ulkeGidaStok, malStok, arastirmaHizi, acikYuva } from './systems/ekonomi.ts';
+import { KADEME_MAX } from './katalogEk.ts';
+import { tarih } from './calendar/index.ts';
+import { TK, TK_AD, ESIK, teklifEkle, anlasmaKur, anlasmaBoz, gerekceBaslat, gerekceSurecte, gerekceVar, savasIlan, savasaKatil, barisKabul, barisUygula, gorusDegis, teklifBolgeleri, ekipmanFiyat, BARIS_TUR, bolgeDegeri, kuklaKur } from './systems/diplomasi.ts';
+import { EK_EMIRLER, EK_ALAN } from './emirEk.ts';
 import { olaySecimUygula, olayTanim } from './systems/olaylar.ts';
 import { tahminiGun } from './systems/kara.ts';
 import { trEk, trEkK, trKucuk } from './tr.ts';
@@ -62,7 +65,7 @@ const EMIR_ALAN: Record<string, number> = {
 };
 function elleOncelik(w: World, e: Emir): void {
   const c = e.ulke;
-  const b = EMIR_ALAN[e.tur];
+  const b = EMIR_ALAN[e.tur] ?? EK_ALAN[e.tur];
   if (b && (w.C.c.bakan[c]! & b)) {
     w.C.c.bakan[c] = w.C.c.bakan[c]! & ~b;
     const ad = BAKAN_AD[BAKAN[31 - Math.clz32(b)]!];
@@ -111,7 +114,7 @@ export function onizle(w: World, e: Emir): Kart {
       if (C.pg[c]! < 150_000) return red('Askerlik yasası', `150 siyasi güç gerekiyor; mevcut ${puan(C.pg[c]!)}.`);
       if (y === 4 && !savastaMi(w, c)) return red('Askerlik yasası', 'Son çare yalnız savaşta ve başkent tehdidi altında.');
       if (C.destek[c]! < law.destek) return red('Askerlik yasası', `${law.ad} için savaşa destek ${puan(law.destek)} olmalı; mevcut ${puan(C.destek[c]!)}.`);
-      if (!savastaMi(w, c) && y > YONETIM[w.pkg.ulkeler[c]!.yonetim]!.baris) return red('Askerlik yasası', `Barışta ${YONETIM[w.pkg.ulkeler[c]!.yonetim]!.ad} için tavan ${ASKERLIK[YONETIM[w.pkg.ulkeler[c]!.yonetim]!.baris]!.ad}.`);
+      if (!savastaMi(w, c) && y > YONETIM[w.C.c.rejim[c]!]!.baris) return red('Askerlik yasası', `Barışta ${YONETIM[w.C.c.rejim[c]!]!.ad} için tavan ${ASKERLIK[YONETIM[w.C.c.rejim[c]!]!.baris]!.ad}.`);
       const ig = insanGucu(w, c);
       const y0 = ASKERLIK[C.askerlik[c]!]!.y, y1 = law.y;
       const aktar = y1 > y0 ? mulDiv(ig.S, y1 - y0, S - y0).q : -mulDiv(ig.Y, y0 - y1, y0).q;
@@ -207,8 +210,10 @@ export function onizle(w: World, e: Emir): Kart {
       const t = n(e.tek, -1);
       const T = TEKNOLOJI[t];
       if (!T) return red('Araştırma', 'Teknoloji bulunamadı.');
-      if (w.tekBitti[c * NTEK + t]) return red('Araştırma', `${T.ad} zaten biliniyor.`);
-      for (let k = 0; k < 3; k++) if (w.arastirma[c * 3 + k] === t) return red('Araştırma', `${T.ad} zaten araştırılıyor.`);
+      const L = w.tekBitti[c * NTEK + t]!;
+      if (L >= KADEME_MAX) return red('Araştırma', `${kademe(t, L).ad} son kademede.`);
+      const hedefAd = kademe(t, L + 1).ad;
+      for (let k = 0; k < NYUVA; k++) if (w.arastirma[c * NYUVA + k] === t) return red('Araştırma', `${hedefAd} zaten araştırılıyor.`);
       const eksik = T.on.filter((o) => !w.tekBitti[c * NTEK + TEKNOLOJI.findIndex((x) => x.kod === o)]);
       if (eksik.length) return red('Araştırma', `Ön koşul: ${eksik.map((o) => TEKNOLOJI.find((x) => x.kod === o)!.ad).join(', ')}.`);
       const yv = arastirmaYuvalari(w, c);
@@ -220,7 +225,8 @@ export function onizle(w: World, e: Emir): Kart {
       const m = tekMaliyetHesapla(w, c, t);
       const v = Math.max(1, arastirmaHizi(w, c));
       const kalan = Math.max(0, m - w.tekIlerleme[c * NTEK + t]!);
-      return { gecerli: true, baslik: `Araştırma: ${T.ad}`, kapsam: T.etki, bugun: [bos < 0 ? 'Yuva dolu: en eski araştırmanın yerine geçer (ilerleme korunur)' : `Yuva ${bos + 1}`], tahmin: [`Süre ≈ ${Math.ceil(kalan / v)} gün (bilim bütçesi ve eğitimle kısalır)`, T.yil > w.pkg.senaryo.baslangic.y ? `Zamanından önce (${T.yil}) maliyet artışı uygulandı` : 'Dönem maliyeti'], iptal: 'İlerleme saklanır', uyari: T.dislar.length ? [`Seçilince ${T.dislar.map((d) => TEKNOLOJI.find((x) => x.kod === d)!.ad).join(' ve ')} kapanır.`] : undefined };
+      const yil = kademe(t, L + 1).yil, bugunYil = tarih(w.gun).y;
+      return { gecerli: true, baslik: `Araştırma: ${hedefAd}${L > 0 ? ` (${L + 1}. kademe)` : ''}`, kapsam: L > 0 ? `${T.etki} — kademe etkisi büyür` : T.etki, bugun: [bos < 0 ? 'Yuva dolu: en eski araştırmanın yerine geçer (ilerleme korunur)' : `Yuva ${bos + 1}/${acikYuva(w, c)}`], tahmin: [`Süre ≈ ${Math.ceil(kalan / v)} gün (bilim bütçesi ve eğitimle kısalır)`, yil > bugunYil ? `Zamanından önce (${yil}): ${yil - bugunYil} yıl erken, maliyet ×${(1 + 0.12 * Math.floor((yil - bugunYil) / AKTIF.yilOlcek)).toFixed(1)}` : 'Dönem maliyeti'], iptal: 'İlerleme saklanır', uyari: T.dislar.length && L === 0 ? [`Seçilince ${T.dislar.map((d) => TEKNOLOJI.find((x) => x.kod === d)!.ad).join(' ve ')} kapanır.`] : undefined };
     }
     case 'insa': {
       const p = n(e.proje, -1);
@@ -233,9 +239,13 @@ export function onizle(w: World, e: Emir): Kart {
       const ort = Math.floor(eyBolge.reduce((s, x) => s + w.R.c.altyapi[x]!, 0) / eyBolge.length);
       const yuva = 1 + Math.floor(ort / 2);
       let mevcut = 0;
-      for (const s of w.PR.rows()) if (eyBolge.includes(w.PR.c.bolge[s]!)) mevcut++;
+      for (const s of w.PR.rows()) if (eyBolge.includes(w.PR.c.bolge[s]!) && !PROJE[w.PR.c.tur[s]!]?.ozel) mevcut++;
       if (mevcut >= yuva) return red('İnşa', `${w.pkg.eyaletler[e2]!.ad} eyaletinde inşa yuvası dolu (${mevcut}/${yuva}).`);
+      if (P.ozel) return red('İnşa', 'Gemi ve uçak siparişleri tersane ve uçak emirleriyle verilir.');
       if (P.kod === 'valilik' && w.R.c.valilik[r]) return red('İnşa', 'Bölgede valilik zaten var.');
+      if (P.kod === 'kent' && w.R.c.kent[r]! >= 10) return red('İnşa', 'Şehir en üst düzeyde (10).');
+      if (P.kod === 'maden' && w.R.c.maden[r]! >= 5) return red('İnşa', 'Maden işletmesi en üst düzeyde (5).');
+      if (P.kod === 'maden' && !w.pkg.bolgeler[r]!.celik && !w.pkg.bolgeler[r]!.komur && !w.pkg.bolgeler[r]!.petrol) return red('İnşa', `${bAd(w, r)} bölgesinde maden ya da petrol yatağı yok.`);
       if (P.kod === 'demiryolu' && w.R.c.demiryolu[r]! >= 3) return red('İnşa', 'Demiryolu en üst düzeyde.');
       const indirim = insaIndirim(w, c, P.kod);
       const nakit = mulDiv(P.nakit, indirim, S).q;
@@ -262,7 +272,21 @@ export function onizle(w: World, e: Emir): Kart {
       if (savasta(w, c, d)) return red('Diplomasi', `${uAd(w, d)} ile savaştasınız; yalnız barış önerilebilir.`);
       const esik = ESIK[tip] ?? 0;
       const g = gorus(w, d, c);
+      if (efendi(w, c) >= 0 && tip === TK.ultimatom) return red('Ültimatom', 'Kukla devlet ültimatom veremez.');
       if (g < esik) return red(TK_AD[tip]!, `İlişki ${puan(g)}; ${trKucuk(TK_AD[tip]!)} teklifi için ${puan(esik)} gerekiyor.`);
+      if (tip === TK.devir || tip === TK.ultimatom) {
+        const rs = arr(e.bolgeler).filter((r) => r < w.nR && w.R.c.sahip[r] === d);
+        if (!rs.length) return red(TK_AD[tip]!, `${uAd(w, d)} topraklarından bölge seçin.`);
+        if (rs.includes(w.pkg.ulkeler[d]!.baskent)) return red(TK_AD[tip]!, 'Başkent istenemez.');
+        const bedel = n(e.bedel);
+        if (tip === TK.devir && bedel > C.hazine[c]!) return red('Toprak devri', `Hazine ${fmt(bedel)} altın için yetmiyor.`);
+        const deger = rs.reduce((a, r) => a + bolgeDegeri(w, r), 0);
+        return { gecerli: true, baslik: `${TK_AD[tip]}: ${rs.map((r) => bAd(w, r)).join(', ')}`, kapsam: `Muhatap: ${w.pkg.ulkeler[d]!.ad}${tip === TK.devir ? ` · bedel ${fmt(bedel)} altın` : ''}`, bugun: [tip === TK.devir ? 'Bedel kabulde ödenir' : 'Ret hâlinde savaş gerekçesi hazır olur'], tahmin: [`Bölge değeri ${deger}`, tip === TK.ultimatom ? 'Zayıf ve yalnız devletler boyun eğer' : 'İyi ilişki ve yüksek bedel gerekir'], iptal: 'Yanıttan önce geri çekilebilir', siyasi: tip === TK.ultimatom ? 'Muhatabın görüşü −15' : undefined };
+      }
+      if (tip === TK.kuklaOl) {
+        if (efendi(w, d) >= 0) return red('Himaye', `${uAd(w, d)} zaten bir başka devletin himayesinde.`);
+        return { gecerli: true, baslik: `Himaye teklifi: ${uAd(w, d)}`, kapsam: 'Kabul ederse kukla devletiniz olur (savaşlarınıza katılır, gelirinin %10\'unu öder)', bugun: [], tahmin: ['Küçük, tehdit altındaki ve size yakın devletler kabul eder'], iptal: 'Yanıttan önce geri çekilebilir' };
+      }
       if (tip !== TK.ekipman && anlasmaVar(w, tip, c, d) >= 0) return red(TK_AD[tip]!, 'Bu anlaşma zaten yürürlükte.');
       if (tip === TK.ekipman) {
         const k = n(e.ekip, 0), adet = n(e.adet, 100);
@@ -293,13 +317,14 @@ export function onizle(w: World, e: Emir): Kart {
       if (savasta(w, c, d)) return red('Savaş', 'Zaten savaştasınız.');
       if (anlasmaVar(w, A.ateskes, c, d) >= 0) return red('Savaş', 'Ateşkes yürürlükte (5 yıl).');
       if (anlasmaVar(w, A.ittifak, c, d) >= 0) return red('Savaş', 'Müttefikinize savaş ilan edemezsiniz; önce ittifakı bozun.');
+      if (efendi(w, c) >= 0) return red('Savaş', `Kukla devlet kendi başına savaş açamaz (efendi: ${uAd(w, efendi(w, c))}).`);
       const ger = gerekceVar(w, c, d);
       const cagri: string[] = [];
       for (let x = 0; x < w.nC; x++) if (x !== c && x !== d && (anlasmaVar(w, A.ittifak, d, x) >= 0 || anlasmaVar(w, A.garanti, x, d) >= 0)) cagri.push(uAd(w, x));
       return { gecerli: true, baslik: `Savaş ilanı: ${w.pkg.ulkeler[d]!.ad}`, kapsam: ger ? 'Gerekçeli' : 'GEREKÇESİZ', bugun: ger ? [] : ['Huzur −10, savaşa destek −15, ün +20'], tahmin: [cagri.length ? `Savunmaya çağrılabilecekler: ${cagri.join(', ')}` : 'Bilinen garantör veya müttefik yok', 'Ticaret ve saldırmazlık anlaşmaları bozulur'], iptal: 'Geri alınamaz; barış gerekir', siyasi: ger ? 'Diğer devletlerin görüşü −5' : 'Diğer devletlerin görüşü −15' };
     }
     case 'baris': {
-      const d = n(e.kime, -1), tur = clamp(n(e.barisTur), 0, 2);
+      const d = n(e.kime, -1), tur = clamp(n(e.barisTur), 0, 5);
       if (!savasta(w, c, d)) return red('Barış', `${uAd(w, d)} ile savaşta değilsiniz.`);
       const rs = arr(e.bolgeler).filter((r) => r < w.nR);
       const sonuc = barisKabul(w, d, c, tur, rs);
@@ -350,8 +375,10 @@ export function onizle(w: World, e: Emir): Kart {
       const uyari = w.mod !== 1 ? ['Bu kayıt KALICI olarak Sandbox etiketi alır; rekabetçi puan kapanır.'] : undefined;
       return { gecerli: true, baslik: 'Sandbox', kapsam: `${alan}: ${n(e.miktar) >= 0 ? '+' : ''}${fmt(n(e.miktar))}${e.hedefUlke !== undefined ? ` (${uAd(w, n(e.hedefUlke))})` : ''}`, bugun: ['Kaynak doğrudan değiştirilir'], tahmin: [], iptal: 'Ters işlemle', uyari };
     }
-    default:
-      return red('Bilinmeyen emir', `Emir türü tanınmadı: ${e.tur}`);
+    default: {
+      const x = EK_EMIRLER[e.tur];
+      return x ? x.onizle(w, e) : red('Bilinmeyen emir', `Emir türü tanınmadı: ${e.tur}`);
+    }
   }
 }
 
@@ -422,10 +449,11 @@ export function uygula(w: World, e: Emir): { ok: boolean; neden?: string } {
     }
     case 'arastir': {
       const t = n(e.tek);
-      let bos = -1; for (let k = 0; k < 3; k++) if (w.arastirma[c * 3 + k]! < 0) { bos = k; break; }
+      const n0 = acikYuva(w, c);
+      let bos = -1; for (let k = 0; k < n0; k++) if (w.arastirma[c * NYUVA + k]! < 0) { bos = k; break; }
       if (bos < 0) bos = 0;
-      w.arastirma[c * 3 + bos] = t;
-      if (w.tekMaliyet[c * NTEK + t] === 0) w.tekMaliyet[c * NTEK + t] = tekMaliyetHesapla(w, c, t);
+      w.arastirma[c * NYUVA + bos] = t;
+      w.tekMaliyet[c * NTEK + t] = tekMaliyetHesapla(w, c, t);
       break;
     }
     case 'insa': {
@@ -444,7 +472,9 @@ export function uygula(w: World, e: Emir): { ok: boolean; neden?: string } {
     }
     case 'teklif': {
       const d = n(e.kime), tip = n(e.tip);
-      teklifEkle(w, c, d, tip, n(e.ekip, 0), n(e.adet, 0));
+      if (tip === TK.devir || tip === TK.ultimatom) teklifEkle(w, c, d, tip, n(e.bedel), 0, arr(e.bolgeler));
+      else teklifEkle(w, c, d, tip, n(e.ekip, 0), n(e.adet, 0));
+      if (tip === TK.ultimatom) gorusDegis(w, d, c, -15_000);
       break;
     }
     case 'teklifYanit': {
@@ -466,6 +496,7 @@ export function uygula(w: World, e: Emir): { ok: boolean; neden?: string } {
     case 'bakan': { const b = 1 << n(e.alan); C.bakan[c] = n(e.acik) ? C.bakan[c]! | b : C.bakan[c]! & ~b; break; }
     case 'kaliciGida': C.kaliciGida[c] = n(e.acik) ? 1 : 0; break;
     case 'sandbox': sandboxUygula(w, e); break;
+    default: EK_EMIRLER[e.tur]?.uygula(w, e);
   }
   return { ok: true };
 }
@@ -513,6 +544,10 @@ export function teklifSonuc(w: World, s: number, kabul: boolean): void {
   if (!kabul) {
     anlat(w, `${adB}, ${trEkK(adA, 'in')} ${trKucuk(TK_AD[tur]!)} teklifini reddetti.`, 'diplomasi', a, 1);
     if (a === w.oyuncu) bildir(w, 'teklif', `${adB} reddetti: ${TK_AD[tur]}`, a, false);
+    if (tur === TK.ultimatom) {
+      // reddedilen ültimatom: savaş gerekçesi hazır
+      const g = w.GR.alloc(); w.GR.c.ulke[g] = a; w.GR.c.hedef[g] = b; w.GR.c.bitis[g] = w.gun; w.GR.c.hazir[g] = 1;
+    }
     if (tur === TK.cagri) {
       // çağrıya uymamak ittifakı zedeler
       anlasmaBoz(w, A.ittifak, b, a, true); anlasmaBoz(w, A.garanti, b, a, true);
@@ -529,7 +564,20 @@ export function teklifSonuc(w: World, s: number, kabul: boolean): void {
     const sv = T.p1[s]!;
     if (w.SV.alive[sv]) savasaKatil(w, sv, b, T.p2[s]! === 1 ? 1 : 0);
   } else if (tur === TK.baris) {
-    barisUygula(w, a, b, T.p1[s]!, teklifBolgeleri(w, s));
+    // teslim önerisinde öneren kaybeden taraftır
+    if (T.p1[s] === 5) barisUygula(w, b, a, 2, teklifBolgeleri(w, s));
+    else barisUygula(w, a, b, T.p1[s]!, teklifBolgeleri(w, s));
+  } else if (tur === TK.devir || tur === TK.ultimatom) {
+    const bedel = tur === TK.devir ? Math.min(T.p1[s]!, Math.max(0, w.C.c.hazine[a]!)) : 0;
+    w.C.c.hazine[a] = w.C.c.hazine[a]! - bedel; w.C.c.hazine[b] = w.C.c.hazine[b]! + bedel;
+    for (const r of teklifBolgeleri(w, s)) {
+      if (w.R.c.sahip[r] !== b) continue;
+      w.R.c.sahip[r] = a; w.R.c.kontrolEden[r] = a; w.R.c.kontrol[r] = Math.min(w.R.c.kontrol[r]!, 40_000); w.R.c.itaat[r] = 0; w.R.c.anaYurtGun[r] = 0;
+    }
+    w.rotaEpoch++;
+    anlat(w, `${w.pkg.ulkeler[b]!.ad}, ${teklifBolgeleri(w, s).map((r) => w.pkg.bolgeler[r]!.ad).join(', ')} bölgelerini ${trEkK(w.pkg.ulkeler[a]!.kisa, 'e')} ${tur === TK.devir ? 'devretti' : 'bıraktı (ültimatom)'}.`, 'diplomasi', a, 3);
+  } else if (tur === TK.kuklaOl) {
+    kuklaKur(w, a, b);
   } else if (tur === TK.ekipman) {
     const k = T.p1[s]!, adet = T.p2[s]!;
     const f = ekipmanFiyat(k, adet);
@@ -550,7 +598,7 @@ export function teklifSonuc(w: World, s: number, kabul: boolean): void {
 /** Kuyruğa al (onaylı emir). P2'de sırayla işlenir. */
 /** Yuvaların, kuyruktaki araştırma emirleri uygulandıktan sonraki hâli (önizleme ve arayüz için). */
 export function arastirmaYuvalari(w: World, c: number): { yuva: number[]; sirada: number[] } {
-  const yuva = [0, 1, 2].map((k) => w.arastirma[c * 3 + k]!);
+  const yuva = Array.from({ length: acikYuva(w, c) }, (_, k) => w.arastirma[c * NYUVA + k]!);
   const sirada: number[] = [];
   for (const k of w.kuyruk) {
     const e = k.emir as Emir;

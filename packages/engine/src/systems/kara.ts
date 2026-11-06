@@ -11,6 +11,7 @@ import {
   deneyimCarpan, hareketMevsim, camurDuzey, kisDuzey, birlikAdi, anlat, bildir, fmtSayi, modDeger, denizGecer,
 } from './ortak.ts';
 import type { Istat } from './ortak.ts';
+import { havaUstunluk, yakinDestek } from './deniz.ts';
 import { kayipYaz, birlikKisiCikar } from './nufus.ts';
 import { baslangicItaat } from './siyaset.ts';
 import { kenarKey } from '../state/world.ts';
@@ -224,6 +225,11 @@ export function muharebeGunu(w: World, list: Muharebe[]): void {
       if (kaynak.size >= 2) v = mulRatio(v, tekVar(w, c, 'dok_manevra') ? 1_200_000 : 1_100_000).q; // kuşatma
       const md = modDeger(w, c, MT.saldiri);
       if (md) v = mulRatio(v, Math.max(200_000, S + md)).q;
+      // hava üstünlüğü ve yakın destek
+      // yakın destek hava üstünlüğüyle ölçeklenir: gökyüzü düşmandaysa bombardıman uçakları hedefe ulaşamaz
+      const hu = havaUstunluk(w, c, b);
+      const hd = mulDiv(yakinDestek(w, c, b), S + hu, 2 * S).q;
+      if (hu || hd) v = mulRatio(v, Math.max(600_000, S + mulDiv(200_000, hu, S).q + hd)).q;
       return { u, v, k: s.YR, gen: Math.max(1, s.genislik), orgMax: s.orgMax, okC: tekVar(w, c, 'taktik2') ? 900_000 : S };
     });
     const sav: Taraf[] = dGen.aktif.map((u) => {
@@ -239,6 +245,9 @@ export function muharebeGunu(w: World, list: Muharebe[]): void {
       if (U.durus![u] === 1) k = mulRatio(k, 1_100_000).q;
       const md = modDeger(w, c, MT.savunma);
       if (md) k = mulRatio(k, Math.max(200_000, S + md)).q;
+      const hu = havaUstunluk(w, c, b);
+      const hd = mulDiv(yakinDestek(w, c, b), S + hu, 2 * S).q;
+      if (hu || hd) k = mulRatio(k, Math.max(700_000, S + mulDiv(120_000, hu, S).q + Math.floor(hd / 2))).q;
       return { u, v, k, gen: Math.max(1, s.genislik), orgMax: s.orgMax, okC: S };
     });
     // muharebe tahkimatı aşındırır (topçu ile daha hızlı)

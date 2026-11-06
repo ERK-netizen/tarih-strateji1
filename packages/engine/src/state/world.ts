@@ -5,6 +5,8 @@ import { NHUCRE, NKIMLIK, NEKIP, NTEK, NMAL, MAL, BAYRAK, ST, YB, TABUR, SABLON,
 import type { DonemKod } from '../donem.ts';
 import { gunNo } from '../calendar/index.ts';
 import { largestRemainder, S } from '../num/index.ts';
+import { GEMI, HAVA } from '../katalogEk.ts';
+import { AKTIF } from '../catalog.ts';
 
 const f = 'f64' as ColType;
 const i32 = 'i32' as ColType;
@@ -15,6 +17,8 @@ export const BOLGE_KOL = [
   ['isTarim', f], ['isSanayi', f], ['isHizmet', f], ['isGucu', f], ['issiz', f],
   ['yerelGida', f], ['gidaArtik', f], ['uretimDun', f], ['vergiDun', f],
   ['isgalGun', f], ['anaYurtGun', f], ['mesafe', f], ['valilik', f], ['isyan', f], ['tahkimat', f], ['sonMuharebe', f], ['vaDun', f],
+  // şema 7: şehir düzeyi (0–10), maden işletmesi düzeyi (0–5), etkin demografi politikası ve hedef kimlik hücresi
+  ['kent', f], ['maden', f], ['demPol', i32], ['demKim', i32],
 ] as const;
 export type BolgeK = (typeof BOLGE_KOL)[number][0];
 
@@ -33,6 +37,13 @@ export const ULKE_KOL = [
   ['olu', f], ['sonPlan', f], ['hedefUlke', i32], ['bakimHedef', f], ['propaganda', f], ['celik', f], ['komur', f], ['tuketimYet', f], ['bakimOdenen', f], ['harcamaOran', f], ['otoTakviye', i32], ['vergiAy', f], ['kaliciGida', i32], ['olayEsik', f], ['pasif', i32],
   // şema 6: bakanlar (alan bit maskesi), başlangıç tabanları (hedefler), savaşta geçen gün, seçilen doktrin
   ['bakan', i32], ['bazBolge', f], ['bazYasam', f], ['bazTek', f], ['bazNufus', f], ['savasGunu', f], ['tekSay', f], ['maas', f],
+  // şema 7: donanma (sınıf başına gemi), hasar, görev; hava filoları (tür başına uçak), görev ve hedef bölge; abluka ve akın kaybı
+  ['gs0', f], ['gs1', f], ['gs2', f], ['gs3', f], ['gs4', f], ['gHasar', f], ['donGorev', i32],
+  ['h0', f], ['h1', f], ['h2', f], ['hHasar', f], ['havaGorev', i32], ['havaBolge', i32], ['abluka', f], ['akinKayip', f], ['denizK', i32],
+  // siyaset: rejim, parti destekleri (S), iktidar partisi, sonraki seçim günü, rejim geçişinin bitişi
+  ['rejim', i32], ['parti0', f], ['parti1', f], ['parti2', f], ['parti3', f], ['parti4', f], ['iktidar', i32], ['secim', f], ['gecis', f],
+  // demografi ve ekonomi: nüfus politikası, zulüm kaydı, ekonomi modeli, gümrük, sübvansiyonlar, tarım odağı, petrol stoku ve akışı
+  ['nufusPol', i32], ['zulum', f], ['model', i32], ['tarife', f], ['subTarim', f], ['subSanayi', f], ['tarimOdak', i32], ['petrol', f], ['petrolDun', f], ['petrolIht', f],
 ] as const;
 export type UlkeK = (typeof ULKE_KOL)[number][0];
 
@@ -54,8 +65,9 @@ export const TRANSIT_KOL = [
 export const T_GIDA = 0, T_MUH = 1, T_EKIP = 2, T_KISI = 3, T_PARA = 4, T_MAL = 5;
 export const H_EYALET = 0, H_BIRLIK = 1, H_ULKE = 2;
 
-export const ANLASMA_TUR = ['ticaret', 'saldirmazlik', 'gecis', 'garanti', 'ittifak', 'ateskes', 'tazminat'] as const;
-export const A = { ticaret: 0, saldirmazlik: 1, gecis: 2, garanti: 3, ittifak: 4, ateskes: 5, tazminat: 6 } as const;
+export const ANLASMA_TUR = ['ticaret', 'saldirmazlik', 'gecis', 'garanti', 'ittifak', 'ateskes', 'tazminat', 'kukla', 'ambargo'] as const;
+/** kukla: a efendi, b kukla (yönlü). ambargo: a, b'ye ambargo uygular (yönlü). */
+export const A = { ticaret: 0, saldirmazlik: 1, gecis: 2, garanti: 3, ittifak: 4, ateskes: 5, tazminat: 6, kukla: 7, ambargo: 8 } as const;
 export const ANLASMA_KOL = [['tur', i32], ['a', i32], ['b', i32], ['baslangic', f], ['bitis', f], ['miktar', f]] as const;
 
 export const SAVAS_KOL = [['saldiran', i32], ['savunan', i32], ['baslangic', f], ['kayipA', f], ['kayipB', f], ['gerekceli', i32]] as const;
@@ -66,7 +78,8 @@ export const IDDIA_MAX = 4;
 export const GEREKCE_KOL = [['ulke', i32], ['hedef', i32], ['bitis', f], ['hazir', i32]] as const;
 export const HAT_KOL = [['ulke', i32], ['urun', i32], ['fabrika', f], ['verim', f], ['wip', f], ['oncelik', f]] as const;
 export const URUN_MUH = 100;
-export const PROJE_KOL = [['ulke', i32], ['tur', i32], ['bolge', i32], ['spTop', f], ['nakitTop', f], ['spKul', f], ['nakitKul', f], ['sira', f]] as const;
+/** alt/adet (şema 7): gemi sınıfı ya da uçak türü ve sayısı. */
+export const PROJE_KOL = [['ulke', i32], ['tur', i32], ['bolge', i32], ['spTop', f], ['nakitTop', f], ['spKul', f], ['nakitKul', f], ['sira', f], ['alt', i32], ['adet', f]] as const;
 export const YARALI_KOL = [['ulke', i32], ['eyalet', i32], ['kisi', f], ['gun', f]] as const;
 export const KALICI_KOL = [['ulke', i32], ['tur', i32], ['p1', f], ['p2', f], ['p3', f], ['sonGun', f]] as const;
 export const TEKLIF_KOL = [['kimden', i32], ['kime', i32], ['tur', i32], ['p1', f], ['p2', f], ['gun', f], ['durum', i32]] as const;
@@ -106,7 +119,7 @@ export interface World {
   tekIlerleme: Float64Array; // C × NTEK
   tekBitti: Uint8Array; // C × NTEK
   tekMaliyet: Float64Array; // C × NTEK (başlangıçta sabitlenen maliyet)
-  arastirma: Int32Array; // C × 3 (teknoloji indeksi, -1 boş)
+  arastirma: Int32Array; // C × NYUVA (teknoloji indeksi, -1 boş)
   gorus: Float64Array; // C × C
   tutum: Int32Array; // C × C
   tutumKilit: Float64Array; // C × C
@@ -154,6 +167,9 @@ export interface World {
   depo: Int32Array; // eyalet → merkez bölge
 }
 
+/** Araştırma yuvası sayısı (şema 7: 3 → 6; açık yuva sayısı eğitim ve bilim yatırımıyla artar). */
+export const NYUVA = 6;
+
 export const KOL_E = Array.from({ length: 16 }, (_, k) => `e${k}`);
 export const KOL_T = Array.from({ length: 16 }, (_, k) => `t${k}`);
 export const KOL_ON = Array.from({ length: 16 }, (_, k) => `on${k}`);
@@ -185,7 +201,7 @@ export function yeniDunya(pkg: Paket, oyuncu: number): World {
     R: fixedTable('bolge', BOLGE_KOL, nR), E: fixedTable('eyalet', EYALET_KOL, nE), C: fixedTable('ulke', ULKE_KOL, nC),
     pop: new Float64Array(nR * NHUCRE), kim: new Float64Array(nR * NKIMLIK),
     ekip: new Float64Array(nC * NEKIP), tekIlerleme: new Float64Array(nC * NTEK), tekBitti: new Uint8Array(nC * NTEK), tekMaliyet: new Float64Array(nC * NTEK),
-    arastirma: new Int32Array(nC * 3).fill(-1),
+    arastirma: new Int32Array(nC * NYUVA).fill(-1),
     gorus: new Float64Array(nC * nC), tutum: new Int32Array(nC * nC).fill(1), tutumKilit: new Float64Array(nC * nC),
     kokenDefter: new Float64Array(nC * nE), esir: new Float64Array(nC * nC),
     fiyat: new Float64Array(NMAL), pazarHacim: new Float64Array(NMAL),
@@ -212,6 +228,7 @@ export function yeniDunya(pkg: Paket, oyuncu: number): World {
     R.altyapi[r] = b.altyapi; R.demiryolu[r] = b.demiryolu; R.sulama[r] = b.sulama;
     R.sivilF[r] = b.sivilF; R.askeriF[r] = b.askeriF;
     R.anaYurtGun[r] = 0;
+    R.kent[r] = Math.min(6, 1 + b.yerlesim + Math.floor((b.sivilF + b.askeriF) / 3));
     b.iddia.slice(0, IDDIA_MAX).forEach((d, i) => { w.iddia[r * IDDIA_MAX + i] = d + 1; });
     for (let k = 0; k < NHUCRE; k++) w.pop[r * NHUCRE + k] = b.nufus[k]!;
     for (let k = 0; k < NKIMLIK; k++) w.kim[r * NKIMLIK + k] = b.kimlik[k]!;
@@ -225,6 +242,10 @@ export function yeniDunya(pkg: Paket, oyuncu: number): World {
     C.muhimmat[c] = 0; C.bakimOdenen[c] = S; C.harcamaOran[c] = 700_000; C.otoTakviye[c] = 1; C.tuketimYet[c] = S;
     C.celik[c] = 20_000; C.komur[c] = 20_000; C.pasif[c] = u.pasif ? 1 : 0;
     C.bakan[c] = c === oyuncu ? BAKAN_VARSAYILAN : 0;
+    // şema 7: rejim ve partiler, ekonomi ayarları, petrol stoku, deniz ve hava kuvvetleri
+    C.rejim[c] = u.yonetim; C.model[c] = 1; C.tarife[c] = 100_000; C.petrol[c] = 20_000; C.havaBolge[c] = -1;
+    partiBaslat(w, c);
+    kuvvetBaslat(w, c);
     for (let d = 0; d < nC; d++) w.gorus[c * nC + d] = pkg.gorus[c]![d]!;
     // senaryonun verdiği başlangıç teknolojileri
     for (const kod of u.tekler ?? []) { const t = TEKNOLOJI.findIndex((x) => x.kod === kod); if (t >= 0 && !w.tekBitti[c * NTEK + t]) { w.tekBitti[c * NTEK + t] = 1; C.tekSay[c] = C.tekSay[c]! + 1; } }
@@ -275,6 +296,45 @@ export function yeniDunya(pkg: Paket, oyuncu: number): World {
     hatEkle(w, c, 4, 100_000);
   }
   return w;
+}
+
+/** Başlangıç parti destekleri: rejime ve döneme göre (iktidar en güçlü parti). */
+export function partiBaslat(w: World, c: number): void {
+  const C = w.C.c;
+  const rj = C.rejim[c]!;
+  // eğilimler: 0 düzen, 1 serbesti, 2 eşitlik, 3 milliyet, 4 devrim
+  const taban = rj === 2 ? [300, 280, 220, 150, 50] : rj === 1 ? [380, 240, 160, 160, 60] : rj === 3 ? [200, 100, 150, 450, 100] : rj === 4 ? [300, 80, 80, 480, 60] : [500, 150, 120, 180, 50];
+  // ülke kimliği küçük sapma verir (kişilik ve güç; deterministik)
+  const k = w.pkg.ulkeler[c]!.kisilik;
+  if (k === 0) { taban[3] = taban[3]! + 80; taban[1] = taban[1]! - 40; taban[2] = taban[2]! - 40; }
+  if (k === 3) { taban[1] = taban[1]! + 80; taban[3] = taban[3]! - 80; }
+  if (k === 4) { taban[4] = taban[4]! + 60; taban[0] = taban[0]! - 60; }
+  const top = taban.reduce((a, b) => a + b, 0);
+  const pay = largestRemainder(S, taban.map((x) => Math.max(1, x)));
+  void top;
+  C.parti0[c] = pay[0]!; C.parti1[c] = pay[1]!; C.parti2[c] = pay[2]!; C.parti3[c] = pay[3]!; C.parti4[c] = pay[4]!;
+  let best = 0; for (let i = 1; i < 5; i++) if (pay[i]! > pay[best]!) best = i;
+  C.iktidar[c] = best;
+  C.secim[c] = rj === 1 || rj === 2 ? w.gun + 365 * 2 + ((c * 97) % 730) : 0;
+}
+/** Başlangıç donanması ve hava kuvvetleri: senaryonun deniz gücü ve genel güç puanından (dönem kataloğuna göre). */
+export function kuvvetBaslat(w: World, c: number): void {
+  const u = w.pkg.ulkeler[c]!;
+  if (u.pasif) return;
+  const C = w.C.c;
+  let lim = w.onbellek.get('limanUlke') as Uint8Array | undefined;
+  if (!lim) {
+    lim = new Uint8Array(w.nC);
+    for (const k of w.pkg.kenarlar) if (k.tur) { const a = w.pkg.bolgeler[k.a]!.sahip, b2 = w.pkg.bolgeler[k.b]!.sahip; if (a >= 0) lim[a] = 1; if (b2 >= 0) lim[b2] = 1; }
+    for (const b2 of w.pkg.bolgeler) if (b2.kiyi && b2.sahip >= 0) lim[b2.sahip] = 1;
+    w.onbellek.set('limanUlke', lim);
+  }
+  const kiyi = lim[c] === 1;
+  const d = AKTIF.donem;
+  const deniz = u.deniz ?? Math.floor((u.guc ?? 4) / 2);
+  if (kiyi && deniz > 0) GEMI[d].forEach((g, k) => { C[`gs${k}` as 'gs0'][c] = Math.floor((g.taban * deniz * (deniz + 2)) / 6); });
+  const guc = u.guc ?? 4;
+  HAVA[d].forEach((h, k) => { C[`h${k}` as 'h0'][c] = Math.floor((h.taban * guc * (guc + 1)) / 8); });
 }
 
 export function toplamAskeriFabrika(w: World, c: number): number {

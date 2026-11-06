@@ -22,7 +22,7 @@ function bolgeToplam(w: World, r: number): number {
 }
 
 /** Kimlik dağılımını nüfus toplamına eşitler (yalnız sivil değişimlerde, oransal, en büyük artık). */
-function kimlikEsitle(w: World, r: number): void {
+export function kimlikEsitle(w: World, r: number): void {
   const hedef = bolgeToplam(w, r);
   const agirlik: number[] = [];
   let top = 0;
@@ -37,13 +37,21 @@ export function aylikNufus(w: World): void {
   const nR = w.nR;
   const toplamlar: number[] = [];
   let dunya = 0;
-  for (let r = 0; r < nR; r++) { const t = bolgeToplam(w, r); toplamlar.push(t); dunya += t; }
+  // doğum ağırlığı: doğum teşviki uygulayan ülkelerde %25 fazla (şema 7)
+  const agirlik: number[] = [];
+  let dunyaAg = 0;
+  for (let r = 0; r < nR; r++) {
+    const t = bolgeToplam(w, r); toplamlar.push(t); dunya += t;
+    const c0 = w.R.c.sahip[r]!;
+    const a = c0 >= 0 && w.C.c.nufusPol[c0] === 1 ? t + (t >> 2) : t;
+    agirlik.push(a); dunyaAg += a;
+  }
   // Doğum: dünya toplamı, artık kanalıyla
-  const dg = mulRatio(dunya, DOGUM_AY);
+  const dg = mulRatio(dunyaAg, DOGUM_AY);
   let dogum = dg.q;
   w.artik.dogum += dg.rem;
   if (w.artik.dogum >= S) { dogum += 1; w.artik.dogum -= S; }
-  const dogumPay = largestRemainder(dogum, toplamlar);
+  const dogumPay = largestRemainder(dogum, agirlik);
   // Doğal ölüm
   const og = mulRatio(dunya, OLUM_AY);
   let olum = og.q;

@@ -1,8 +1,9 @@
 // Sistemlerin paylaştığı saf yardımcılar: ilişki, erişim, rota, birlik istatistikleri.
 import type { World } from '../state/world.ts';
-import { A, cc, kenarKey, IDDIA_MAX } from '../state/world.ts';
-import { AKTIF, TABUR, EKIPMAN, AILE_EKIP, ARAZI, K, KIS_HAREKET, KIS_KAPASITE, CAMUR_HAREKET, tekVar } from '../catalog.ts';
-import { S, mulDiv, clamp } from '../num/index.ts';
+import { A, cc, kenarKey, IDDIA_MAX, MOD_TUR } from '../state/world.ts';
+import { PARTI } from '../katalogEk.ts';
+import { AKTIF, TABUR, EKIPMAN, AILE_EKIP, ARAZI, K, KIS_HAREKET, KIS_KAPASITE, CAMUR_HAREKET, tekVar, tekKat, tekSeviye } from '../catalog.ts';
+import { S, mulDiv, clamp, mulRatio } from '../num/index.ts';
 import { tarih } from '../calendar/index.ts';
 import { KOL_E, KOL_T } from '../state/world.ts';
 
@@ -56,18 +57,8 @@ function savasMatris(w: World): Uint8Array {
  * açık deniz geçişi ve düşman kıyısına çıkarma kapanır. Kendi kıyıları arasındaki boğaz geçişi (kıyı topçusu) açık kalır.
  */
 export function denizKapali(w: World, c: number): boolean {
-  let o = w.onbellek.get('denizK') as { s: number; m: Uint8Array } | undefined;
-  if (!o || o.s !== w.savasSurum) {
-    const n = w.nC, m = new Uint8Array(n), sm = savasMatris(w);
-    const g = (x: number) => w.pkg.ulkeler[x]!.deniz ?? Math.floor((w.pkg.ulkeler[x]!.guc ?? 4) / 2);
-    for (let x = 0; x < n; x++) {
-      let biz = g(x), onlar = 0;
-      for (let y = 0; y < n; y++) { const t = sm[x * n + y]; if (t === 2) biz = Math.max(biz, g(y)); else if (t === 1) onlar = Math.max(onlar, g(y)); }
-      m[x] = onlar >= 3 && onlar * 4 > biz * 5 ? 1 : 0;
-    }
-    o = { s: w.savasSurum, m }; w.onbellek.set('denizK', o);
-  }
-  return o.m[c] === 1;
+  // durum haftalık deniz çözümünde (deniz.ts) ve savaş değişince güncellenir; rota önbelleğiyle tutarlı kalır
+  return w.C.c.denizK[c] === 1;
 }
 /** Bu deniz kenarından geçiş serbest mi? (kara kenarı her zaman serbest) */
 export function denizGecer(w: World, c: number, a: number, b: number): boolean {
@@ -102,7 +93,7 @@ function anahtarEkle(w: World, m: Map<number, number>, s: number): void {
   const t = w.AN.c.tur[s]!, x = w.AN.c.a[s]!, y = w.AN.c.b[s]!;
   const k1 = (t * n + x) * n + y;
   if (!m.has(k1)) m.set(k1, s);
-  if (t !== A.garanti && t !== A.tazminat) { const k2 = (t * n + y) * n + x; if (!m.has(k2)) m.set(k2, s); }
+  if (t !== A.garanti && t !== A.tazminat && t !== A.kukla && t !== A.ambargo) { const k2 = (t * n + y) * n + x; if (!m.has(k2)) m.set(k2, s); }
 }
 function anlasmaIndeks(w: World): Map<number, number> {
   const o = w.onbellek.get('anIdx') as { s: number; m: Map<number, number> } | undefined;
@@ -150,6 +141,16 @@ export function iddiaSil(w: World, r: number, c: number): void {
   for (let i = 0; i < IDDIA_MAX; i++) if (w.iddia[r * IDDIA_MAX + i] === c + 1) w.iddia[r * IDDIA_MAX + i] = 0;
 }
 export function pasif(w: World, c: number): boolean { return w.C.c.pasif[c] === 1; }
+/** c'nin efendisi (kukla ise), yoksa -1. */
+export function efendi(w: World, c: number): number {
+  for (const s of w.AN.rows()) if (w.AN.c.tur[s] === A.kukla && w.AN.c.b[s] === c) return w.AN.c.a[s]!;
+  return -1;
+}
+export function kuklalar(w: World, c: number): number[] {
+  const l: number[] = [];
+  for (const s of w.AN.rows()) if (w.AN.c.tur[s] === A.kukla && w.AN.c.a[s] === c) l.push(w.AN.c.b[s]!);
+  return l.sort((x, y) => x - y);
+}
 
 /** Ülke → kontrol ettiği / sahip olduğu bölgeler (artan sıra). Kontrol ve sahiplik değişimleri rotaEpoch'u artırır. */
 function bolgeGruplari(w: World): { kontrol: number[][]; sahip: number[][] } {
@@ -196,8 +197,8 @@ export function kenarKapasite(w: World, a: number, b: number): number {
   cap = mulDiv(cap, hasar, S).q;
   const c = R.kontrolEden[a]!;
   if (c >= 0) {
-    if (tekVar(w, c, 'demiryolu')) cap = mulDiv(cap, 11, 10).q;
-    if (tekVar(w, c, 'ikmal2')) cap = mulDiv(cap, 5, 4).q;
+    const ek = tekKat(w, c, 'demiryolu', 100_000) + tekKat(w, c, 'ikmal2', 250_000);
+    if (ek) cap = mulRatio(cap, S + Math.min(2 * S, ek)).q;
   }
   return Math.max(0, cap);
 }
@@ -315,8 +316,11 @@ export interface Istat { YS: number; SV: number; YR: number; orgMax: number; gen
 
 /** Ülkenin süreli değiştiricilerinin toplamı (S; olay sonuçları: MOD tablosu). */
 export function modDeger(w: World, c: number, tur: number): number {
-  if (w.MOD.count() === 0) return 0;
+  // iktidar partisinin etkisi (şema 7) + olay değiştiricileri
   let t = 0;
+  const p = PARTI[AKTIF.donem][w.C.c.iktidar[c]!];
+  if (p) { const ad = MOD_TUR[tur]!; const k = ad === 'huzurAy' ? 'huzur' : ad === 'destekAy' ? 'destek' : ad === 'mesruAy' ? 'mesru' : ad; t += (p.etki as Record<string, number>)[k] ?? 0; }
+  if (w.MOD.count() === 0) return t;
   for (const s of w.MOD.rows()) if (w.MOD.c.ulke[s] === c && w.MOD.c.tur[s] === tur && w.MOD.c.bitis[s]! > w.gun) t += w.MOD.c.deger[s]!;
   return t;
 }
@@ -334,11 +338,15 @@ export function modEkle(w: World, c: number, tur: number, deger: number, gun: nu
 /** Teknoloji ve doktrinlerin aile saldırı çarpanı (S). */
 function aileSaldiri(w: World, c: number, aile: string): number {
   let m = S;
-  if (aile === 'piyade' || aile === 'mt') { if (tekVar(w, c, 'taktik1')) m += 80_000; if (tekVar(w, c, 'taktik2')) m += 80_000; }
-  if (aile === 'sahra' || aile === 'agir') { if (tekVar(w, c, 'topcu1')) m += 150_000; if (tekVar(w, c, 'dok_ates')) m += 100_000; }
-  if (aile === 'suvari' && tekVar(w, c, 'zirh1')) m += 150_000;
-  if (tekVar(w, c, 'dok_manevra')) m += 50_000;
-  return m;
+  // kademeli etkiler: her kademe temel etkinin yarısını ekler; silah hatlarının üst kademeleri ekipman kuşağını yeniler
+  if (aile === 'piyade' || aile === 'mt') {
+    m += tekKat(w, c, 'taktik1', 80_000) + tekKat(w, c, 'taktik2', 80_000);
+    m += 50_000 * Math.max(0, tekSeviye(w, c, 'piyade2') - 1) + 50_000 * Math.max(0, tekSeviye(w, c, 'piyade3') - 1);
+  }
+  if (aile === 'sahra' || aile === 'agir') { m += tekKat(w, c, 'topcu1', 150_000) + tekKat(w, c, 'dok_ates', 100_000) + 60_000 * Math.max(0, tekSeviye(w, c, 'agirtop2') - 1); }
+  if (aile === 'suvari') m += tekKat(w, c, 'zirh1', 150_000);
+  m += tekKat(w, c, 'dok_manevra', 50_000);
+  return Math.min(m, 5 * S);
 }
 
 const ihtiyacOn = new Map<number, { kisi: number; aile: Record<string, number> }>();
@@ -408,11 +416,11 @@ export function birlikIstat(w: World, u: number): Istat {
   }
   // savunma ve organizasyon doktrinleri, hız
   let svC = S, orgC = S, hizC = S;
-  if (tekVar(w, c, 'dok_ates')) svC += 100_000;
-  if (tekVar(w, c, 'tahkimat2')) svC += 100_000;
+  svC += tekKat(w, c, 'dok_ates', 100_000) + tekKat(w, c, 'tahkimat2', 100_000) + 40_000 * Math.max(0, tekSeviye(w, c, 'piyade2') - 1);
   if (tekVar(w, c, 'dok_kitle')) orgC -= 50_000;
-  if (tekVar(w, c, 'dok_manevra')) hizC += 150_000;
-  if (zirhli && tekVar(w, c, 'zirh1')) hizC += 100_000;
+  orgC += Math.max(0, tekKat(w, c, 'kurmay', 30_000) - 30_000);
+  hizC += Math.min(600_000, tekKat(w, c, 'dok_manevra', 150_000));
+  if (zirhli) hizC += Math.min(500_000, tekKat(w, c, 'zirh1', 100_000));
   if (hiz < 1e9 && hizC !== S) hiz = mulDiv(hiz, hizC, S).q;
   const orgMax = ih.kisi > 0 ? Math.floor(orgT / ih.kisi) : 0;
   return {

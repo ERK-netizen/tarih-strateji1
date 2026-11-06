@@ -233,7 +233,7 @@ function Zaman() {
 }
 
 export const PANELLER: [Panel, string, string][] = [
-  ['devlet', 'Devlet', 'crown'], ['ordu', 'Ordu', 'crossed-swords'], ['ekonomi', 'Ekonomi', 'anvil'], ['diplomasi', 'Diplomasi', 'dove'],
+  ['devlet', 'Devlet', 'crown'], ['siyaset', 'Siyaset', 'vote'], ['ordu', 'Ordu', 'crossed-swords'], ['kuvvet', 'Deniz/Hava', 'anchor'], ['ekonomi', 'Ekonomi', 'anvil'], ['diplomasi', 'Diplomasi', 'dove'],
   ['arastirma', 'Araştırma', 'telescope'], ['istatistik', 'İstatistik', 'histogram'], ['kronik', 'Kronik', 'scroll-unfurled'], ['kayit', 'Kayıt', 'save'],
 ];
 

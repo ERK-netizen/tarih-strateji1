@@ -1,4 +1,5 @@
 import { DONEMLER, TEK_KOD, type DonemKod } from './donem.ts';
+import { KADEME_MAX, KADEME_ARALIK, TEK_SOGUK, TEK_GELECEK, TEK_ORTA2, TEK_BARUT2, TEK_ARASAVAS, TEK_BILGI, kademeBilgi } from './katalogEk.ts';
 // Ek B: veri sözlüğü ve başlangıç katsayıları (1A). Bütün sayılar VARSAYILAN denge başlangıç değeridir.
 // Ölçekler: oran S=1e6, puan ×1000, gıda/mühimmat/kaynak milibirim, sanayi milipuan (SP×1000).
 
@@ -75,7 +76,8 @@ export const SABLON: Sablon[] = [
   { kod: 'topcu', ad: 'Topçu Alayı', kisa: 'T', taburlar: ['sahra', 'sahra', 'agir'], esanlam: ['topçu', 'top', 'topçu alayı'] },
   { kod: 'yedek', ad: 'Yedek Tümen', kisa: 'Y', taburlar: ['piyade', 'piyade', 'piyade'], esanlam: ['yedek', 'garnizon', 'yedek tümen'] },
 ];
-export const MAX_TABUR = 6;
+/** Birlik başına en çok tabur (şema 7: 6 → 12; şablon dışı taburlar elle eklenir). */
+export const MAX_TABUR = 12;
 
 // ---------- Mallar (pazar) ----------
 export interface Mal { kod: string; ad: string; p0: number; esanlam: string[] }
@@ -84,9 +86,10 @@ export const MAL: Mal[] = [
   { kod: 'celik', ad: 'Çelik', p0: 1500, esanlam: ['çelik', 'demir'] },
   { kod: 'komur', ad: 'Kömür', p0: 400, esanlam: ['kömür'] },
   { kod: 'muhimmat', ad: 'Mühimmat', p0: 3500, esanlam: ['mühimmat', 'cephane', 'mermi'] },
+  { kod: 'petrol', ad: 'Petrol', p0: 700, esanlam: ['petrol', 'yakıt', 'akaryakıt'] },
 ];
 export const NMAL = MAL.length;
-export const MALI = { gida: 0, celik: 1, komur: 2, muhimmat: 3 } as const;
+export const MALI = { gida: 0, celik: 1, komur: 2, muhimmat: 3, petrol: 4 } as const;
 
 // ---------- Yasalar ----------
 export const ASKERLIK = [
@@ -147,10 +150,35 @@ const TEK_I: Record<string, number> = Object.fromEntries(TEK_KOD.map((k, i) => [
 /** Teknoloji yuvası (kodlar bütün dönemlerde aynı sıradadır). */
 export const tekIdx = (kod: string): number => TEK_I[kod] ?? TEKNOLOJI.findIndex((t) => t.kod === kod);
 /** Ülke bu teknolojiyi biliyor mu? */
-export const tekVar = (w: { tekBitti: Uint8Array }, c: number, kod: string): boolean => w.tekBitti[c * NTEK + tekIdx(kod)] === 1;
+export const tekVar = (w: { tekBitti: Uint8Array }, c: number, kod: string): boolean => w.tekBitti[c * NTEK + tekIdx(kod)]! >= 1;
+/** Teknoloji hattının ulaşılan kademesi (0 = yok, 1 = temel, en çok KADEME_MAX). */
+export const tekSeviye = (w: { tekBitti: Uint8Array }, c: number, kod: string): number => w.tekBitti[c * NTEK + tekIdx(kod)]!;
+/**
+ * Kademeli etki: temel etkinin kademeyle büyümesi (S). L=0 → 0, L=1 → baz, sonra her kademe yarım baz ekler
+ * (12. kademe ≈ 6,5 × baz). Etkilerin üst sınırı kullanıldığı yerde konur.
+ */
+export function tekKat(w: { tekBitti: Uint8Array }, c: number, kod: string, baz: number): number {
+  const L = tekSeviye(w, c, kod);
+  return L <= 0 ? 0 : Math.floor((baz * (L + 1)) / 2);
+}
+/** Hattın L. kademesinin adı ve yılı (dönem adından Soğuk Savaş, çağdaş ve gelecek adlarına uzanır). */
+export function kademe(t: number, L: number): { ad: string; yil: number } {
+  const T = TEKNOLOJI[t]!;
+  if (L <= 1) return { ad: T.ad, yil: T.yil };
+  const sira: [number, string][] = [[T.yil, T.ad]];
+  const sonra: Record<DonemKod, DonemKod[]> = { orta: ['barut', 'buyuk', 'ikinci', 'modern'], barut: ['buyuk', 'ikinci', 'modern'], buyuk: ['ikinci', 'modern'], ikinci: ['modern'], modern: [] };
+  for (const d of sonra[AKTIF.donem]) {
+    const x = DONEMLER[d].teknoloji.find((y) => y.kod === T.kod);
+    if (d === 'modern') { const s = TEK_SOGUK[T.kod]; if (s && s[1] > T.yil) sira.push([s[1], s[0]]); }
+    if (x && x.yil > T.yil) sira.push([x.yil, x.ad]);
+  }
+  for (const tab of [TEK_ORTA2, TEK_BARUT2, TEK_ARASAVAS, TEK_BILGI, TEK_GELECEK]) { const g = tab[T.kod]; if (g && g[1] > T.yil + 5) sira.push([g[1], g[0]]); }
+  sira.sort((a, b) => a[0] - b[0]);
+  return kademeBilgi(sira, KADEME_ARALIK[AKTIF.donem], Math.min(L, KADEME_MAX));
+}
 
 // ---------- Projeler (13.6) ----------
-export interface Proje { kod: string; ad: string; sp: number; nakit: number; gun: number; esanlam: string[] }
+export interface Proje { kod: string; ad: string; sp: number; nakit: number; gun: number; esanlam: string[]; ozel?: boolean }
 export const PROJE: Proje[] = [
   { kod: 'sivil', ad: 'Sivil fabrika', sp: 1_800_000, nakit: 900_000, gun: 180, esanlam: ['sivil fabrika', 'fabrika'] },
   { kod: 'askeri', ad: 'Askerî fabrika', sp: 1_800_000, nakit: 1_000_000, gun: 180, esanlam: ['askeri fabrika', 'askerî fabrika', 'silah fabrikası', 'cephane fabrikası'] },
@@ -158,6 +186,10 @@ export const PROJE: Proje[] = [
   { kod: 'demiryolu', ad: 'Demiryolu düzeyi', sp: 900_000, nakit: 800_000, gun: 120, esanlam: ['demiryolu', 'ray', 'tren yolu'] },
   { kod: 'altyapi', ad: 'Altyapı', sp: 700_000, nakit: 500_000, gun: 90, esanlam: ['altyapı', 'yol'] },
   { kod: 'valilik', ad: 'Valilik', sp: 500_000, nakit: 700_000, gun: 150, esanlam: ['valilik', 'idare binası'] },
+  { kod: 'kent', ad: 'Şehir imarı', sp: 2_400_000, nakit: 1_500_000, gun: 240, esanlam: ['şehir imarı', 'şehir', 'imar', 'kent'] },
+  { kod: 'maden', ad: 'Maden ocağı', sp: 1_200_000, nakit: 900_000, gun: 150, esanlam: ['maden ocağı', 'maden', 'ocak'] },
+  { kod: 'gemi', ad: 'Tersane siparişi', sp: 0, nakit: 0, gun: 0, esanlam: ['gemi', 'tersane'], ozel: true },
+  { kod: 'ucak', ad: 'Uçak siparişi', sp: 0, nakit: 0, gun: 0, esanlam: ['uçak'], ozel: true },
 ];
 export const projeIdx = (kod: string): number => PROJE.findIndex((p) => p.kod === kod);
 

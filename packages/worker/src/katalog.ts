@@ -1,5 +1,5 @@
 // Oyuncunun gördüğü varlıklardan komut kataloğu (yalnız görünür adlar).
-import { type World, TEKNOLOJI, EKIPMAN, MAL, PROJE, SABLON, ASKERLIK, EKONOMI, ortak, diplomasi } from '@ts/engine';
+import { type World, TEKNOLOJI, EKIPMAN, MAL, PROJE, SABLON, ASKERLIK, EKONOMI, TABUR, AKTIF, GEMI, HAVA, DENIZ_GOREV, HAVA_GOREV, REJIM_AD, PARTI, EKO_MODEL, TARIM_ODAK, NKIMLIK, ortak, diplomasi, toplum } from '@ts/engine';
 import type { Katalog } from '@ts/command';
 
 export function katalogKur(w: World, secili: number[] = []): Katalog {
@@ -8,7 +8,12 @@ export function katalogKur(w: World, secili: number[] = []): Katalog {
   return {
     oyuncu: P,
     ulkeler: w.pkg.ulkeler.map((u) => ({ kod: u.kod, ad: u.ad, kisa: u.kisa, sifat: u.sifat })),
-    bolgeler: w.pkg.bolgeler.map((b, r) => ({ ad: b.ad, kontrol: w.R.c.kontrolEden[r]!, sahip: w.R.c.sahip[r]!, komsu: b.komsu, merkez: b.merkez })),
+    bolgeler: w.pkg.bolgeler.map((b, r) => {
+      const o: Katalog['bolgeler'][number] = { ad: b.ad, kontrol: w.R.c.kontrolEden[r]!, sahip: w.R.c.sahip[r]!, komsu: b.komsu, merkez: b.merkez };
+      // oyuncunun bölgelerinde kimlik adları (demografi komutları için)
+      if (w.R.c.sahip[r] === P) o.kimlik = b.kimlikAnahtar.slice(0, NKIMLIK).map((_, k) => toplum.kimlikAdi(w, r, k));
+      return o;
+    }),
     eyaletler: w.pkg.eyaletler.map((e) => ({ ad: e.ad, bolgeler: e.bolgeler })),
     birlikler: w.U.list().filter((u) => U.ulke![u] === P).map((u) => ({ id: w.U.id(u), ad: ortak.birlikAdi(w, u), bolge: U.bolge![u]!, sablon: U.sablon![u]!, hedef: U.hedef![u]! })),
     savastaki: ortak.dusmanlar(w, P),
@@ -24,5 +29,14 @@ export function katalogKur(w: World, secili: number[] = []): Katalog {
     vergi: w.C.c.vergi[P]!,
     butce: [w.C.c.b0[P]!, w.C.c.b1[P]!, w.C.c.b2[P]!, w.C.c.b3[P]!],
     askerlikMevcut: w.C.c.askerlik[P]!,
+    gemiler: GEMI[AKTIF.donem].map((g) => ({ ad: g.ad, kisa: g.kisa })),
+    ucaklar: HAVA[AKTIF.donem].map((h) => ({ ad: h.ad, kisa: h.kisa })),
+    denizGorev: [...DENIZ_GOREV],
+    havaGorev: [...HAVA_GOREV],
+    taburlar: TABUR.map((t) => t.ad),
+    rejimler: [...REJIM_AD[AKTIF.donem]],
+    partiler: PARTI[AKTIF.donem].map((p) => p.ad),
+    ekoModeller: EKO_MODEL.map((m) => m.ad),
+    tarimOdaklar: TARIM_ODAK.map((t) => t.ad),
   };
 }

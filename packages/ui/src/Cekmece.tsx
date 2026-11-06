@@ -69,6 +69,8 @@ function BolgeCekmece({ r, kapat }: { r: number; kapat: () => void }) {
           <dt>{buyukHarf(d.terim.sivilF)} / {d.terim.askeriF}</dt><dd>{v.sivilF} / {v.askeriF}</dd>
           <dt>Altyapı · {d.terim.demiryolu}</dt><dd>{v.altyapi} · {v.demiryolu}</dd>
           {v.uretim !== null && <><dt>Tarım</dt><dd>{(v.uretim / 1000).toFixed(1).replace('.', ',')} birim/gün</dd></>}
+          <dt>Şehir düzeyi</dt><dd>{v.kent}/10{v.maden > 0 ? ` · maden ocağı ${v.maden}` : ''}{v.kiyi ? ' · kıyı' : ''}</dd>
+          {v.petrol && <><dt>Petrol</dt><dd>{(v.petrol.miktar / 1000).toFixed(1)}/gün{v.petrol.yil > 0 ? ` (${v.petrol.yil}'den itibaren)` : ''}</dd></>}
           {(v.celik > 0 || v.komur > 0) && <><dt>Maden</dt><dd>{v.celik > 0 ? `${d.mallar[1].ad.toLocaleLowerCase('tr')} ${(v.celik / 1000).toFixed(1)}` : ''} {v.komur > 0 ? `${d.mallar[2].ad.toLocaleLowerCase('tr')} ${(v.komur / 1000).toFixed(1)}` : ''}</dd></>}
           {v.vergi !== null && <><dt>Vergi</dt><dd>{fmt(v.vergi)}/gün</dd></>}
           {v.iddia.length > 0 && <><dt>Hak iddiası</dt><dd>{v.iddia.join(', ')}</dd></>}
@@ -78,7 +80,7 @@ function BolgeCekmece({ r, kapat }: { r: number; kapat: () => void }) {
         {v.projeler.length > 0 && <p class="soluk">İnşaat: {v.projeler.map((p: any) => `${p.ad} %${p.yuzde}`).join(', ')}</p>}
       </section>
 
-      {tamBenim && <InsaBolumu r={r} />}
+      {tamBenim && <InsaBolumu r={r} kiyi={!!v.kiyi} />}
       {benim && <KurBolumu r={r} />}
 
       {!benim && (
@@ -201,17 +203,23 @@ export function OrgBar({ v }: { v: number }) {
   return <span class={`mini-bar ${c}`} title={`%${Math.round(v * 100)}`}><span style={{ width: `${Math.max(0, Math.min(100, v * 100))}%` }} /></span>;
 }
 
-function InsaBolumu({ r }: { r: number }) {
+const PROJE_SIMGE: Record<string, string> = { sivil: 'factory', askeri: 'anvil', sulama: 'wheat', demiryolu: 'railway', altyapi: 'road', valilik: 'castle', kent: 'modern-city', maden: 'mining' };
+function InsaBolumu({ r, kiyi }: { r: number; kiyi: boolean }) {
   const d = ozet.value.donem;
-  const simge = ['factory', 'anvil', 'wheat', 'railway', 'road', 'castle'];
+  const [gemi, setGemi] = useState<any[] | null>(null);
+  useEffect(() => { if (kiyi) void istemci.istek('query', { gorunum: 'kuvvet' }).then((x) => setGemi(x.veri.gemiler)); }, [kiyi, r]);
   return (
     <section class="bolum">
       <h3>İnşa et</h3>
       <div class="izgara-dugme">
-        {d.projeler.map((p: any, i: number) => (
-          <button key={i} onClick={() => onizle({ tur: 'insa', proje: i, bolge: r })}><Simge ad={simge[i] ?? 'anvil'} boy={20} /><span>{p.ad}</span></button>
+        {d.projeler.map((p: any, i: number) => p.ozel ? null : (
+          <button key={i} onClick={() => onizle({ tur: 'insa', proje: i, bolge: r })}><Simge ad={PROJE_SIMGE[p.kod] ?? 'anvil'} boy={20} /><span>{p.ad}</span></button>
         ))}
       </div>
+      {kiyi && gemi && gemi.length > 0 && <>
+        <h4>Tersane</h4>
+        <div class="izgara-dugme">{gemi.map((g: any) => <button key={g.k} onClick={() => onizle({ tur: 'gemiInsa', sinif: g.k, adet: 1, bolge: r })}><Simge ad={g.k === 3 ? 'submarine' : g.k === 4 ? 'anchor' : 'battleship'} boy={20} /><span>{g.ad} <span class="soluk kucuk">({g.sayi})</span></span></button>)}</div>
+      </>}
     </section>
   );
 }

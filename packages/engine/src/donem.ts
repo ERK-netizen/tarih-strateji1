@@ -9,7 +9,7 @@ export interface Donem {
   /** Teknoloji yılı ölçeği: erken dönemlerde ilerleme yavaştır (yıl farkı bu sayıya bölünür) */
   yilOlcek: number;
   ekipman: Ekipman[]; tabur: Tabur[]; sablon: Sablon[]; teknoloji: Teknoloji[];
-  proje: { kod: string; ad: string; sp: number; nakit: number; gun: number; esanlam: string[] }[];
+  proje: { kod: string; ad: string; sp: number; nakit: number; gun: number; esanlam: string[]; ozel?: boolean }[];
   mal: { kod: string; ad: string; p0: number; esanlam: string[] }[];
   /** Arayüz terimleri */
   terim: { sivilF: string; askeriF: string; demiryolu: string; muhimmat: string; para: string };
@@ -57,12 +57,22 @@ function teknolojiler(ad: Record<string, [string, number, string[]?]>): Teknoloj
   });
 }
 
-const PROJE_SAYI = [[1_800_000, 900_000, 180], [1_800_000, 1_000_000, 180], [600_000, 500_000, 120], [900_000, 800_000, 120], [700_000, 500_000, 90], [500_000, 700_000, 150]] as const;
-function projeler(adlar: [string, string, string[]][]): Donem['proje'] {
-  return adlar.map(([kod, ad, es], i) => ({ kod, ad, sp: PROJE_SAYI[i]![0], nakit: PROJE_SAYI[i]![1], gun: PROJE_SAYI[i]![2], esanlam: [ad.toLocaleLowerCase('tr'), ...es] }));
+// sivil, askeri, sulama, demiryolu, altyapı, valilik, kent (şehir imarı), maden (maden ocağı), gemi (tersane siparişi), uçak
+const PROJE_SAYI = [[1_800_000, 900_000, 180], [1_800_000, 1_000_000, 180], [600_000, 500_000, 120], [900_000, 800_000, 120], [700_000, 500_000, 90], [500_000, 700_000, 150],
+  [2_400_000, 1_500_000, 240], [1_200_000, 900_000, 150], [0, 0, 0], [0, 0, 0]] as const;
+/** Ek projeler (şema 7): şehir imarı, maden ocağı; gemi ve uçak siparişleri ayrı emirle verilir (özel). */
+const EK_PROJE: Record<DonemKod, [string, string, string[]][]> = {
+  orta: [['kent', 'Şehir imarı', ['şehir', 'imar', 'kent']], ['maden', 'Maden ocağı', ['maden', 'ocak']], ['gemi', 'Tersane siparişi', ['gemi', 'tersane']], ['ucak', 'Uçak siparişi', ['uçak']]],
+  barut: [['kent', 'Şehir imarı', ['şehir', 'imar', 'kent']], ['maden', 'Maden ocağı', ['maden', 'ocak']], ['gemi', 'Tersane siparişi', ['gemi', 'tersane']], ['ucak', 'Uçak siparişi', ['uçak']]],
+  buyuk: [['kent', 'Şehir imarı', ['şehir', 'imar', 'kent', 'şehir geliştir']], ['maden', 'Maden ocağı', ['maden', 'ocak', 'petrol kuyusu']], ['gemi', 'Tersane siparişi', ['gemi', 'tersane']], ['ucak', 'Uçak siparişi', ['uçak']]],
+  ikinci: [['kent', 'Şehir imarı', ['şehir', 'imar', 'kent', 'şehir geliştir']], ['maden', 'Maden ve petrol işletmesi', ['maden', 'ocak', 'petrol kuyusu']], ['gemi', 'Tersane siparişi', ['gemi', 'tersane']], ['ucak', 'Uçak siparişi', ['uçak']]],
+  modern: [['kent', 'Kentsel dönüşüm', ['şehir', 'imar', 'kent', 'kentsel dönüşüm']], ['maden', 'Maden ve enerji sahası', ['maden', 'petrol', 'doğalgaz']], ['gemi', 'Tersane siparişi', ['gemi', 'tersane']], ['ucak', 'Uçak siparişi', ['uçak']]],
+};
+function projeler(adlar: [string, string, string[]][], d: DonemKod = 'buyuk'): Donem['proje'] {
+  return [...adlar, ...EK_PROJE[d]].map(([kod, ad, es], i) => ({ kod, ad, sp: PROJE_SAYI[i]![0], nakit: PROJE_SAYI[i]![1], gun: PROJE_SAYI[i]![2], esanlam: [ad.toLocaleLowerCase('tr'), ...es], ozel: kod === 'gemi' || kod === 'ucak' || undefined }));
 }
 function mallar(adlar: [string, string[]][]): Donem['mal'] {
-  const kod = ['gida', 'celik', 'komur', 'muhimmat'], p0 = [900, 1500, 400, 3500];
+  const kod = ['gida', 'celik', 'komur', 'muhimmat', 'petrol'], p0 = [900, 1500, 400, 3500, 700];
   return adlar.map(([ad, es], i) => ({ kod: kod[i]!, ad, p0: p0[i]!, esanlam: [ad.toLocaleLowerCase('tr'), ...es] }));
 }
 const sablon = (adlar: [string, string, string[], string[]][]): Sablon[] =>
@@ -89,8 +99,8 @@ export const DONEMLER: Record<DonemKod, Donem> = {
       ikmal1: ['Menzilhane ve erzak ambarı', 760], ikmal2: ['Kervan ikmali', 790], istihbarat1: ['Berid haber ağı', 760, ['berid']], seferberlik: ['Divan ordu defteri', 760, ['ordu defteri']],
       sanayi3: ['Ölçü ve ayar birliği', 800], insaat1: ['Kemer ve kubbe tekniği', 770], maden1: ['Maden ocakları', 760], ticaret1: ['Kervan ticareti', 750], maliye1: ['Haraç ve öşür düzeni', 760], banka1: ['Sakk ve sarraflar', 790, ['sarraf', 'çek']],
       tarim3: ['Bağ ve bahçe ıslahı', 810], depo1: ['Tahıl ambarları', 750], egitim1: ['Beytülhikme', 790, ['bilgelik evi']], asayis1: ['Şurta teşkilatı', 760, ['şurta']] }),
-    proje: projeler([['sivil', 'Atölye', ['atölye', 'çarşı']], ['askeri', 'Silahhane', ['silahhane', 'cebehane']], ['sulama', 'Sulama kanalı', ['sulama', 'kanal']], ['demiryolu', 'Yol', ['yol', 'köprü']], ['altyapi', 'Kervansaray', ['kervansaray', 'han']], ['valilik', 'Valilik', ['valilik', 'emirlik']]]),
-    mal: mallar([['Tahıl', ['gıda', 'yiyecek', 'buğday', 'erzak']], ['Demir', ['çelik', 'maden']], ['Odun kömürü', ['kömür', 'odun']], ['Ok ve erzak', ['mühimmat', 'ok', 'cephane']]]),
+    proje: projeler([['sivil', 'Atölye', ['atölye', 'çarşı']], ['askeri', 'Silahhane', ['silahhane', 'cebehane']], ['sulama', 'Sulama kanalı', ['sulama', 'kanal']], ['demiryolu', 'Yol', ['yol', 'köprü']], ['altyapi', 'Kervansaray', ['kervansaray', 'han']], ['valilik', 'Valilik', ['valilik', 'emirlik']]], 'orta'),
+    mal: mallar([['Tahıl', ['gıda', 'yiyecek', 'buğday', 'erzak']], ['Demir', ['çelik', 'maden']], ['Odun kömürü', ['kömür', 'odun']], ['Ok ve erzak', ['mühimmat', 'ok', 'cephane']], ['Neft', ['petrol', 'neft', 'nafta']]]),
     terim: { sivilF: 'atölye', askeriF: 'silahhane', demiryolu: 'yol', muhimmat: 'ok ve erzak', para: 'altın' },
     simge: { piyade: 'swordman', suvari: 'mounted-knight', mt: 'bowman', sahra: 'catapult', agir: 'trebuchet' },
   },
@@ -114,8 +124,8 @@ export const DONEMLER: Record<DonemKod, Donem> = {
       ikmal1: ['Menzil ambarları', 1600], ikmal2: ['Nehir filosu ikmali', 1630], istihbarat1: ['Casus ve kaşif ağı', 1600, ['casus']], seferberlik: ['Asker yazım defterleri', 1610],
       sanayi3: ['Kalıp ve değişebilir parça', 1670], insaat1: ['Mimarlar ocağı', 1600], maden1: ['Derin maden kuyuları', 1620], ticaret1: ['Ticaret kumpanyası', 1602, ['kumpanya']], maliye1: ['İltizam reformu', 1620], banka1: ['Banka ve senet', 1650, ['banka']],
       tarim3: ['Kanal ve arazi ıslahı', 1660], depo1: ['Kiler ve ambar düzeni', 1600], egitim1: ['Akademi ve rasathane', 1640, ['akademi', 'rasathane']], asayis1: ['Subaşı ve asayiş', 1600] }),
-    proje: projeler([['sivil', 'İmalathane', ['imalathane', 'manifaktür']], ['askeri', 'Tophane', ['tophane', 'baruthane', 'silah fabrikası']], ['sulama', 'Sulama', ['sulama', 'kanal']], ['demiryolu', 'Menzil yolu', ['menzil', 'yol']], ['altyapi', 'Liman ve köprü', ['liman', 'köprü', 'altyapı']], ['valilik', 'Valilik', ['valilik', 'beylerbeylik']]]),
-    mal: mallar([['Tahıl', ['gıda', 'yiyecek', 'buğday', 'erzak']], ['Demir', ['çelik', 'maden']], ['Kömür', ['kömür', 'odun']], ['Barut ve mermi', ['mühimmat', 'barut', 'cephane']]]),
+    proje: projeler([['sivil', 'İmalathane', ['imalathane', 'manifaktür']], ['askeri', 'Tophane', ['tophane', 'baruthane', 'silah fabrikası']], ['sulama', 'Sulama', ['sulama', 'kanal']], ['demiryolu', 'Menzil yolu', ['menzil', 'yol']], ['altyapi', 'Liman ve köprü', ['liman', 'köprü', 'altyapı']], ['valilik', 'Valilik', ['valilik', 'beylerbeylik']]], 'barut'),
+    mal: mallar([['Tahıl', ['gıda', 'yiyecek', 'buğday', 'erzak']], ['Demir', ['çelik', 'maden']], ['Kömür', ['kömür', 'odun']], ['Barut ve mermi', ['mühimmat', 'barut', 'cephane']], ['Neft', ['petrol', 'neft']]]),
     terim: { sivilF: 'imalathane', askeriF: 'tophane', demiryolu: 'menzil yolu', muhimmat: 'barut ve mermi', para: 'akçe' },
     simge: { piyade: 'musket', suvari: 'cavalry', mt: 'pikeman', sahra: 'cannon', agir: 'pirate-cannon' },
   },
@@ -139,8 +149,8 @@ export const DONEMLER: Record<DonemKod, Donem> = {
       ikmal1: ['Sahra mutfağı ve cephane deposu', 1914], ikmal2: ['Kamyon ikmali', 1916, ['kamyon']], istihbarat1: ['Telsiz dinleme ve hava keşfi', 1915, ['hava keşfi']], seferberlik: ['Seferberlik planı', 1914],
       sanayi3: ['Standart parça üretimi', 1918], insaat1: ['Betonarme', 1914], maden1: ['Mekanik madencilik', 1914], ticaret1: ['Ticaret filosu', 1914], maliye1: ['Gelir vergisi', 1914], banka1: ['Savaş tahvili', 1915, ['tahvil']],
       tarim3: ['Haber-Bosch azotu', 1918, ['azot']], depo1: ['Konserve ve soğuk depo', 1914, ['konserve']], egitim1: ['Teknik üniversiteler', 1915], asayis1: ['Jandarma teşkilatı', 1914, ['jandarma']] }),
-    proje: projeler([['sivil', 'Sivil fabrika', ['fabrika']], ['askeri', 'Askerî fabrika', ['askeri fabrika', 'silah fabrikası', 'cephane fabrikası']], ['sulama', 'Sulama', ['kanal']], ['demiryolu', 'Demiryolu düzeyi', ['demiryolu', 'ray', 'tren yolu']], ['altyapi', 'Altyapı', ['yol']], ['valilik', 'Valilik', ['idare binası']]]),
-    mal: mallar([['Gıda', ['yiyecek', 'tahıl', 'buğday', 'erzak']], ['Çelik', ['demir']], ['Kömür', []], ['Mühimmat', ['cephane', 'mermi']]]),
+    proje: projeler([['sivil', 'Sivil fabrika', ['fabrika']], ['askeri', 'Askerî fabrika', ['askeri fabrika', 'silah fabrikası', 'cephane fabrikası']], ['sulama', 'Sulama', ['kanal']], ['demiryolu', 'Demiryolu düzeyi', ['demiryolu', 'ray', 'tren yolu']], ['altyapi', 'Altyapı', ['yol']], ['valilik', 'Valilik', ['idare binası']]], 'buyuk'),
+    mal: mallar([['Gıda', ['yiyecek', 'tahıl', 'buğday', 'erzak']], ['Çelik', ['demir']], ['Kömür', []], ['Mühimmat', ['cephane', 'mermi']], ['Petrol', ['yakıt', 'akaryakıt']]]),
     terim: { sivilF: 'sivil fabrika', askeriF: 'askerî fabrika', demiryolu: 'demiryolu', muhimmat: 'mühimmat', para: 'altın' },
     simge: { piyade: 'brodie-helmet', suvari: 'cavalry', mt: 'machine-gun', sahra: 'field-gun', agir: 'cannon' },
   },
@@ -164,8 +174,8 @@ export const DONEMLER: Record<DonemKod, Donem> = {
       ikmal1: ['Motorlu ikmal', 1939, ['kamyon']], ikmal2: ['Hava ikmali', 1942], istihbarat1: ['Şifre çözme', 1941, ['enigma']], seferberlik: ['Genel seferberlik planı', 1939],
       sanayi3: ['Akan üretim hattı', 1942], insaat1: ['Prefabrik inşaat', 1940], maden1: ['Sentetik yakıt', 1940], ticaret1: ['Konvoy ticareti', 1939], maliye1: ['Savaş vergileri', 1939], banka1: ['Ödünç verme ve kiralama kredisi', 1941],
       tarim3: ['Hibrit tohum', 1944], depo1: ['Gıda dondurma', 1939], egitim1: ['Bilimsel araştırma kurulu', 1940], asayis1: ['İşgal yönetimi', 1939] }),
-    proje: projeler([['sivil', 'Sivil fabrika', ['fabrika']], ['askeri', 'Askerî fabrika', ['askeri fabrika', 'silah fabrikası']], ['sulama', 'Sulama', ['kanal']], ['demiryolu', 'Demiryolu düzeyi', ['demiryolu', 'ray']], ['altyapi', 'Altyapı', ['yol', 'otoyol']], ['valilik', 'Valilik', ['idare binası']]]),
-    mal: mallar([['Gıda', ['yiyecek', 'tahıl', 'erzak']], ['Çelik', ['demir']], ['Petrol ve kömür', ['kömür', 'petrol', 'yakıt']], ['Mühimmat', ['cephane', 'mermi']]]),
+    proje: projeler([['sivil', 'Sivil fabrika', ['fabrika']], ['askeri', 'Askerî fabrika', ['askeri fabrika', 'silah fabrikası']], ['sulama', 'Sulama', ['kanal']], ['demiryolu', 'Demiryolu düzeyi', ['demiryolu', 'ray']], ['altyapi', 'Altyapı', ['yol', 'otoyol']], ['valilik', 'Valilik', ['idare binası']]], 'ikinci'),
+    mal: mallar([['Gıda', ['yiyecek', 'tahıl', 'erzak']], ['Çelik', ['demir']], ['Kömür', []], ['Mühimmat', ['cephane', 'mermi']], ['Petrol', ['yakıt', 'akaryakıt']]]),
     terim: { sivilF: 'sivil fabrika', askeriF: 'askerî fabrika', demiryolu: 'demiryolu', muhimmat: 'mühimmat', para: 'altın' },
     simge: { piyade: 'winchester-rifle', suvari: 'tank', mt: 'machine-gun', sahra: 'field-gun', agir: 'cannon' },
   },
@@ -189,8 +199,8 @@ export const DONEMLER: Record<DonemKod, Donem> = {
       ikmal1: ['Akıllı lojistik', 2026], ikmal2: ['Otonom ikmal', 2029], istihbarat1: ['Uydu ve sinyal istihbaratı', 2026, ['uydu']], seferberlik: ['Yedek kuvvet sistemi', 2026],
       sanayi3: ['Eklemeli üretim', 2029, ['3d baskı']], insaat1: ['Modüler yapı', 2026], maden1: ['Nadir toprak işleme', 2027, ['nadir toprak']], ticaret1: ['Serbest ticaret bölgesi', 2026], maliye1: ['Dijital vergi', 2026], banka1: ['Egemen varlık fonu', 2027, ['varlık fonu']],
       tarim3: ['Gen düzenlemeli tohum', 2031], depo1: ['Stratejik gıda rezervi', 2026], egitim1: ['Ar-Ge teşvikleri', 2026, ['ar-ge']], asayis1: ['Siber güvenlik ve asayiş', 2026, ['siber güvenlik']] }),
-    proje: projeler([['sivil', 'Sanayi tesisi', ['fabrika', 'sivil fabrika']], ['askeri', 'Savunma sanayii tesisi', ['askeri fabrika', 'savunma sanayii', 'silah fabrikası']], ['sulama', 'Sulama', ['baraj', 'kanal']], ['demiryolu', 'Hızlı tren hattı', ['demiryolu', 'tren']], ['altyapi', 'Altyapı', ['otoyol', 'yol']], ['valilik', 'Valilik', ['idare binası']]]),
-    mal: mallar([['Gıda', ['yiyecek', 'tahıl', 'erzak']], ['Çelik', ['demir']], ['Enerji', ['kömür', 'petrol', 'doğalgaz']], ['Mühimmat', ['cephane', 'mermi']]]),
+    proje: projeler([['sivil', 'Sanayi tesisi', ['fabrika', 'sivil fabrika']], ['askeri', 'Savunma sanayii tesisi', ['askeri fabrika', 'savunma sanayii', 'silah fabrikası']], ['sulama', 'Sulama', ['baraj', 'kanal']], ['demiryolu', 'Hızlı tren hattı', ['demiryolu', 'tren']], ['altyapi', 'Altyapı', ['otoyol', 'yol']], ['valilik', 'Valilik', ['idare binası']]], 'modern'),
+    mal: mallar([['Gıda', ['yiyecek', 'tahıl', 'erzak']], ['Çelik', ['demir']], ['Kömür', []], ['Mühimmat', ['cephane', 'mermi']], ['Petrol ve doğalgaz', ['petrol', 'doğalgaz', 'yakıt', 'enerji']]]),
     terim: { sivilF: 'sanayi tesisi', askeriF: 'savunma sanayii', demiryolu: 'hızlı tren', muhimmat: 'mühimmat', para: 'milyon $' },
     simge: { piyade: 'ak47', suvari: 'battle-tank', mt: 'missile-pod', sahra: 'field-gun', agir: 'missile-launcher' },
   },

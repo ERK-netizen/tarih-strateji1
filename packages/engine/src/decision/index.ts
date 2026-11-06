@@ -1,17 +1,19 @@
 // Bölüm 19: karar modülü. Yalnız gözlem görünümü, kamu bilgisi ve kendi verisini kullanır;
 // emirlerini oyuncuyla aynı doğrulama yolundan (orders.uygula) geçirir.
 import type { World } from '../state/world.ts';
-import { A, URUN_MUH, ck, BK } from '../state/world.ts';
-import { KISILIK, SABLON, TEKNOLOJI, NTEK, MALI, ASKERLIK, EKIPMAN, NEKIP, AKTIF } from '../catalog.ts';
+import { A, URUN_MUH, ck, BK, NYUVA } from '../state/world.ts';
+import { KISILIK, SABLON, TEKNOLOJI, NTEK, MALI, MAL, ASKERLIK, EKIPMAN, NEKIP, AKTIF, projeIdx, NKIMLIK } from '../catalog.ts';
 import { S, mulDiv, clamp } from '../num/index.ts';
 import { rng, AMAC, uniformInt } from '../rng/index.ts';
 import { uygula, teklifSonuc, type Emir } from '../orders.ts';
 import { bolgeGozlem, bolgeGozlemBolgeler, ulkeGozlem } from '../observe/index.ts';
 import {
-  uc, savasta, savastaMi, dusmanlar, anlasmaVar, gorus, birlikIstat, birlikIkmal, sinirKomsusu, muttefik, essavasan, iddiaVar, savasUyeleri, pasif, rotaTip, kontrolB, sahipB, denizGecer,
+  uc, savasta, savastaMi, dusmanlar, anlasmaVar, gorus, birlikIstat, birlikIkmal, sinirKomsusu, muttefik, essavasan, iddiaVar, savasUyeleri, pasif, rotaTip, kontrolB, sahipB, denizGecer, efendi,
 } from '../systems/ortak.ts';
 import { insanGucu } from '../systems/nufus.ts';
-import { ulkeGidaStok, zorunluGider, krediLimiti } from '../systems/ekonomi.ts';
+import { ulkeGidaStok, zorunluGider, krediLimiti, acikYuva } from '../systems/ekonomi.ts';
+import { denizGucu, akinGucu, korumaGucu, havaGucu, havaUstunluk } from '../systems/deniz.ts';
+import { HAVA } from '../katalogEk.ts';
 import { savunmaCarpan, topcuBaski } from '../systems/kara.ts';
 import { TK, ESIK, gerekceVar, gerekceSurecte, barisKabul, savasSkoru, istekliligi, tavizButcesi, bolgeDegeri, teslimKosulu, teklifBolgeleri } from '../systems/diplomasi.ts';
 
@@ -81,7 +83,11 @@ export function kararGunu(w: World): void {
       orduPlan(w, c);
       diplomasiPlan(w, c);
     }
-    if (savastaMi(w, c) && w.gun % 15 === c) barisPlan(w, c);
+    // barış değerlendirmesi: her ülke 15 günde bir (eskiden yalnız ilk 15 ülke değerlendiriyordu)
+    if (savastaMi(w, c) && w.gun % 15 === c % 15) barisPlan(w, c);
+    if (gunAy === (5 + ((c * 4513) % 24)) % 30) { kuvvetPlan(w, c); kuklaPlan(w, c); }
+    if (((w.gun % 7) + 7) % 7 === c % 7) kuvvetGorev(w, c);
+    if (gunAy === (9 + ((c * 2851) % 20)) % 30) siyasetPlan(w, c);
   }
 }
 
@@ -130,6 +136,31 @@ function kabulEder(w: World, b: number, a: number, tur: number, p1: number, p2: 
       return benim * 10 >= karsiGuc * 6 || g >= 75_000;
     }
     case TK.baris: return barisKabul(w, b, a, p1, istenen).kabul;
+    case TK.devir: {
+      // toprak satışı: iyi ilişki, ana yurt dışı bölge ve en az üç yıllık katma değer kadar bedel (kuklalar efendiye itiraz etmez)
+      if (savasta(w, a, b)) return false;
+      if (efendi(w, b) === a) return true;
+      if (g < 30_000) return false;
+      let deger = 0;
+      for (const r of istenen) { if (w.pkg.bolgeler[r]!.anaYurt.includes(b)) return false; deger += w.R.c.vaDun[r]!; }
+      return p1 >= deger * 365 * 3;
+    }
+    case TK.ultimatom: {
+      // zayıf ve yalnız devlet boyun eğer; ana yurttan büyük parça istenirse direnir
+      if (savastaMi(w, b)) return false;
+      const ben = kendiGuc(w, b), o = ulkeGucuGozlem(w, b, a);
+      let destek = 0;
+      for (let d = 0; d < w.nC; d++) if (d !== a && d !== b && (anlasmaVar(w, A.ittifak, b, d) >= 0 || anlasmaVar(w, A.garanti, d, b) >= 0)) destek += kendiGuc(w, d);
+      let istek = 0, top = 0;
+      for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === b) { const v = bolgeDegeri(w, r); top += v; if (istenen.includes(r)) istek += v * (w.pkg.bolgeler[r]!.anaYurt.includes(b) ? 2 : 1); }
+      return (ben + destek) * 10 < o * 3 && istek * 5 < top;
+    }
+    case TK.kuklaOl: {
+      // küçük ve tehdit altındaki devlet güçlü bir hamiye sığınır
+      if (efendi(w, b) >= 0 || savasta(w, a, b)) return false;
+      const ben = kendiGuc(w, b), o = kendiGuc(w, a);
+      return g >= 50_000 && ben * 10 < o * 2 && (tehdit || kis === 'Temkinli');
+    }
     case TK.ekipman: {
       // satıcı: kendi ihtiyacının iki katı stok varsa
       const k = p1, adet = p2;
@@ -179,13 +210,20 @@ function ekonomiPlanIc(w: World, c: number, mask: number): void {
   if (ac(BK.arastirma)) {
   const kis = KISILIK[w.pkg.ulkeler[c]!.kisilik]!;
   const sira = arastirmaSirasi(kis);
-  for (let k = 0; k < 3; k++) {
-    if (w.arastirma[c * 3 + k]! >= 0) continue;
+  // önce bilinmeyen hatlar (kişilik sırası), sonra en düşük kademeli hat yükseltilir
+  const nY = acikYuva(w, c);
+  for (let k = 0; k < nY; k++) {
+    if (w.arastirma[c * NYUVA + k]! >= 0) continue;
+    let tamam = false;
     for (const kod of sira) {
       const t = TEKNOLOJI.findIndex((x) => x.kod === kod);
       if (w.tekBitti[c * NTEK + t]) continue;
-      if (emir(w, c, 'arastir', { tek: t })) break;
+      if (emir(w, c, 'arastir', { tek: t })) { tamam = true; break; }
     }
+    if (tamam) continue;
+    const yuk = sira.map((kod) => TEKNOLOJI.findIndex((x) => x.kod === kod)).filter((t) => t >= 0 && w.tekBitti[c * NTEK + t]! > 0)
+      .sort((a, b) => w.tekBitti[c * NTEK + a]! - w.tekBitti[c * NTEK + b]! || sira.indexOf(TEKNOLOJI[a]!.kod) - sira.indexOf(TEKNOLOJI[b]!.kod));
+    for (const t of yuk) if (emir(w, c, 'arastir', { tek: t })) break;
   }
   }
   // ticaret
@@ -202,6 +240,12 @@ function ekonomiPlanIc(w: World, c: number, mask: number): void {
   kaliciSiparis(w, c, MALI.celik, 1, celikAkis > (talep.celik * 13) / 10 ? birim(((celikAkis - talep.celik) * 7 * 7) / 10) : 0);
   kaliciSiparis(w, c, MALI.komur, 0, komurAkis < talep.komur && C.hazine[c]! > gunluk * 40 ? birim((talep.komur - komurAkis) * 7) : 0);
   kaliciSiparis(w, c, MALI.komur, 1, komurAkis > (talep.komur * 13) / 10 ? birim(((komurAkis - talep.komur) * 7 * 7) / 10) : 0);
+  // petrol: stok 20 günden azsa ve üretim ihtiyacı karşılamıyorsa alım; 90 günü aşan üretim fazlası satılır
+  if (MAL.length > MALI.petrol) {
+    const pi = C.petrolIht[c]!, pd = C.petrolDun[c]!, ps = C.petrol[c]!;
+    kaliciSiparis(w, c, MALI.petrol, 0, pi > 0 && pd < pi && ps < pi * 20 && C.hazine[c]! > gunluk * 40 ? birim((pi - pd) * 7) : 0);
+    kaliciSiparis(w, c, MALI.petrol, 1, pd > pi && ps > pi * 90 ? birim(((pd - pi) * 7 * 7) / 10) : 0);
+  }
   }
   // üretim
   // piyade silahı açığına göre
@@ -225,9 +269,12 @@ function ekonomiPlanIc(w: World, c: number, mask: number): void {
     const rs: number[] = [];
     for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === c && w.R.c.kontrolEden[r] === c) rs.push(r);
     rs.sort((a, b) => w.pkg.bolgeler[b]!.yerlesim - w.pkg.bolgeler[a]!.yerlesim || a - b);
-    const secim = uniformInt(rng(w.tohum, w.gun, 19, c, 0, AMAC.aiChoice, 1, 0), 3);
-    const proje = [0, 1, 3][secim]!;
-    for (const r of rs) if (emir(w, c, 'insa', { proje, bolge: r })) break;
+    // seçenekler: sivil, askerî, demiryolu, şehir imarı (kalabalık bölge), maden ocağı (yataklı bölge)
+    const secim = uniformInt(rng(w.tohum, w.gun, 19, c, 0, AMAC.aiChoice, 1, 0), 5);
+    const proje = [0, 1, 3, projeIdx('kent'), projeIdx('maden')][secim]!;
+    const sira = secim === 4 ? rs.filter((r) => w.pkg.bolgeler[r]!.celik + w.pkg.bolgeler[r]!.komur > 0 || !!w.pkg.bolgeler[r]!.petrol).sort((a, b) => w.R.c.maden[a]! - w.R.c.maden[b]! || w.pkg.bolgeler[b]!.celik + w.pkg.bolgeler[b]!.komur - w.pkg.bolgeler[a]!.celik - w.pkg.bolgeler[a]!.komur || a - b)
+      : secim === 3 ? [...rs].sort((a, b) => w.R.c.kent[a]! - w.R.c.kent[b]! || w.pkg.bolgeler[b]!.yerlesim - w.pkg.bolgeler[a]!.yerlesim || a - b).slice(0, 6) : rs;
+    for (const r of sira) if (emir(w, c, 'insa', { proje, bolge: r })) break;
   }
   }
   // yasa: savaşta ekonomi ve askerlik
@@ -358,12 +405,14 @@ function diplomasiPlan(w: World, c: number): void {
     // çağdaş dönem: nükleer caydırıcılık (savaşta değilse saldırılmaz), demokrasilerde savaş eşiği yüksek
     if (AKTIF.donem === 'modern') {
       if (NUKLEER.has(w.pkg.ulkeler[d]!.kod)) continue;
-      if (w.pkg.ulkeler[c]!.yonetim === 2) gerekli += 400_000;
+      if (w.C.c.rejim[c] === 2) gerekli += 400_000;
       gerekli += 200_000;
     }
     if (gerekceVar(w, c, d)) {
       if (oran >= Math.max(ESIK_SALDIRI[0]!, gerekli - 100_000) && w.C.c.destek[c]! >= 25_000) { emir(w, c, 'savasIlan', { hedef: d }); return; }
     } else if (gerekceSurecte(w, c, d) < 0 && oran >= gerekli && gorus(w, c, d) < 45_000 && w.C.c.pg[c]! >= 80_000) {
+      // yayılmacı ve siyasi gücü bol devlet bahaneyi beklemez: sınır olayı tertipler (ifşa riskini göze alır)
+      if (kis === 'Yayılmacı' && w.C.c.pg[c]! >= 160_000 && emir(w, c, 'sinirOlayi', { hedef: d })) return;
       emir(w, c, 'gerekce', { hedef: d });
       return;
     }
@@ -372,27 +421,191 @@ function diplomasiPlan(w: World, c: number): void {
 
 // ---------- Barış planı ----------
 function barisPlan(w: World, c: number): void {
+  const kis = KISILIK[w.pkg.ulkeler[c]!.kisilik]!;
+  // kaybeden taraf: teslim koşulları oluştuysa en çok toprağını tutan düşmana kendisi teslim olur
+  if (teslimKosulu(w, c)) {
+    let enIyi = -1, enCok = 0;
+    for (const d of dusmanlar(w, c)) {
+      let n = 0; for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === c && w.R.c.kontrolEden[r] === d) n += bolgeDegeri(w, r);
+      if (n > enCok) { enCok = n; enIyi = d; }
+    }
+    if (enIyi >= 0) {
+      const rs: number[] = [];
+      for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === c && w.R.c.kontrolEden[r] === enIyi && r !== w.pkg.ulkeler[c]!.baskent) rs.push(r);
+      if (emir(w, c, 'baris', { kime: enIyi, barisTur: 5, bolgeler: rs })) return;
+    }
+  }
   for (const d of dusmanlar(w, c)) {
-    // yalnız savaş liderleri ya da iki taraflı
     const skor = savasSkoru(w, c, d);
     if (skor >= 25_000) {
-      // tavizli barış: işgal ettiğimiz bölgeleri iste (iddialar önce), kaybedenin bütçesi kadar
-      const butce = tavizButcesi(w, d, c);
       const aday: number[] = [];
       for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === d && w.R.c.kontrolEden[r] === c) aday.push(r);
       aday.sort((a, b) => (Number(iddiaVar(w, b, c)) - Number(iddiaVar(w, a, c))) || bolgeDegeri(w, b) - bolgeDegeri(w, a) || a - b);
+      if (teslimKosulu(w, d)) {
+        // toprağını tutmadığımız çöken devletle teslim imzalamayız (asıl galibe bırakılır)
+        if (aday.length === 0) continue;
+        // çöken devlet: yayılmacılar tamamını ilhak eder, ideolojik/temkinliler kukla kurar, diğerleri işgal ettiğini alır
+        let sahip = 0; for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === d) sahip++;
+        if ((kis === 'Yayılmacı' || kis === 'Fırsatçı') && sahip <= 8 && barisKabul(w, d, c, 3, []).kabul) { emir(w, c, 'baris', { kime: d, barisTur: 3, bolgeler: [] }); continue; }
+        // kukla yalnız başka cephesi olmayan galip için (büyük savaşın ortasında küçük devleti kukla yapmak cephe açar)
+        if ((kis === 'İdeolojik' || kis === 'Temkinli') && dusmanlar(w, c).length === 1 && barisKabul(w, d, c, 4, []).kabul) { emir(w, c, 'baris', { kime: d, barisTur: 4, bolgeler: aday.filter((r) => iddiaVar(w, r, c)) }); continue; }
+        emir(w, c, 'baris', { kime: d, barisTur: 2, bolgeler: aday });
+        continue;
+      }
+      // tavizli barış: işgal ettiğimiz bölgeleri iste (iddialar önce), kaybedenin bütçesi kadar
+      const butce = tavizButcesi(w, d, c);
       const sec: number[] = [];
       let top = 0;
-      // ölçülü talep: bütçenin %60'ı ve en çok 3 bölge (teslimde 5)
       const sinir = Math.floor((butce * 6) / 10);
-      for (const r of aday) { const v = bolgeDegeri(w, r); if (sec.length < 3 && top + v <= sinir) { sec.push(r); top += v; } }
-      if (teslimKosulu(w, d)) emir(w, c, 'baris', { kime: d, barisTur: 2, bolgeler: aday.slice(0, 5) });
-      else if (sec.length > 0) emir(w, c, 'baris', { kime: d, barisTur: 1, bolgeler: sec });
+      for (const r of aday) { const v = bolgeDegeri(w, r); if (sec.length < 4 && top + v <= sinir) { sec.push(r); top += v; } }
+      if (sec.length > 0) emir(w, c, 'baris', { kime: d, barisTur: 1, bolgeler: sec });
     } else if (istekliligi(w, c, d) >= 250_000 || (skor <= -20_000 && w.C.c.yorgunluk[c]! > 40_000)) {
       emir(w, c, 'baris', { kime: d, barisTur: 0, bolgeler: [] });
     }
   }
-  void barisKabul;
+}
+
+/** Donanma ve hava kuvvetlerinin görevleri ve yeni siparişler (aylık). */
+/** Haftalık: donanma ve hava görevleri (savaş başlayınca bir hafta içinde atanır). */
+function kuvvetGorev(w: World, c: number): void {
+  const C = w.C.c;
+  const dus = dusmanlar(w, c);
+  const ben = denizGucu(w, c);
+  let onlar = 0; for (const d of dus) onlar = Math.max(onlar, denizGucu(w, d));
+  let gorev = 0;
+  if (dus.length && ben > 0) {
+    if (ben * 2 >= onlar * 3) gorev = 2; // açık üstünlük: abluka
+    else if (ben * 5 >= onlar * 3) gorev = 1; // denke yakın: hâkimiyet için meydan okur
+    else if (akinGucu(w, c) > 0) gorev = 3; // zayıf: ticaret akını
+    if (C.akinKayip[c]! > 80_000 && korumaGucu(w, c) > 0 && gorev !== 2) gorev = 4;
+    // akıncı donanma ara sıra ana filoyla baskına çıkar (haftada %8; düşmanın en az %25'i kadar güçlü ve sağlamsa)
+    if (gorev === 3 && ben * 100 >= onlar * 25 && C.gHasar[c]! < 200_000 && uniformInt(rng(w.tohum, w.gun, 45, c, 0, AMAC.aiChoice, 0, 0), 100) < 8) gorev = 1;
+    if (C.gHasar[c]! > (gorev === 3 ? 400_000 : 250_000)) gorev = 0; // ağır hasarlı filo onarım için limana döner
+  }
+  if (C.donGorev[c] !== gorev) emir(w, c, 'donanmaGorev', { gorev });
+  // hava: en sıcak cephe bölgesinde üstünlük ya da yakın destek
+  if (HAVA[AKTIF.donem].length && havaGucu(w, c, 'hava') + havaGucu(w, c, 'destek') > 0) {
+    if (dus.length) {
+      const U = uc(w);
+      const say = new Map<number, number>();
+      for (const u of w.U.rows()) if (U.ulke![u] === c && U.muharebe![u]) say.set(U.bolge![u]!, (say.get(U.bolge![u]!) ?? 0) + 1);
+      // muharebe yoksa düşmana komşu en kalabalık cephe bölgesi
+      if (say.size === 0) for (const u of w.U.rows()) if (U.ulke![u] === c && w.komsuluk[U.bolge![u]!]!.some((q) => dus.includes(w.R.c.kontrolEden[q]!))) say.set(U.bolge![u]!, (say.get(U.bolge![u]!) ?? 0) + 1);
+      let r = -1, m = 0; for (const [b, v] of [...say.entries()].sort((x, y) => x[0] - y[0])) if (v > m) { m = v; r = b; }
+      if (r < 0) r = w.pkg.ulkeler[c]!.baskent;
+      // önce gökyüzü: üstünlük kurulmadan yakın destek boşa gider
+      const g = havaGucu(w, c, 'destek') > 0 && havaUstunluk(w, c, r) >= 300_000 ? 2 : 1;
+      if (C.havaGorev[c] !== g || C.havaBolge[c] !== r) emir(w, c, 'havaGorev', { gorev: g, bolge: r });
+    } else if (C.havaGorev[c] !== 0) emir(w, c, 'havaGorev', { gorev: 0, bolge: -1 });
+  }
+}
+
+/** Aylık: yeni gemi ve uçak siparişleri. */
+function kuvvetPlan(w: World, c: number): void {
+  const C = w.C.c;
+  const dus = dusmanlar(w, c);
+  const ben = denizGucu(w, c);
+  // sipariş: hazine güçlü ve gelir bakımı taşıyorsa (savaşta ya da donanma tabanının altına düşünce)
+  const gelir = C.gelirDun[c]!;
+  const gider = zorunluGider(w, c).toplam;
+  if (gelir <= gider * 1.2 || C.hazine[c]! < gelir * 90) return;
+  const d0 = w.pkg.ulkeler[c]!.deniz ?? 0;
+  // tersane: ana yurdun en sanayileşmiş kıyısı
+  let kiyi = -1, kp = -1;
+  for (let r = 0; r < w.nR; r++) {
+    const b = w.pkg.bolgeler[r]!;
+    if (!b.kiyi || w.R.c.sahip[r] !== c || w.R.c.kontrolEden[r] !== c) continue;
+    const p = (b.anaYurt.includes(c) ? 1000 : 0) + w.R.c.sivilF[r]! + w.R.c.askeriF[r]!;
+    if (p > kp) { kp = p; kiyi = r; }
+  }
+  if (kiyi >= 0 && d0 >= 2 && (dus.length || ben < d0 * 120)) emir(w, c, 'gemiInsa', { sinif: dus.length ? 2 : 1, adet: Math.max(1, Math.floor(d0 / 2)), bolge: kiyi });
+  if (HAVA[AKTIF.donem].length && (dus.length || havaGucu(w, c, 'hava') < (w.pkg.ulkeler[c]!.guc ?? 4) * 60)) emir(w, c, 'ucakUret', { tip: dus.length ? 1 : 0, adet: Math.max(1, Math.floor((w.pkg.ulkeler[c]!.guc ?? 4) / 3)) });
+}
+
+/**
+ * Aylık toplum ve ekonomi politikası: iktidar partisi ve rejime uygun ekonomi modeli, tarife, sübvansiyon, tarım odağı,
+ * nüfus politikası; barışçıl demografi (asimilasyon); müttefike yardım; ideolojik devletlerin darbe girişimi; ambargo kaldırma.
+ * YZ sürgün ve soykırım uygulamaz: bu seçenekler yalnız oyuncunundur (K-41).
+ */
+function siyasetPlan(w: World, c: number): void {
+  const C = w.C.c;
+  const kis = KISILIK[w.pkg.ulkeler[c]!.kisilik]!;
+  const savas = savastaMi(w, c);
+  const ip = C.iktidar[c]!, rj = C.rejim[c]!;
+  // ekonomi modeli: yılda bir değerlendirilir
+  if (((w.gun + c * 37) % 360) < 30 && C.pg[c]! >= 120_000) {
+    const model = rj === 3 && ip === 4 ? 3 : rj === 3 || rj === 4 || ip === 3 ? 2 : ip === 1 && !savas ? 0 : 1;
+    if (C.model[c] !== model) emir(w, c, 'ekoModel', { model });
+  }
+  // tarife: milliyetçi/devletçi yüksek, liberal düşük, savaşta orta-yüksek
+  const tarife = ip === 3 || C.model[c]! >= 2 ? 250_000 : ip === 1 ? 50_000 : savas ? 150_000 : 100_000;
+  if (Math.abs(C.tarife[c]! - tarife) >= 50_000) emir(w, c, 'tarife', { oran: tarife });
+  // gıda ve tarım: stok azsa tahıla döner ve tarımı destekler; bolsa nakit ürünlerine geçer
+  const { stok, gunluk } = ulkeGidaStok(w, c);
+  const gun = gunluk > 0 ? Math.floor(stok / gunluk) : 999;
+  const odak = gun < 45 || savas ? 0 : gun > 150 ? 1 : C.tarimOdak[c]!;
+  if (C.tarimOdak[c] !== odak) emir(w, c, 'tarimOdak', { odak });
+  const subT = gun < 30 ? 50_000 : 0, subS = savas && C.hazine[c]! > C.g1[c]! ? 30_000 : 0;
+  if (C.subTarim[c] !== subT) emir(w, c, 'sub', { alan: 0, oran: subT });
+  if (C.subSanayi[c] !== subS) emir(w, c, 'sub', { alan: 1, oran: subS });
+  // nüfus: milliyetçi iktidar doğumu teşvik eder
+  const pol = ip === 3 && C.hazine[c]! > C.g1[c]! ? 1 : 0;
+  if (C.nufusPol[c] !== pol) emir(w, c, 'nufusPol', { pol });
+  // barışçıl demografi: milliyetçi ya da tek parti yönetimi en kalabalık azınlığı asimile etmeye çalışır (aynı anda en çok iki bölge)
+  if (!savas && (ip === 3 || rj === 3)) {
+    let suren = 0; for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === c && w.R.c.demPol[r]! > 0) suren++;
+    if (suren < 2) {
+      const ku = w.pkg.ulkeler[c]!.kultur;
+      let enR = -1, enK = -1, enN = 0;
+      for (let r = 0; r < w.nR; r++) {
+        if (w.R.c.sahip[r] !== c || w.R.c.kontrolEden[r] !== c || w.R.c.demPol[r]! > 0) continue;
+        const a = w.pkg.bolgeler[r]!.kimlikAnahtar;
+        if (!a.some(([k]) => k === ku)) continue;
+        for (let k = 0; k < a.length && k < NKIMLIK; k++) { const n = w.kim[r * NKIMLIK + k]!; if (a[k]![0] >= 0 && a[k]![0] !== ku && n > enN) { enN = n; enR = r; enK = k; } }
+      }
+      if (enR >= 0) emir(w, c, 'demografi', { bolge: enR, eylem: 1, kimlik: enK });
+    }
+  }
+  // müttefike yardım: savaştaki müttefik hazinesi tükeniyorsa (ve biz rahatsak)
+  if (C.hazine[c]! > C.g1[c]! * 4) {
+    for (const s of w.AN.rows()) {
+      if (w.AN.c.tur[s] !== A.ittifak) continue;
+      const d = w.AN.c.a[s] === c ? w.AN.c.b[s]! : w.AN.c.b[s] === c ? w.AN.c.a[s]! : -1;
+      if (d < 0 || pasif(w, d) || !savastaMi(w, d) || C.hazine[d]! > C.g1[d]!) continue;
+      if (emir(w, c, 'yardim', { kime: d, miktar: Math.max(10_000, Math.floor(C.g1[c]! / 3)) })) break;
+    }
+  }
+  // ideolojik devletler: komşu kırılgan rejime darbe desteği (yılda bir, düşük olasılık)
+  if (kis === 'İdeolojik' && !savas && C.pg[c]! >= 220_000 && uniformInt(rng(w.tohum, w.gun, 44, c, 0, AMAC.aiChoice, 0, 0), 12) === 0) {
+    for (let d = 0; d < w.nC; d++) {
+      if (d === c || pasif(w, d) || C.rejim[d] === rj || !sinirKomsusu(w, c, d) || C.mesru[d]! > 40_000 || gorus(w, c, d) > 40_000) continue;
+      if (emir(w, c, 'darbe', { hedef: d })) break;
+    }
+  }
+  // ambargoyu kaldırma: hedefin suç kaydı söndü ve ilişkiler düzeldiyse
+  for (const s of w.AN.rows()) {
+    if (w.AN.c.tur[s] !== A.ambargo || w.AN.c.a[s] !== c) continue;
+    const d = w.AN.c.b[s]!;
+    if (C.zulum[d]! < 20_000 && gorus(w, c, d) >= 30_000) { emir(w, c, 'ambargo', { kime: d, acik: 0 }); break; }
+  }
+}
+
+/** Kukla ilişkileri: güçlenen ya da efendisi çöken kukla bağımsızlık ilan eder; yayılmacılar zayıf komşuya ültimatom verir. */
+function kuklaPlan(w: World, c: number): void {
+  const f = efendi(w, c);
+  if (f >= 0) {
+    if ((gorus(w, c, f) < 25_000 && kendiGuc(w, c) * 3 > kendiGuc(w, f)) || (savastaMi(w, f) && teslimKosulu(w, f))) emir(w, c, 'bagimsizlik', {});
+    return;
+  }
+  const kis = KISILIK[w.pkg.ulkeler[c]!.kisilik]!;
+  if ((kis !== 'Yayılmacı' && kis !== 'Fırsatçı') || savastaMi(w, c)) return;
+  for (let d = 0; d < w.nC; d++) {
+    if (d === c || pasif(w, d) || savasta(w, c, d) || !sinirKomsusu(w, c, d)) continue;
+    const istek: number[] = [];
+    for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === d && iddiaVar(w, r, c) && r !== w.pkg.ulkeler[d]!.baskent) istek.push(r);
+    if (!istek.length || kendiGuc(w, c) < kendiGuc(w, d) * 3) continue;
+    if (emir(w, c, 'teklif', { kime: d, tip: TK.ultimatom, bolgeler: istek.slice(0, 3) })) return;
+  }
 }
 
 // ---------- Oyuncunun kalıcı emirleri ----------
@@ -404,6 +617,21 @@ function oyuncuKalici(w: World, c: number): void {
 }
 
 // ---------- Cephe yönetimi (19.5) ----------
+/** Toplam güç oranı (S): kendi birliklerimiz / düşmanın gözlenen ordusu (aralık ortası). Haftalık önbellek. */
+function ustunluk(w: World, c: number, k: number, birimler: number[]): number {
+  const anahtar = `ust${Math.floor(w.gun / 7)}`;
+  let o = w.onbellek.get('ustunluk') as { k: string; m: Map<number, number> } | undefined;
+  if (!o || o.k !== anahtar) { o = { k: anahtar, m: new Map() }; w.onbellek.set('ustunluk', o); }
+  const key = c * 65536 + k;
+  const v0 = o.m.get(key);
+  if (v0 !== undefined) return v0;
+  let biz = 0; for (const u of birimler) { const s = birlikIstat(w, u); biz += s.YS + s.SV; }
+  let onlar = 0; for (const g of ulkeGozlem(w, c, k)) onlar += Math.floor((g.gucAlt + g.gucUst) / 2);
+  const v = onlar <= 0 ? 10 * S : mulDiv(biz, S, onlar).q;
+  o.m.set(key, v);
+  return v;
+}
+
 function cepheYonet(w: World, c: number): void {
   const U = uc(w);
   const kis = w.pkg.ulkeler[c]!.kisilik;
@@ -494,7 +722,11 @@ function cepheYonet(w: World, c: number): void {
     let say = 0;
     for (const a of adaylar) {
       if (say >= 3) break;
-      if (a.oran < esik) continue;
+      // ezici üstünlük: düşman ordusunun (gözlenen) 2,5 katı güçteysek eşik düşer, başkent hedefi daha da cazip
+      const hk = R.kontrolEden[a.hedef]!;
+      let e = esik;
+      if (ustunluk(w, c, hk, birimler) >= 2_500_000) e = Math.max(1_100_000, mulDiv(esik, w.pkg.ulkeler[hk]?.baskent === a.hedef ? 700_000 : 800_000, S).q);
+      if (a.oran < e) continue;
       // savunmayı boşaltmamak için kaynak bölgede tehdide yetecek güç kalır; boş bölgeye en çok iki birlik yeter
       const kullan = a.kaynak.filter((u) => !atanmis.has(u)).sort((x, y) => birlikIstat(w, y).YS - birlikIstat(w, x).YS || x - y);
       const giden: number[] = [];

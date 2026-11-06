@@ -52,7 +52,7 @@ export async function paketSec(kimlik: string): Promise<Paket> {
 
 export const istemci = new Istemci();
 
-export type Panel = 'devlet' | 'ordu' | 'ekonomi' | 'diplomasi' | 'arastirma' | 'istatistik' | 'kronik' | 'kayit';
+export type Panel = 'devlet' | 'siyaset' | 'ordu' | 'kuvvet' | 'ekonomi' | 'diplomasi' | 'arastirma' | 'istatistik' | 'kronik' | 'kayit';
 /** Sağ çekmece: aynı anda tek pencere (panel, bölge ya da tur raporu). */
 export type Cekmece = null | { tur: 'panel'; panel: Panel } | { tur: 'bolge'; r: number } | { tur: 'rapor' };
 

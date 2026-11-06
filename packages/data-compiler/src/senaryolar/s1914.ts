@@ -93,6 +93,8 @@ export const S1914: SenaryoTanim = {
     'Chittagong': 'Çitagong', 'Thimphu': 'Punakha',
   },
   halk: 'IL:Arap/sunni PS:Arap/sunni JO:Arap/sunni LB:Arap/sunni SY:Arap/sunni IQ:Arap/sii KW:Arap/sunni QA:Arap/sunni AE:Arap/sunni BH:Arap/sii LY:Arap/sunni TN:Arap/sunni DZ:Arap/sunni MA:Arap/sunni YE:Arap/sunni SA:Arap/sunni PK:Pencaplı/sunni BA:Sırp/ortodoks MK:Bulgar/ortodoks TW:Çinli/cin AT:Avusturyalı/katolik KK:Kıbrıslı Türk/sunni XK:Arnavut/sunni',
+  // sınırı sonradan değişen bölgeler: 1914 halkı (çağdaş ülke eşlemesinin düzeltmesi)
+  halkBolge: { 'Szczecin': 'Alman/protestan', 'Gdańsk': 'Alman/protestan', 'Kaliningrad': 'Alman/protestan', 'Strasbourg': 'Alman/katolik' },
   iliski: [
     ['ittifak', 'GER', 'AUH'], ['ittifak', 'FRA', 'RUS'], ['garanti', 'RUS', 'SRB'], ['garanti', 'GBR', 'BEL'], ['garanti', 'FRA', 'BEL'], ['ittifak', 'GBR', 'JAP'],
     ['ittifak', 'GBR', 'CAN'], ['ittifak', 'GBR', 'AUS'], ['ittifak', 'GBR', 'NZL'], ['ittifak', 'GBR', 'SAF'], ['ittifak', 'AUS', 'NZL'], ['ittifak', 'SRB', 'MNE'],

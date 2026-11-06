@@ -111,6 +111,8 @@ export class Sunucu {
       case 'diplomasi': v = G.diplomasiG(w); break;
       case 'ekonomi': v = G.ekonomiG(w); break;
       case 'arastirma': v = G.arastirmaG(w); break;
+      case 'kuvvet': v = G.kuvvetG(w); break;
+      case 'siyaset': v = G.siyasetG(w); break;
       case 'istatistik': v = G.istatistik(w, p.kapsam ?? w.oyuncu); break;
       case 'kronik': v = G.kronik(w, !!p.hepsi); break;
       case 'danisman': v = danis(w, 'oneri'); break;

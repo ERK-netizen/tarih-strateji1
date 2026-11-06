@@ -1,5 +1,4 @@
-// Bölüm 21: kural tabanlı danışman. Soru cümleleri emir üretmez; buraya gelir (bölüm 20.3).
-import { trEkK, type World, acikla, ortak, ekonomi, diplomasi, nufus, TEKNOLOJI } from '@ts/engine';
+import { trEkK, type World, acikla, ortak, ekonomi, diplomasi, nufus, TEKNOLOJI, NYUVA } from '@ts/engine';
 import { ozet } from './gorunum.ts';
 
 export interface Cevap { baslik: string; paragraflar: string[]; oneriler: string[] }
@@ -79,7 +78,7 @@ export function danis(w: World, konu: string, ulke?: number, bolge?: number): Ce
       return { baslik: 'Sanayi', paragraflar: [`Etkin sivil fabrika ${(e.sivil / 1000).toFixed(1)}, askerî ${(e.askeri / 1000).toFixed(1)}. Günlük çelik ${(w.C.c.celikDun[P]! / 1000).toFixed(1)}, kömür ${(w.C.c.komurDun[P]! / 1000).toFixed(1)} birim.`, 'Çelik veya kömür yetmezse hatlar orantılı yavaşlar; dışarıdan haftalık alım ayarlayabilirsiniz.'], oneriler: w.C.c.celikDun[P]! < 1000 ? ['Her hafta 20 çelik satın al'] : ['Seri üretimi araştır'] };
     }
     case 'arastirma': {
-      const bos = [0, 1, 2].filter((k) => w.arastirma[P * 3 + k]! < 0).length;
+      const bos = Array.from({ length: ekonomi.acikYuva(w, P) }, (_, k) => k).filter((k) => w.arastirma[P * NYUVA + k]! < 0).length;
       const uygun = TEKNOLOJI.filter((t, i) => !w.tekBitti[P * TEKNOLOJI.length + i] && t.on.every((x) => w.tekBitti[P * TEKNOLOJI.length + TEKNOLOJI.findIndex((y) => y.kod === x)])).slice(0, 3);
       return { baslik: `Araştırma: ${bos} boş yuva`, paragraflar: [`Bilim bütçesi araştırma hızını en çok %50 artırır.`], oneriler: uygun.map((t) => `${t.ad} araştır`) };
     }
@@ -109,7 +108,7 @@ function oneriler(w: World): Cevap {
   if (o.teklifler.length) p.push(`Yanıt bekleyen ${o.teklifler.length} teklif var.`);
   if (o.gidaGun < 30) { p.push(`Gıda stoku ${o.gidaGun} güne indi.`); t.push('Her hafta 300 gıda satın al'); }
   if (o.hazineGun < 60) { p.push(`Hazine ${o.hazineGun} günlük giderle tükenecek.`); t.push('Vergiyi 2 puan artır'); }
-  if ([0, 1, 2].some((k) => w.arastirma[P * 3 + k]! < 0)) { p.push('Boş araştırma yuvası var.'); t.push('Seri üretimi araştır'); }
+  if (Array.from({ length: ekonomi.acikYuva(w, P) }, (_, k) => k).some((k) => w.arastirma[P * NYUVA + k]! < 0)) { p.push('Boş araştırma yuvası var.'); t.push('Seri üretimi araştır'); }
   if (o.savasta.length) { p.push(`Savaştasınız: ${o.savasta.map((d) => w.pkg.ulkeler[d]!.kisa).join(', ')}. Cephe durumunu "savaş nasıl gidiyor?" diye sorabilirsiniz.`); if (!o.otoCephe) t.push('Cepheyi otomatik yönet'); }
   const tehdit = w.pkg.ulkeler.map((_, c) => c).filter((c) => c !== P && diplomasi.gerekceSurecte(w, c, P) >= 0);
   if (tehdit.length) { p.push(`${tehdit.map((c) => w.pkg.ulkeler[c]!.kisa).join(', ')} size karşı savaş gerekçesi hazırlıyor.`); t.push('2 piyade tümeni kur'); }

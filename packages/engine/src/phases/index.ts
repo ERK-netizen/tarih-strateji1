@@ -1,16 +1,18 @@
 // Bölüm 7: günlük faz hattı P0–P12, sıklık katmanları, durma koşulları, bütünlük ve hash.
 import type { World, Bildirim } from '../state/world.ts';
 import { hc } from '../state/world.ts';
-import { tarih } from '../calendar/index.ts';
+import { tarih, haftaGunu } from '../calendar/index.ts';
 import { NHUCRE, ST, YB } from '../catalog.ts';
 import { uygula, type Emir } from '../orders.ts';
 import { kararGunu, teklifYanitlari } from '../decision/index.ts';
 import { aylikNufus, isDagit, yaraliIyilestir, gunlukIsOlcekle } from '../systems/nufus.ts';
-import { gidaGunu, aylikGida, sanayiGunu, arastirmaGunu, maliyeGunu, aylikMaliye, pazarTemizle, hasatKademeSec, ulkeGidaGuvence } from '../systems/ekonomi.ts';
+import { gidaGunu, aylikGida, sanayiGunu, arastirmaGunu, maliyeGunu, aylikMaliye, pazarTemizle, hasatKademeSec, ulkeGidaGuvence, aylikArastirma } from '../systems/ekonomi.ts';
 import { varislar, lojistikGunu } from '../systems/lojistik.ts';
 import { hareketGunu, muharebeGunu, sonucGunu, birlikTuketim } from '../systems/kara.ts';
 import { aylikSiyaset, aylikKontrol } from '../systems/siyaset.ts';
-import { aylikDiplomasi, gerekceGunu } from '../systems/diplomasi.ts';
+import { aylikDiplomasi, gerekceGunu, cokusDenetle } from '../systems/diplomasi.ts';
+import { denizHaftasi, havaHaftasi, denizUstunlukGuncelle } from '../systems/deniz.ts';
+import { aylikSiyasetEk, demografiHaftasi, yillikKent } from '../systems/toplum.ts';
 import { olayGunu, aylikOlaylar, hasatAnlat, acilisOlaylari } from '../systems/olaylar.ts';
 import { serilestir } from '../serialize/index.ts';
 import { fazDegisti } from '../observe/index.ts';
@@ -67,9 +69,11 @@ export function gunIlerle(w: World, kesinlestir = true): GunSonuc {
     aylikSiyaset(w);
     aylikDiplomasi(w);
     aylikOlaylar(w);
+    aylikArastirma(w);
+    aylikSiyasetEk(w);
     for (let c = 0; c < w.nC; c++) w.C.c.vergiAy[c] = 0;
     tarihceEkle(w);
-    if (t.m === 1) { hasatKademeSec(w); hasatAnlat(w); }
+    if (t.m === 1) { hasatKademeSec(w); hasatAnlat(w); yillikKent(w); }
   }
   // P2: oyuncu emirleri (kuyruk sırası), sonra karar modülü
   const kuyruk = w.kuyruk.splice(0, w.kuyruk.length).sort((a, b) => a.sira - b.sira);
@@ -85,6 +89,8 @@ export function gunIlerle(w: World, kesinlestir = true): GunSonuc {
   gerekceGunu(w);
   for (let c = 0; c < w.nC; c++) w.C.c.savasGunu[c] = savastaMi(w, c) ? w.C.c.savasGunu[c]! + 1 : 0;
   modTemizle(w);
+  denizUstunlukGuncelle(w);
+  if (haftaGunu(w.gun) === 2) { denizHaftasi(w); havaHaftasi(w); cokusDenetle(w); demografiHaftasi(w); }
   fazDegisti(w);
   // P4: varışlar
   varislar(w);

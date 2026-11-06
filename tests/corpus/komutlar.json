@@ -1,24 +1,326 @@
 [
- {"metin": "Vergiyi %20 yap", "tur": "vergi"}, {"metin": "vergileri artır", "tur": "vergi"}, {"metin": "vergi oranını yüzde 12'ye düşür", "tur": "vergi"},
- {"metin": "2 piyade tümeni kur", "tur": "birlikKur"}, {"metin": "üç süvari tümeni eğit", "tur": "birlikKur"}, {"metin": "bir topçu alayı oluştur", "tur": "birlikKur"}, {"metin": "Akyurt'ta yedek tümen topla", "tur": "birlikKur"},
- {"metin": "Demirhan'a savaş ilan et", "tur": "savasIlan"}, {"metin": "Kızılova'ya savaş ilan edelim", "tur": "savasIlan"},
- {"metin": "Kızılova ile ticaret anlaşması öner", "tur": "teklif"}, {"metin": "Mavikıyı'ya garanti ver", "tur": "teklif"}, {"metin": "Kızılova'ya saldırmazlık paktı teklif et", "tur": "teklif"}, {"metin": "kizilova ile ittifak kur", "tur": "teklif"},
- {"metin": "500 gıda satın al", "tur": "satinAl"}, {"metin": "her hafta 300 gıda satın al", "tur": "satinAl"}, {"metin": "Kızılova'dan 200 kömür al", "tur": "satinAl"}, {"metin": "50 çelik ithal et", "tur": "satinAl"},
- {"metin": "200 kömür sat", "tur": "sat"}, {"metin": "her hafta 100 gıda sat", "tur": "sat"},
- {"metin": "Mühimmat üretimine 4 fabrika ayır", "tur": "uretim"}, {"metin": "tüfek üret", "tur": "uretim"}, {"metin": "sahra topu üretimini durdur", "tur": "uretim"},
- {"metin": "seri üretimi araştır", "tur": "arastir"}, {"metin": "demiryolu ağını geliştir", "tur": "arastir"}, {"metin": "tarım teknolojisini araştıralım", "tur": "arastir"},
- {"metin": "Akyurt'a askerî fabrika inşa et", "tur": "insa"}, {"metin": "Taşdere'ye sivil fabrika inşa et", "tur": "insa"}, {"metin": "Akyurt'ta sulama yap", "tur": "insa"},
- {"metin": "savaş ekonomisine geç", "tur": "ekonomi"}, {"metin": "topyekûn savaş ilan et", "tur": "ekonomi"},
- {"metin": "askerlik yasasını kapsamlı yap", "tur": "askerlik"}, {"metin": "zorunlu askerliğe geç", "tur": "askerlik"},
- {"metin": "karne uygula", "tur": "karne"}, {"metin": "karneyi kaldır", "tur": "karne"},
- {"metin": "işgal politikasını sert yap", "tur": "isgalPol"},
- {"metin": "bilime %40 ayır", "tur": "butce"}, {"metin": "eğitime yüzde 30 ver", "tur": "butce"},
- {"metin": "Demirhan'a düşmanca tutum al", "tur": "tutum"}, {"metin": "Kızılova'ya dostane tutum benimse", "tur": "tutum"},
- {"metin": "Mavikıyı için gerekçe hazırla", "tur": "gerekce"}, {"metin": "Kızılova'ya karşı savaş gerekçesi üret", "tur": "gerekce"},
- {"metin": "Demirhan'a beyaz barış öner", "tur": "baris"}, {"metin": "Demirhan ile barış yap", "tur": "baris"},
- {"metin": "1 milyon borç al", "tur": "borcAl"}, {"metin": "cepheyi otomatik yönet", "tur": "otoCephe"}, {"metin": "cephe otomasyonunu kapat", "tur": "otoCephe"},
- {"metin": "hazineye 1 milyon ekle", "tur": "sandbox"}, {"metin": "5000 gıda ekle sandbox", "tur": "sandbox"}, {"metin": "Demirhan'ın hazinesine 2 milyon ekle", "tur": "sandbox"},
- {"metin": "1 ay ilerle", "tur": "zaman"}, {"metin": "bir hafta bekle", "tur": "zaman"}, {"metin": "sonraki olaya kadar ilerle", "tur": "zaman"}, {"metin": "3 gün geç", "tur": "zaman"},
- {"metin": "huzur neden düşüyor?", "tur": "soru"}, {"metin": "ne yapmalıyım", "tur": "soru"}, {"metin": "Demirhan'ın niyeti ne?", "tur": "soru"},
- {"metin": "Tunçkale'ye saldırmayın", "tur": "bilgi"}, {"metin": "uçak gemisi inşa et", "tur": "ret"}
+ {
+  "metin": "Vergiyi %20 yap",
+  "tur": "vergi"
+ },
+ {
+  "metin": "vergileri artır",
+  "tur": "vergi"
+ },
+ {
+  "metin": "vergi oranını yüzde 12'ye düşür",
+  "tur": "vergi"
+ },
+ {
+  "metin": "2 piyade tümeni kur",
+  "tur": "birlikKur"
+ },
+ {
+  "metin": "üç süvari tümeni eğit",
+  "tur": "birlikKur"
+ },
+ {
+  "metin": "bir topçu alayı oluştur",
+  "tur": "birlikKur"
+ },
+ {
+  "metin": "Akyurt'ta yedek tümen topla",
+  "tur": "birlikKur"
+ },
+ {
+  "metin": "Demirhan'a savaş ilan et",
+  "tur": "savasIlan"
+ },
+ {
+  "metin": "Kızılova'ya savaş ilan edelim",
+  "tur": "savasIlan"
+ },
+ {
+  "metin": "Kızılova ile ticaret anlaşması öner",
+  "tur": "teklif"
+ },
+ {
+  "metin": "Mavikıyı'ya garanti ver",
+  "tur": "teklif"
+ },
+ {
+  "metin": "Kızılova'ya saldırmazlık paktı teklif et",
+  "tur": "teklif"
+ },
+ {
+  "metin": "kizilova ile ittifak kur",
+  "tur": "teklif"
+ },
+ {
+  "metin": "500 gıda satın al",
+  "tur": "satinAl"
+ },
+ {
+  "metin": "her hafta 300 gıda satın al",
+  "tur": "satinAl"
+ },
+ {
+  "metin": "Kızılova'dan 200 kömür al",
+  "tur": "satinAl"
+ },
+ {
+  "metin": "50 çelik ithal et",
+  "tur": "satinAl"
+ },
+ {
+  "metin": "200 kömür sat",
+  "tur": "sat"
+ },
+ {
+  "metin": "her hafta 100 gıda sat",
+  "tur": "sat"
+ },
+ {
+  "metin": "Mühimmat üretimine 4 fabrika ayır",
+  "tur": "uretim"
+ },
+ {
+  "metin": "tüfek üret",
+  "tur": "uretim"
+ },
+ {
+  "metin": "sahra topu üretimini durdur",
+  "tur": "uretim"
+ },
+ {
+  "metin": "seri üretimi araştır",
+  "tur": "arastir"
+ },
+ {
+  "metin": "demiryolu ağını geliştir",
+  "tur": "arastir"
+ },
+ {
+  "metin": "tarım teknolojisini araştıralım",
+  "tur": "arastir"
+ },
+ {
+  "metin": "Akyurt'a askerî fabrika inşa et",
+  "tur": "insa"
+ },
+ {
+  "metin": "Taşdere'ye sivil fabrika inşa et",
+  "tur": "insa"
+ },
+ {
+  "metin": "Akyurt'ta sulama yap",
+  "tur": "insa"
+ },
+ {
+  "metin": "savaş ekonomisine geç",
+  "tur": "ekonomi"
+ },
+ {
+  "metin": "topyekûn savaş ilan et",
+  "tur": "ekonomi"
+ },
+ {
+  "metin": "askerlik yasasını kapsamlı yap",
+  "tur": "askerlik"
+ },
+ {
+  "metin": "zorunlu askerliğe geç",
+  "tur": "askerlik"
+ },
+ {
+  "metin": "karne uygula",
+  "tur": "karne"
+ },
+ {
+  "metin": "karneyi kaldır",
+  "tur": "karne"
+ },
+ {
+  "metin": "işgal politikasını sert yap",
+  "tur": "isgalPol"
+ },
+ {
+  "metin": "bilime %40 ayır",
+  "tur": "butce"
+ },
+ {
+  "metin": "eğitime yüzde 30 ver",
+  "tur": "butce"
+ },
+ {
+  "metin": "Demirhan'a düşmanca tutum al",
+  "tur": "tutum"
+ },
+ {
+  "metin": "Kızılova'ya dostane tutum benimse",
+  "tur": "tutum"
+ },
+ {
+  "metin": "Mavikıyı için gerekçe hazırla",
+  "tur": "gerekce"
+ },
+ {
+  "metin": "Kızılova'ya karşı savaş gerekçesi üret",
+  "tur": "gerekce"
+ },
+ {
+  "metin": "Demirhan'a beyaz barış öner",
+  "tur": "baris"
+ },
+ {
+  "metin": "Demirhan ile barış yap",
+  "tur": "baris"
+ },
+ {
+  "metin": "1 milyon borç al",
+  "tur": "borcAl"
+ },
+ {
+  "metin": "cepheyi otomatik yönet",
+  "tur": "otoCephe"
+ },
+ {
+  "metin": "cephe otomasyonunu kapat",
+  "tur": "otoCephe"
+ },
+ {
+  "metin": "hazineye 1 milyon ekle",
+  "tur": "sandbox"
+ },
+ {
+  "metin": "5000 gıda ekle sandbox",
+  "tur": "sandbox"
+ },
+ {
+  "metin": "Demirhan'ın hazinesine 2 milyon ekle",
+  "tur": "sandbox"
+ },
+ {
+  "metin": "1 ay ilerle",
+  "tur": "zaman"
+ },
+ {
+  "metin": "bir hafta bekle",
+  "tur": "zaman"
+ },
+ {
+  "metin": "sonraki olaya kadar ilerle",
+  "tur": "zaman"
+ },
+ {
+  "metin": "3 gün geç",
+  "tur": "zaman"
+ },
+ {
+  "metin": "huzur neden düşüyor?",
+  "tur": "soru"
+ },
+ {
+  "metin": "ne yapmalıyım",
+  "tur": "soru"
+ },
+ {
+  "metin": "Demirhan'ın niyeti ne?",
+  "tur": "soru"
+ },
+ {
+  "metin": "Tunçkale'ye saldırmayın",
+  "tur": "bilgi"
+ },
+ {
+  "metin": "uçak gemisi inşa et",
+  "tur": "ret"
+ },
+ {
+  "metin": "Akyurt tersanesinde 2 muhrip inşa et",
+  "tur": "gemiInsa"
+ },
+ {
+  "metin": "Donanma abluka görevine geçsin",
+  "tur": "donanmaGorev"
+ },
+ {
+  "metin": "Donanmayı limana çek",
+  "tur": "donanmaGorev"
+ },
+ {
+  "metin": "3 filo avcı uçağı sipariş et",
+  "tur": "ucakUret"
+ },
+ {
+  "metin": "Hava kuvvetleri Tunçkale üzerinde yakın destek görevine geçsin",
+  "tur": "havaGorev"
+ },
+ {
+  "metin": "Hava kuvvetleri üsse dönsün",
+  "tur": "havaGorev"
+ },
+ {
+  "metin": "Rejimi demokratik cumhuriyet olarak değiştir",
+  "tur": "rejim"
+ },
+ {
+  "metin": "Liberaller partisini destekle",
+  "tur": "partiDestek"
+ },
+ {
+  "metin": "Erken seçime git",
+  "tur": "secimErken"
+ },
+ {
+  "metin": "Nüfus politikası: doğum teşviki",
+  "tur": "nufusPol"
+ },
+ {
+  "metin": "Kuzgunkaya bölgesindeki Mavikıyılı halkını asimile et",
+  "tur": "demografi"
+ },
+ {
+  "metin": "Ekonomi modelini devletçilik yap",
+  "tur": "ekoModel"
+ },
+ {
+  "metin": "Gümrük tarifesini %30 yap",
+  "tur": "tarife"
+ },
+ {
+  "metin": "Tarım sübvansiyonunu %5 yap",
+  "tur": "sub"
+ },
+ {
+  "metin": "Tarım odağını hayvancılık yap",
+  "tur": "tarimOdak"
+ },
+ {
+  "metin": "Kızılova'ya ambargo uygula",
+  "tur": "ambargo"
+ },
+ {
+  "metin": "Demirhan'a 100.000 altın yardım gönder",
+  "tur": "yardim"
+ },
+ {
+  "metin": "Kızılova'da darbeyi destekle",
+  "tur": "darbe"
+ },
+ {
+  "metin": "Demirhan'a tam ilhak öner",
+  "tur": "baris"
+ },
+ {
+  "metin": "Kızılova'ya himaye antlaşması öner",
+  "tur": "teklif"
+ },
+ {
+  "metin": "Kızılova'nın sınırında olay çıkar",
+  "tur": "sinirOlayi"
+ },
+ {
+  "metin": "Bağımsızlık ilan et",
+  "tur": "bagimsizlik"
+ },
+ {
+  "metin": "Tunçkale ayrılıkçılarını destekle",
+  "tur": "ayrilikci"
+ }
 ]

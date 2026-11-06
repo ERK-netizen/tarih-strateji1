@@ -96,6 +96,8 @@ export const S1939: SenaryoTanim = {
     'Yanji': 'Hsinking', 'Belmopan': 'Belize', 'Chittagong': 'Çitagong', 'Dodoma': 'Dodoma', 'Ouagadougou': 'Vagadugu', 'Kişinev': 'Kişinev', 'Kırım': 'Kırım',
   },
   halk: 'IL:Arap/sunni PS:Arap/sunni JO:Arap/sunni LB:Arap/sunni SY:Arap/sunni IQ:Iraklı/sii PK:Pencaplı/sunni TW:Çinli/cin AT:Alman/katolik KK:Kıbrıslı Türk/sunni XK:Arnavut/sunni RU:Rus/laik',
+  // sınırı sonradan değişen bölgeler: 1939 halkı (çağdaş ülke eşlemesinin düzeltmesi)
+  halkBolge: { 'Szczecin': 'Alman/protestan', 'Gdańsk': 'Alman/protestan', 'Kaliningrad': 'Alman/protestan' },
   iliski: [
     ['savas', ['GER', 'SVK'], ['POL']],
     ['savas', ['JAP', 'MAN'], ['CHN'], 790],

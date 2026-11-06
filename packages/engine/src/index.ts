@@ -20,5 +20,8 @@ export * as nufus from './systems/nufus.ts';
 export * as lojistik from './systems/lojistik.ts';
 export * as kara from './systems/kara.ts';
 export * as olaylar from './systems/olaylar.ts';
+export * as deniz from './systems/deniz.ts';
+export * as toplum from './systems/toplum.ts';
 export * from './tr.ts';
 export { DONEMLER, TEK_DAL, TEK_KOD, type DonemKod, type Donem } from './donem.ts';
+export * from './katalogEk.ts';

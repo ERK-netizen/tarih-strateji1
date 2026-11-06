@@ -16,6 +16,16 @@ interface Harita { gen: number; yuk: number; bolgeler: HBolge[]; kenarlar: { a: 
 const H: Harita = JSON.parse(readFileSync(join(kok, 'data/derlenmis/harita.json'), 'utf8'));
 const NR = H.bolgeler.length;
 
+// ---------- Petrol yatakları ----------
+/** Harita bölge adı → [günlük üretim (milibirim), üretime başlama yılı]. Yatak, yılı gelmeden işletilemez. */
+const PETROL: Record<string, [number, number]> = {
+  'Bakü': [8000, 1871], 'Makhachkala': [2500, 1893], 'Bükreş': [2500, 1857], 'Lviv': [1000, 1880], 'Houston': [9000, 1901], 'Oklahoma City': [6000, 1905], 'Los Angeles': [4000, 1892],
+  'Monterrey': [4000, 1910], 'Ahvaz': [4000, 1908], 'Barinas': [6000, 1914], 'Palembang': [2000, 1890], 'Rangun': [800, 1889], 'Musul': [5000, 1927], 'Kuveyt': [8000, 1938],
+  'Riyad': [15000, 1938], 'Basra': [5000, 1948], 'Doha': [2000, 1940], 'Abu Dabi': [6000, 1958], 'Maskat': [1500, 1964], 'Bandar Seri Begawan': [1500, 1929],
+  'Trablusgarp': [3000, 1959], 'Benghazi': [4000, 1959], 'Ouargla': [4000, 1956], 'Benin': [5000, 1956], 'Calgary': [4000, 1947], 'Kazan': [6000, 1943], 'Surgut': [12000, 1965],
+  'Harbin': [4000, 1959], 'Anchorage': [3000, 1968], 'Bergen': [4000, 1971], 'Glasgow': [3000, 1975], 'Kyzylorda': [3000, 1965], 'Luanda': [3000, 1955], 'Ürümqi': [1500, 1955],
+};
+
 // ---------- Donanmalar ----------
 /** Senaryo başı deniz gücü (0–10): deniz geçişini ve çıkarmayı belirler (motor: denizKapali). */
 const DENIZ: Record<string, Record<string, number>> = {
@@ -316,6 +326,7 @@ export function derle(t: SenaryoTanim): { paket: Paket; ozet: string } {
       alan, verim: 2000, isciYog: 420, sulama: yerlesim[r]! > 0 || ['EG', 'IQ'].includes(b.iso) ? 1 : 0, altyapi, demiryolu,
       sivilF: sivilF[r]!, askeriF: askeriF[r]!, celik, komur, nufus: cells, kimlik, kimlikAnahtar: anahtar, kis: kaydir(kis), camur: kaydir(camur),
       anaYurt: [], iddia: [], iklim: al > 45 ? 1 : 0,
+      kiyi: b.kiyi ? 1 : undefined, petrol: PETROL[b.ad],
     };
   });
   // ana yurt ve iddialar: aynı halktan tek etkin devlet varsa o halkın ana yurdudur

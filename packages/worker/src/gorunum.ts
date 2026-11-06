@@ -2,11 +2,14 @@
 import {
   type World, tarihMetni, ortak, ekonomi, siyaset, nufus, diplomasi, olaylar, bolgeGozlem, istihbaratDuzeyi, aralik, hazineKademe,
   ARAZI, ASKERLIK, EKONOMI, ISGAL, YONETIM, KISILIK, TUTUM, TEKNOLOJI, NTEK, EKIPMAN, AILE_EKIP, TABUR, SABLON, MAL, PROJE, URUN_MUH, A, ANLASMA_TUR, K,
-  hc, ST, YB, kara, arastirmaYuvalari, AKTIF, DONEMLER, sablonIhtiyac, TEK_DAL, BAKAN, BAKAN_AD, MOD_TUR,
+  hc, ST, YB, kara, arastirmaYuvalari, AKTIF, DONEMLER, sablonIhtiyac, TEK_DAL, BAKAN, BAKAN_AD, MOD_TUR, REJIM_AD,
+  deniz, toplum, kademe, KADEME_MAX, GEMI, HAVA, DENIZ_GOREV, HAVA_GOREV, PARTI, SECIMLI, EKO_MODEL, TARIM_ODAK, DONEM_FIYAT, NKIMLIK, MALI, mulDiv,
 } from '@ts/engine';
 import { KOL_E, KOL_T } from '@ts/engine';
 
 const U = (w: World) => ortak.uc(w);
+
+const rejimAd = (w: World, c: number): string => REJIM_AD[AKTIF.donem]![w.C.c.rejim[c]!] ?? YONETIM[w.C.c.rejim[c]!]!.ad;
 
 export function ozet(w: World) {
   const P = w.oyuncu;
@@ -20,7 +23,7 @@ export function ozet(w: World) {
   const pu = w.pkg.ulkeler[P]!;
   return {
     gun: w.gun, tarih: tarihMetni(w.gun), oyuncu: P, mod: w.mod, surum: w.surum, bolgeSayisi: ortak.ulkeBolgeleri(w, P, false).length,
-    ulke: { ad: pu.ad, kisa: pu.kisa, renk: pu.renk, lider: pu.lider, yonetim: YONETIM[pu.yonetim]!.ad, kisilik: KISILIK[pu.kisilik] },
+    ulke: { ad: pu.ad, kisa: pu.kisa, renk: pu.renk, lider: pu.lider, yonetim: rejimAd(w, P), kisilik: KISILIK[pu.kisilik] },
     hazine: C.hazine[P]!, gelirDun: C.gelirDun[P]!, giderDun: C.giderDun[P]!, aylikGelir: C.g1[P]!,
     hazineGun: g.toplam > 0 ? Math.floor(C.hazine[P]! / Math.max(1, C.giderDun[P]! || g.toplam)) : 999,
     pg: C.pg[P]!, huzur: C.huzur[P]!, mesru: C.mesru[P]!, destek: C.destek[P]!, yorgunluk: C.yorgunluk[P]!,
@@ -79,8 +82,9 @@ export function donemOzet() {
       return { i, ad: s.ad, kisa: s.kisa, simge: i === 3 ? d.simge.piyade : aileSimge(ana?.aile ?? 'piyade'), ihtiyac: sablonIhtiyac(i).kisi };
     }),
     ekipman: EKIPMAN.map((e, i) => ({ i, ad: e.ad, aile: e.aile, simge: aileSimge(e.aile) })),
-    projeler: PROJE.map((p, i) => ({ i, ad: p.ad })),
+    projeler: PROJE.map((p, i) => ({ i, ad: p.ad, kod: p.kod, ozel: !!p.ozel })),
     mallar: MAL.map((m, i) => ({ i, ad: m.ad })),
+    taburlar: TABUR.map((t, i) => ({ i, ad: t.ad, aile: t.aile, kisi: t.kisi })),
   };
 }
 
@@ -160,6 +164,7 @@ export function bolge(w: World, r: number) {
     birlikler, yabanci, projeler, vergi: k === P ? R.vergiDun[r]! : null, baskent: w.pkg.ulkeler.findIndex((u) => u.baskent === r),
     sahipAd: w.pkg.ulkeler[R.sahip[r]!]!.ad, kontrolAd: w.pkg.ulkeler[k]!.ad, sahipRenk: w.pkg.ulkeler[R.sahip[r]!]!.renk, kontrolRenk: w.pkg.ulkeler[k]!.renk, isyan: R.isyan[r]!, cephe: w.gun - R.sonMuharebe[r]! <= 7,
     kis: ortak.kisDuzey(w, r), camur: ortak.camurDuzey(w, r),
+    kent: R.kent[r]!, maden: R.maden[r]!, kiyi: !!b.kiyi, petrol: b.petrol ? { miktar: b.petrol[0], yil: b.petrol[1] } : null, demPol: R.demPol[r]!,
     komsu: b.komsu,
     // tahkimat: kendi bölgesi kesin, yabancı bölge keşif/istihbarat varsa görünür
     tahkimat: gorunur ? R.tahkimat[r]! : null, tahkimatTavan: k >= 0 ? kara.tahkimatTavan(w, k) : 0, savunma: gorunur ? kara.savunmaCarpan(w, r, 0) : null,
@@ -219,7 +224,8 @@ export function diplomasiG(w: World) {
       if ((a === P && b === c) || (a === c && b === P)) {
         const t = w.AN.c.tur[s]!;
         const ad = ['Ticaret', 'Saldırmazlık', 'Geçiş hakkı', 'Garanti', 'İttifak', 'Ateşkes', 'Tazminat'][t]!;
-        anl.push(t === A.garanti ? (a === P ? `Garanti veriyoruz` : `Garantörümüz`) : t === A.gecis ? (a === P ? 'Geçiş veriyoruz' : 'Geçiş hakkımız var') : t === A.tazminat ? (a === P ? 'Tazminat ödüyoruz' : 'Tazminat alıyoruz') : ad);
+        anl.push(t === A.garanti ? (a === P ? `Garanti veriyoruz` : `Garantörümüz`) : t === A.gecis ? (a === P ? 'Geçiş veriyoruz' : 'Geçiş hakkımız var') : t === A.tazminat ? (a === P ? 'Tazminat ödüyoruz' : 'Tazminat alıyoruz')
+          : t === A.kukla ? (a === P ? 'Kuklamız' : 'Efendimiz') : t === A.ambargo ? (a === P ? 'Ambargo' : 'Bize ambargo uyguluyor') : ad);
       }
     }
     // istihbarat aralığıyla ordu
@@ -236,7 +242,7 @@ export function diplomasiG(w: World) {
       if ((a === c || b === c) && a !== P && b !== P && w.AN.c.tur[s] !== A.ateskes) kendiAnl.push(`${ANLASMA_TUR[w.AN.c.tur[s]!]}: ${w.pkg.ulkeler[a === c ? b : a]!.kisa}`);
     }
     return {
-      id: c, ad: u.ad, kisa: u.kisa, renk: u.renk, lider: u.lider, yonetim: YONETIM[u.yonetim]!.ad, kisilik: KISILIK[u.kisilik],
+      id: c, ad: u.ad, kisa: u.kisa, renk: u.renk, lider: u.lider, yonetim: rejimAd(w, c), kisilik: KISILIK[u.kisilik],
       gorusBize: w.gorus[c * w.nC + P]!, gorusumuz: w.gorus[P * w.nC + c]!, tutumumuz: TUTUM[w.tutum[P * w.nC + c]!], tutumlari: TUTUM[w.tutum[c * w.nC + P]!],
       anlasmalar: anl, digerAnlasmalar: kendiAnl, savasta: ortak.savasta(w, P, c),
       gerekceBize: diplomasi.gerekceSurecte(w, c, P) >= 0, gerekceBizim: diplomasi.gerekceSurecte(w, P, c) >= 0 ? (diplomasi.gerekceVar(w, P, c) ? 'hazır' : 'hazırlanıyor') : null,
@@ -268,6 +274,11 @@ export function ekonomiG(w: World) {
     fiyat: MAL.map((m, i) => ({ ad: m.ad, fiyat: w.fiyat[i]!, p0: m.p0, hacim: w.pazarHacim[i]! })), tuketimYet: C.tuketimYet[P]!,
     gider: ekonomi.zorunluGider(w, P), gelirDun: C.gelirDun[P]!, g1: C.g1[P]!, g2: C.g2[P]!, g3: C.g3[P]!,
     egitim: C.egitim[P]!, kapasite: siyaset.yonetimKapasitesi(w, P),
+    model: C.model[P]!, modeller: EKO_MODEL.map((m, i) => ({ i, ad: m.ad, aciklama: m.aciklama, hizmet: m.hizmet, sanayi: m.sanayi, vergi: m.vergi, insa: m.insa })),
+    tarife: C.tarife[P]!, subTarim: C.subTarim[P]!, subSanayi: C.subSanayi[P]!, tarimOdak: C.tarimOdak[P]!, odaklar: TARIM_ODAK.map((t, i) => ({ i, ad: t.ad, aciklama: t.aciklama })),
+    petrol: C.petrol[P]!, petrolDun: C.petrolDun[P]!, petrolIht: C.petrolIht[P]!,
+    kent: (() => { let n = 0, top = 0, mx = 0, maden = 0; for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === P) { n++; top += w.R.c.kent[r]!; mx = Math.max(mx, w.R.c.kent[r]!); maden += w.R.c.maden[r]!; } return { ort: n ? Math.round((top * 10) / n) / 10 : 0, enBuyuk: mx, maden }; })(),
+    sehirler: (() => { const l: { r: number; ad: string; kent: number; fabrika: number }[] = []; for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === P && w.R.c.kent[r]! >= 3) l.push({ r, ad: w.pkg.bolgeler[r]!.ad, kent: w.R.c.kent[r]!, fabrika: w.R.c.sivilF[r]! + w.R.c.askeriF[r]! }); return l.sort((a, b) => b.kent - a.kent || b.fabrika - a.fabrika).slice(0, 8); })(),
   };
 }
 
@@ -278,22 +289,86 @@ export function arastirmaG(w: World) {
   return {
     hiz, yuvalar: yv.yuva, sirada: yv.sirada,
     teknolojiler: TEKNOLOJI.map((t, i) => {
-      const bitti = w.tekBitti[P * NTEK + i] === 1;
+      const bitti = w.tekBitti[P * NTEK + i]! >= 1;
       const maliyet = w.tekMaliyet[P * NTEK + i]! || ekonomi.tekMaliyetHesapla(w, P, i);
       const ilerleme = w.tekIlerleme[P * NTEK + i]!;
       const onUygun = t.on.every((o) => w.tekBitti[P * NTEK + TEKNOLOJI.findIndex((x) => x.kod === o)]);
       const arastiriliyor = yv.yuva.includes(i);
       // doktrin dışlaması: seçilmiş (bitmiş ya da süren) bir doktrin ötekileri kapatır
-      const kapatan = t.dislar.map((d) => TEKNOLOJI.findIndex((x) => x.kod === d)).find((j) => j >= 0 && (w.tekBitti[P * NTEK + j] === 1 || yv.yuva.includes(j) || yv.sirada.includes(j)));
+      const kapatan = t.dislar.map((d) => TEKNOLOJI.findIndex((x) => x.kod === d)).find((j) => j >= 0 && (w.tekBitti[P * NTEK + j]! >= 1 || yv.yuva.includes(j) || yv.sirada.includes(j)));
+      const L = w.tekBitti[P * NTEK + i]!;
+      const simdi = L >= 1 ? kademe(i, L) : { ad: t.ad, yil: t.yil };
+      const sonraki = L < KADEME_MAX ? kademe(i, L + 1) : null;
       return {
         i, ad: t.ad, yil: t.yil, etki: t.etki, dal: t.dal, doktrin: t.dislar.length > 0, kapali: kapatan !== undefined ? TEKNOLOJI[kapatan]!.ad : null,
         on: t.on.map((o) => TEKNOLOJI.find((x) => x.kod === o)!.ad), bitti, arastiriliyor, sirada: yv.sirada.includes(i), uygun: onUygun && kapatan === undefined,
         yuzde: Math.min(100, Math.floor((ilerleme * 100) / Math.max(1, maliyet))), kalanGun: Math.ceil(Math.max(0, maliyet - ilerleme) / Math.max(1, hiz)),
-        erken: t.yil > w.pkg.senaryo.baslangic.y,
+        erken: (sonraki?.yil ?? t.yil) > tarihYil(w), seviye: L, enUst: KADEME_MAX, simdiAd: simdi.ad, simdiYil: simdi.yil,
+        sonrakiAd: sonraki?.ad ?? null, sonrakiYil: sonraki?.yil ?? null, son: L >= KADEME_MAX,
       };
     }),
     dallar: TEK_DAL,
     bitenSay: w.C.c.tekSay[P]!,
+    kademeToplam: (() => { let n = 0; for (let i = 0; i < NTEK; i++) n += w.tekBitti[P * NTEK + i]!; return n; })(), kademeEnUst: NTEK * KADEME_MAX,
+    enIleri: (() => { let b = 0; for (let i = 1; i < NTEK; i++) if (w.tekBitti[P * NTEK + i]! > w.tekBitti[P * NTEK + b]!) b = i; const L = w.tekBitti[P * NTEK + b]!; return L >= 1 ? { ...kademe(b, L), seviye: L } : null; })(),
+    bilimOrani: ekonomi.bilimOrani(w, P), yil: tarihYil(w),
+  };
+}
+const tarihYil = (w: World): number => Number(/\d{3,4}$/.exec(tarihMetni(w.gun))?.[0] ?? w.pkg.senaryo.baslangic.y);
+
+/** Deniz ve hava kuvvetleri: sınıf sayıları, görevler, siparişler, petrol. Düşman donanması kaba tahminle. */
+export function kuvvetG(w: World) {
+  const P = w.oyuncu;
+  const C = w.C.c;
+  const d = AKTIF.donem;
+  const fiyat = DONEM_FIYAT[d];
+  const siparis = w.PR.list().filter((s) => w.PR.c.ulke[s] === P && (PROJE[w.PR.c.tur[s]!]!.kod === 'gemi' || PROJE[w.PR.c.tur[s]!]!.kod === 'ucak')).map((s) => {
+    const gemi = PROJE[w.PR.c.tur[s]!]!.kod === 'gemi';
+    const ad = gemi ? GEMI[d][w.PR.c.alt[s]!]?.ad : HAVA[d][w.PR.c.alt[s]!]?.ad;
+    return { gemi, ad: ad ?? '?', adet: w.PR.c.adet[s]!, bolge: w.pkg.bolgeler[w.PR.c.bolge[s]!]!.ad, yuzde: Math.floor((w.PR.c.spKul[s]! * 100) / Math.max(1, w.PR.c.spTop[s]!)) };
+  });
+  const dusman = ortak.dusmanlar(w, P);
+  const yaklas = (v: number) => (v <= 0 ? 0 : Math.round(v / 100) * 100);
+  // tersaneler: ana yurt ve sanayisi büyük kıyılar önce
+  const kiyilar = w.pkg.bolgeler.map((b, r) => ({ r, ad: b.ad, k: !!b.kiyi, ana: b.anaYurt.includes(P) ? 1 : 0, f: w.R.c.sivilF[r]! + w.R.c.askeriF[r]! }))
+    .filter((x) => x.k && w.R.c.sahip[x.r] === P && w.R.c.kontrolEden[x.r] === P).sort((a, b) => b.ana - a.ana || b.f - a.f || a.r - b.r).map((x) => ({ r: x.r, ad: x.ad }));
+  const yakit = deniz.yakitIhtiyaci(w, P);
+  return {
+    gemiler: GEMI[d].map((g, k) => ({ k, ad: g.ad, sayi: deniz.gemiSay(w, P, k), guc: g.guc, akin: g.akin, koruma: g.koruma, bedel: mulDiv(g.bedel, fiyat, 1000).q, gun: g.gun, bakim: mulDiv(g.bakim, fiyat, 1000).q })),
+    ucaklar: HAVA[d].map((h, k) => ({ k, ad: h.ad, sayi: deniz.ucakSay(w, P, k), hava: h.hava, destek: h.destek, bomba: h.bomba, bedel: mulDiv(h.bedel, fiyat, 1000).q, gun: h.gun, bakim: mulDiv(h.bakim, fiyat, 1000).q })),
+    donGorev: C.donGorev[P]!, denizGorevler: [...DENIZ_GOREV], havaGorev: C.havaGorev[P]!, havaBolge: C.havaBolge[P]!, havaBolgeAd: C.havaBolge[P]! >= 0 ? w.pkg.bolgeler[C.havaBolge[P]!]!.ad : null, havaGorevler: [...HAVA_GOREV],
+    denizGuc: deniz.denizGucu(w, P), akinGuc: deniz.akinGucu(w, P), korumaGuc: deniz.korumaGucu(w, P), gHasar: C.gHasar[P]!, hHasar: C.hHasar[P]!,
+    havaGuc: deniz.havaGucu(w, P, 'hava'), destekGuc: deniz.havaGucu(w, P, 'destek'), bombaGuc: deniz.havaGucu(w, P, 'bomba'),
+    abluka: C.abluka[P]!, akinKayip: C.akinKayip[P]!, denizKapali: C.denizK[P]!, dusmanDeniz: yaklas(dusman.reduce((t, c) => t + deniz.denizGucu(w, c), 0)),
+    bakim: deniz.kuvvetBakimi(w, P), siparis, kiyilar, havaVar: HAVA[d].length > 0,
+    petrol: { stok: C.petrol[P]!, uretim: C.petrolDun[P]!, ihtiyac: C.petrolIht[P]!, yakit: deniz.yakitCarpan(w, P), filo: yakit.filo, hava: yakit.hava, ordu: yakit.ordu, sanayi: yakit.sanayi, fiyat: w.fiyat[MALI.petrol] ?? 0 },
+    cepheler: (() => { const s = new Set<number>(); for (let r = 0; r < w.nR; r++) if (w.gun - w.R.c.sonMuharebe[r]! <= 14 && (w.R.c.kontrolEden[r] === P || dusman.includes(w.R.c.kontrolEden[r]!))) s.add(r); return [...s].map((r) => ({ r, ad: w.pkg.bolgeler[r]!.ad, bizim: w.R.c.kontrolEden[r] === P })); })(),
+  };
+}
+
+/** Siyaset ve toplum: rejim, partiler, seçim, nüfus politikası, bölge bölge kimlikler ve demografi politikaları. */
+export function siyasetG(w: World) {
+  const P = w.oyuncu;
+  const C = w.C.c;
+  const d = AKTIF.donem;
+  const pu = w.pkg.ulkeler[P]!;
+  const bolgeler: { r: number; ad: string; nufus: number; demPol: number; demKim: number; kimlik: { k: number; ad: string; kisi: number; bizim: boolean }[] }[] = [];
+  for (let r = 0; r < w.nR; r++) {
+    if (w.R.c.sahip[r] !== P || w.R.c.kontrolEden[r] !== P) continue;
+    const b = w.pkg.bolgeler[r]!;
+    const kim = b.kimlikAnahtar.slice(0, NKIMLIK).map(([ku], k) => ({ k, ad: toplum.kimlikAdi(w, r, k), kisi: w.kim[r * NKIMLIK + k]!, bizim: ku === pu.kultur })).filter((x) => x.kisi > 0);
+    const top = kim.reduce((t, x) => t + x.kisi, 0);
+    const yabanci = kim.filter((x) => !x.bizim).reduce((t, x) => t + x.kisi, 0);
+    if (yabanci * 20 < top && w.R.c.demPol[r] === 0) continue; // %5'ten az azınlık: listelenmez
+    bolgeler.push({ r, ad: b.ad, nufus: top, demPol: w.R.c.demPol[r]!, demKim: w.R.c.demKim[r]!, kimlik: kim.sort((a, c) => c.kisi - a.kisi) });
+  }
+  bolgeler.sort((a, b) => b.kimlik.filter((x) => !x.bizim).reduce((t, x) => t + x.kisi, 0) - a.kimlik.filter((x) => !x.bizim).reduce((t, x) => t + x.kisi, 0));
+  return {
+    rejim: C.rejim[P]!, rejimAd: rejimAd(w, P), rejimler: REJIM_AD[d].map((ad, i) => ({ i, ad, idari: YONETIM[i]?.idari ?? 0, secimli: SECIMLI.has(i) })),
+    partiler: PARTI[d].map((p, i) => ({ i, ad: p.ad, renk: p.renk, aciklama: p.aciklama, pay: toplum.partiPay(w, P, i), etki: p.etki })),
+    iktidar: C.iktidar[P]!, secim: C.secim[P]! > 0 ? tarihMetni(C.secim[P]!) : null, secimGun: C.secim[P]! > 0 ? C.secim[P]! - w.gun : null, secimli: SECIMLI.has(C.rejim[P]!),
+    gecis: C.gecis[P]! > w.gun ? C.gecis[P]! - w.gun : 0, nufusPol: C.nufusPol[P]!, zulum: C.zulum[P]!, pg: C.pg[P]!, mesru: C.mesru[P]!, huzur: C.huzur[P]!,
+    bolgeler: bolgeler.slice(0, 40),
   };
 }
 
@@ -316,7 +391,7 @@ export function istatistik(w: World, c: number) {
     id: c, ad: w.pkg.ulkeler[c]!.ad, kesin, istihbarat: I,
     gruplar: [
       { ad: 'Devlet', satir: [
-        ['Yönetim', YONETIM[w.pkg.ulkeler[c]!.yonetim]!.ad], ['Lider', w.pkg.ulkeler[c]!.lider], ['Kişilik', KISILIK[w.pkg.ulkeler[c]!.kisilik]!],
+        ['Yönetim', rejimAd(w, c)], ['Lider', w.pkg.ulkeler[c]!.lider], ['Kişilik', KISILIK[w.pkg.ulkeler[c]!.kisilik]!],
         ['Siyasi güç', kesin ? (C.pg[c]! / 1000).toFixed(0) : '—'], ['Meşruiyet', (C.mesru[c]! / 1000).toFixed(1)], ['Huzur', (C.huzur[c]! / 1000).toFixed(1)],
         ['Savaşa destek', (C.destek[c]! / 1000).toFixed(1)], ['Savaş yorgunluğu', (C.yorgunluk[c]! / 1000).toFixed(1)], ['Güvenilirlik', (C.guvenilir[c]! / 1000).toFixed(0)], ['Saldırganlık ünü', (C.un[c]! / 1000).toFixed(0)],
       ] },
