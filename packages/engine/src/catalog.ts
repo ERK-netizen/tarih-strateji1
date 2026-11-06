@@ -1,4 +1,4 @@
-import { DONEMLER, type DonemKod } from './donem.ts';
+import { DONEMLER, TEK_KOD, type DonemKod } from './donem.ts';
 // Ek B: veri sözlüğü ve başlangıç katsayıları (1A). Bütün sayılar VARSAYILAN denge başlangıç değeridir.
 // Ölçekler: oran S=1e6, puan ×1000, gıda/mühimmat/kaynak milibirim, sanayi milipuan (SP×1000).
 
@@ -119,24 +119,35 @@ export const TUTUM = ['Dostane', 'Nötr', 'Soğuk', 'Düşmanca'] as const;
 export const BUTCE = ['Bilim', 'Eğitim', 'Altyapı/Tarım', 'Sosyal/Güvenlik'] as const;
 
 // ---------- Teknoloji (1A alt kümesi) ----------
-export interface Teknoloji { kod: string; ad: string; yil: number; maliyet: number; on: string[]; etki: string; esanlam: string[] }
+export interface Teknoloji {
+  kod: string; ad: string; yil: number; maliyet: number; on: string[]; etki: string; esanlam: string[];
+  /** Dal (TEK_DAL sırası) */
+  dal: number;
+  /** Bu teknoloji araştırılınca kapanan seçenekler (doktrinler birbirini dışlar) */
+  dislar: string[];
+}
 // maliyet: araştırma puanı ×1000 (taban hız günlük 1000 → 1 puan/gün)
 export const TEKNOLOJI: Teknoloji[] = [
-  { kod: 'piyade2', ad: 'Piyade silahı II', yil: 1916, maliyet: 150_000, on: [], etki: 'Piyade silahı II üretimi', esanlam: ['piyade silahı', 'tüfek', 'piyade silahı ii'] },
-  { kod: 'piyade3', ad: 'Piyade silahı III', yil: 1918, maliyet: 180_000, on: ['piyade2'], etki: 'Piyade silahı III üretimi', esanlam: ['piyade silahı iii'] },
-  { kod: 'agirtop2', ad: 'Ağır top II', yil: 1916, maliyet: 160_000, on: [], etki: 'Ağır top II üretimi', esanlam: ['ağır top', 'topçu', 'ağır top ii'] },
-  { kod: 'tarim1', ad: 'Tarım makineleri', yil: 1914, maliyet: 120_000, on: [], etki: 'İşçi yoğunluğu −%15', esanlam: ['tarım', 'tarım makineleri', 'tarım teknolojisi'] },
-  { kod: 'tarim2', ad: 'Gübre kimyası', yil: 1917, maliyet: 170_000, on: ['tarim1'], etki: 'Alan verimi +%10', esanlam: ['gübre', 'gübre kimyası'] },
-  { kod: 'sanayi1', ad: 'Seri üretim', yil: 1914, maliyet: 130_000, on: [], etki: 'Fabrika gücü +%10', esanlam: ['sanayi', 'seri üretim', 'fabrika'] },
-  { kod: 'sanayi2', ad: 'Elektrikli tezgâh', yil: 1917, maliyet: 180_000, on: ['sanayi1'], etki: 'Fabrika gücü +%10; verim tavanı +0,1', esanlam: ['elektrik', 'elektrikli tezgah', 'tezgâh'] },
-  { kod: 'demiryolu', ad: 'Demiryolu ağı', yil: 1914, maliyet: 140_000, on: [], etki: 'Demiryolu inşa maliyeti −%25; kapasite +%10', esanlam: ['demiryolu', 'demiryolu ağı', 'lojistik'] },
-  { kod: 'sihhiye', ad: 'Sahra sıhhiyesi', yil: 1915, maliyet: 120_000, on: [], etki: 'Yaralı iyileşmesi %50 → %60', esanlam: ['sıhhiye', 'sağlık', 'hastane', 'sahra sıhhiyesi'] },
-  { kod: 'kurmay', ad: 'Kurmay sistemi', yil: 1914, maliyet: 140_000, on: [], etki: 'Organizasyon yenilenmesi +%20', esanlam: ['kurmay', 'kurmay sistemi', 'doktrin'] },
-  { kod: 'idare', ad: 'Modern bürokrasi', yil: 1915, maliyet: 150_000, on: [], etki: 'Yönetim kapasitesi +10, idari verim +0,05', esanlam: ['bürokrasi', 'idare', 'modern bürokrasi'] },
-  { kod: 'propaganda', ad: 'Kitle basını', yil: 1915, maliyet: 110_000, on: [], etki: 'Savaşa destek +5', esanlam: ['propaganda', 'basın', 'kitle basını'] },
+  { kod: 'piyade2', ad: 'Piyade silahı II', yil: 1916, maliyet: 150_000, on: [], etki: 'Piyade silahı II üretimi', esanlam: ['piyade silahı', 'tüfek', 'piyade silahı ii'], dal: 0, dislar: [] },
+  { kod: 'piyade3', ad: 'Piyade silahı III', yil: 1918, maliyet: 180_000, on: ['piyade2'], etki: 'Piyade silahı III üretimi', esanlam: ['piyade silahı iii'], dal: 0, dislar: [] },
+  { kod: 'agirtop2', ad: 'Ağır top II', yil: 1916, maliyet: 160_000, on: [], etki: 'Ağır top II üretimi', esanlam: ['ağır top', 'topçu', 'ağır top ii'], dal: 0, dislar: [] },
+  { kod: 'tarim1', ad: 'Tarım makineleri', yil: 1914, maliyet: 120_000, on: [], etki: 'İşçi yoğunluğu −%15', esanlam: ['tarım', 'tarım makineleri', 'tarım teknolojisi'], dal: 4, dislar: [] },
+  { kod: 'tarim2', ad: 'Gübre kimyası', yil: 1917, maliyet: 170_000, on: ['tarim1'], etki: 'Alan verimi +%10', esanlam: ['gübre', 'gübre kimyası'], dal: 4, dislar: [] },
+  { kod: 'sanayi1', ad: 'Seri üretim', yil: 1914, maliyet: 130_000, on: [], etki: 'Fabrika gücü +%10', esanlam: ['sanayi', 'seri üretim', 'fabrika'], dal: 3, dislar: [] },
+  { kod: 'sanayi2', ad: 'Elektrikli tezgâh', yil: 1917, maliyet: 180_000, on: ['sanayi1'], etki: 'Fabrika gücü +%10; verim tavanı +0,1', esanlam: ['elektrik', 'elektrikli tezgah', 'tezgâh'], dal: 3, dislar: [] },
+  { kod: 'demiryolu', ad: 'Demiryolu ağı', yil: 1914, maliyet: 140_000, on: [], etki: 'Demiryolu inşa maliyeti −%25; kapasite +%10', esanlam: ['demiryolu', 'demiryolu ağı', 'lojistik'], dal: 2, dislar: [] },
+  { kod: 'sihhiye', ad: 'Sahra sıhhiyesi', yil: 1915, maliyet: 120_000, on: [], etki: 'Yaralı iyileşmesi %50 → %60', esanlam: ['sıhhiye', 'sağlık', 'hastane', 'sahra sıhhiyesi'], dal: 2, dislar: [] },
+  { kod: 'kurmay', ad: 'Kurmay sistemi', yil: 1914, maliyet: 140_000, on: [], etki: 'Organizasyon yenilenmesi +%20', esanlam: ['kurmay', 'kurmay sistemi', 'doktrin'], dal: 1, dislar: [] },
+  { kod: 'idare', ad: 'Modern bürokrasi', yil: 1915, maliyet: 150_000, on: [], etki: 'Yönetim kapasitesi +10, idari verim +0,05', esanlam: ['bürokrasi', 'idare', 'modern bürokrasi'], dal: 5, dislar: [] },
+  { kod: 'propaganda', ad: 'Kitle basını', yil: 1915, maliyet: 110_000, on: [], etki: 'Savaşa destek +5', esanlam: ['propaganda', 'basın', 'kitle basını'], dal: 5, dislar: [] },
+  ...DONEMLER.buyuk.teknoloji.slice(12),
 ];
 export const NTEK = TEKNOLOJI.length;
-export const tekIdx = (kod: string): number => TEKNOLOJI.findIndex((t) => t.kod === kod);
+const TEK_I: Record<string, number> = Object.fromEntries(TEK_KOD.map((k, i) => [k, i]));
+/** Teknoloji yuvası (kodlar bütün dönemlerde aynı sıradadır). */
+export const tekIdx = (kod: string): number => TEK_I[kod] ?? TEKNOLOJI.findIndex((t) => t.kod === kod);
+/** Ülke bu teknolojiyi biliyor mu? */
+export const tekVar = (w: { tekBitti: Uint8Array }, c: number, kod: string): boolean => w.tekBitti[c * NTEK + tekIdx(kod)] === 1;
 
 // ---------- Projeler (13.6) ----------
 export interface Proje { kod: string; ad: string; sp: number; nakit: number; gun: number; esanlam: string[] }
@@ -152,7 +163,7 @@ export const projeIdx = (kod: string): number => PROJE.findIndex((p) => p.kod ==
 
 // ---------- Dönem kataloğu ----------
 /** Etkin dönem: senaryo paketine göre katalog dizileri yerinde değiştirilir (Worker'da tek dünya vardır). */
-export const AKTIF = { donem: 'buyuk' as DonemKod, surum: 0 };
+export const AKTIF = { donem: 'buyuk' as DonemKod, surum: 0, yilOlcek: 1 };
 export function donemYukle(kod: DonemKod | undefined): void {
   const d = DONEMLER[kod ?? 'buyuk'];
   if (AKTIF.donem === d.kod && EKIPMAN[0]?.ad === d.ekipman[0]!.ad) return;
@@ -164,6 +175,7 @@ export function donemYukle(kod: DonemKod | undefined): void {
   MAL.splice(0, MAL.length, ...d.mal);
   aileKur();
   AKTIF.donem = d.kod;
+  AKTIF.yilOlcek = d.yilOlcek;
   AKTIF.surum++;
 }
 
@@ -180,7 +192,7 @@ export const K = {
   hizmetVerim: 450, // mili-altın / kişi / gün katma değer
   spDeger: 900, // altın / SP (katma değer)
   maasGun: 60, // mili-altın / asker / gün
-  ekipBakim: 5, // binde: ekipman SP değerinin günlük bakım payı (‰)
+  ekipBakim: 15, // binde: ekipman SP değerinin günlük bakım payı (‰)
   idariGider: 120, // mili-altın / kişi / yıl → günlük idari gider tabanı
   bozulmaAylik: 5000, // gıda aylık bozulma S ölçekli %0,5
   kenarKapasite: 600_000, // milibirim taşıma / gün taban

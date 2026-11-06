@@ -1,9 +1,10 @@
 // Bölüm 9 ve 17: kontrol, işgal itaati, bütünleşme, huzur, meşruiyet, PG, yorgunluk, savaşa destek.
 import type { World } from '../state/world.ts';
-import { YONETIM, ISGAL, EKONOMI, NTEK, tekIdx } from '../catalog.ts';
+import { YONETIM, ISGAL, EKONOMI, NTEK, tekIdx, tekVar } from '../catalog.ts';
 import { S, mulDiv, clamp, approach } from '../num/index.ts';
 import { rng, AMAC, bernoulli } from '../rng/index.ts';
-import { yonetimMesafeleri, savastaMi, uc, anlat, bildir, birlikIstat } from './ortak.ts';
+import { yonetimMesafeleri, savastaMi, uc, anlat, bildir, birlikIstat, modDeger } from './ortak.ts';
+import { MT } from '../state/world.ts';
 import { ulkeGidaGuvence, butceEtki } from './ekonomi.ts';
 import { trEk } from '../tr.ts';
 
@@ -134,9 +135,11 @@ export function aylikKontrol(w: World): void {
       const pol = ISGAL[w.C.c.isgalPol[k]!]!;
       const gk = garnizonKapsama(w, r);
       const hedefI = Math.min(100_000, pol.hedef + mulDiv(15_000, gk, S).q);
-      R.itaat[r] = approach(R.itaat[r]!, hedefI, pol.hiz, pol.hiz);
+      const hz = tekVar(w, k, 'asayis1') ? mulDiv(pol.hiz, 5, 4).q : pol.hiz;
+      R.itaat[r] = approach(R.itaat[r]!, hedefI, hz, hz);
       let hedefD = pol.direnis - mulDiv(20_000, gk, S).q;
       if (w.C.c.isgalPol[k] === 2 && R.isgalGun[r]! < 90) hedefD -= 15_000;
+      if (tekVar(w, k, 'asayis1')) hedefD = mulDiv(hedefD, 3, 4).q;
       R.direnis[r] = approach(R.direnis[r]!, clamp(hedefD, 0, 100_000), 5000, 5000);
       R.isgalGun[r] = R.isgalGun[r]! + 30;
       if (R.direnis[r]! > 60_000) {
@@ -185,6 +188,8 @@ export function huzurHedefi(w: World, c: number): { hedef: number; bilesen: Bile
   }
   if (isgal > 0) b.push({ ad: 'Topraklarımızın işgali', deger: -mulDiv(20_000, isgal, Math.max(1, ana)).q });
   if (C.yasakGun[c]! > w.gun) b.push({ ad: 'Olay etkisi', deger: -8000 });
+  const mh = modDeger(w, c, MT.huzurAy);
+  if (mh) b.push({ ad: 'Kararların sonuçları', deger: mh });
   const top = b.reduce((s, x) => s + x.deger, 0);
   return { hedef: clamp(top, 0, 100_000), bilesen: b };
 }
@@ -207,6 +212,8 @@ export function mesruHedefi(w: World, c: number): { hedef: number; bilesen: Bile
   b.push({ ad: 'Huzur', deger: Math.floor((C.huzur[c]! - 50_000) / 5) });
   if (C.zafer[c]) b.push({ ad: 'Zafer/yenilgi', deger: C.zafer[c]! });
   if (C.temerrut[c]! > w.gun) b.push({ ad: 'Temerrüt', deger: -10_000 });
+  const mm = modDeger(w, c, MT.mesruAy);
+  if (mm) b.push({ ad: 'Kararların sonuçları', deger: mm });
   const top = b.reduce((s, x) => s + x.deger, 0);
   return { hedef: clamp(top, 0, 100_000), bilesen: b };
 }
@@ -218,6 +225,8 @@ export function destekHedefi(w: World, c: number): { hedef: number; bilesen: Bil
   if (C.saldiriyaUgradi[c]! > 0) b.push({ ad: 'Saldırıya uğradık', deger: C.saldiriyaUgradi[c]! });
   if (C.zafer[c]) b.push({ ad: 'Zafer/propaganda', deger: Math.floor(C.zafer[c]! / 2) });
   if (C.propaganda[c]) b.push({ ad: 'Kitle basını', deger: C.propaganda[c]! });
+  const md = modDeger(w, c, MT.destekAy);
+  if (md) b.push({ ad: 'Kararların sonuçları', deger: md });
   const top = b.reduce((s, x) => s + x.deger, 0);
   return { hedef: clamp(top, 0, 100_000), bilesen: b };
 }

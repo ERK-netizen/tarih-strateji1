@@ -64,6 +64,7 @@ function Devlet() {
           <dt>Bölge</dt><dd>{o.bolgeSayisi}</dd>
         </dl>
       </section>
+      <Durum o={o} />
       <section>
         <h3>Vergi ve bütçe</h3>
         <div class="satir-ayar"><span>Vergi oranı <strong>{yuzde(o.vergi)}</strong></span>
@@ -91,8 +92,35 @@ function Devlet() {
         <SecimSatiri ad="Takviye" secenek={['Kapalı', 'Açık']} deger={o.otoTakviye} sec={(i) => onizle({ tur: 'otoTakviye', acik: i })} />
         <SecimSatiri ad="Gıda alımı" secenek={['Kapalı', 'Açık']} deger={o.kaliciGida} sec={(i) => onizle({ tur: 'kaliciGida', acik: i })} />
       </section>
+      <section>
+        <h3>Bakanlar</h3>
+        <p class="soluk kucuk">Göreve başlayan bakan, alanını ayda bir sizin adınıza planlar. O alanda elle emir verirseniz bakan görevden alınır.</p>
+        {o.bakanlar.map((b: any) => <SecimSatiri key={b.i} ad={b.ad} secenek={['Sizde', 'Bakanda']} deger={(o.bakan >> b.i) & 1} sec={(i) => onizle({ tur: 'bakan', alan: b.i, acik: i })} />)}
+      </section>
       {o.mod === 1 && <Sandbox />}
     </div>
+  );
+}
+
+const ETKI_AD: Record<string, string> = { uretim: 'Üretim', vergi: 'Vergi verimi', huzurAy: 'Huzur', destekAy: 'Savaşa destek', arastirma: 'Araştırma', saldiri: 'Saldırı', savunma: 'Savunma', insan: 'İnsan gücü', tarim: 'Tarım', mesruAy: 'Meşruiyet' };
+function Durum({ o }: { o: any }) {
+  const h = o.hedef;
+  const fark = h.bolge - h.bazBolge;
+  return (
+    <section>
+      <h3>Durum ve hedefler</h3>
+      {h.kriz.length > 0 && <ul class="liste kriz">{h.kriz.map((k: any) => <li key={k.ad}><span class={`durum-cip ${k.duzey}`}>{k.ad}</span> <span class="kucuk">{k.neden}</span></li>)}</ul>}
+      {h.kriz.length === 0 && <p class="soluk kucuk">Ciddi bir kriz yok.</p>}
+      <dl class="cift">
+        <dt>Toprak</dt><dd>{h.bolge} bölge <span class={fark > 0 ? 'iyi-yazi' : fark < 0 ? 'kotu-yazi' : 'soluk'}>({fark >= 0 ? '+' : ''}{fark} başlangıca göre)</span></dd>
+        <dt>Teknoloji</dt><dd>{h.tek} <span class="soluk">(başlangıçta {h.bazTek})</span></dd>
+        {h.savasGunu > 0 && <><dt>Savaşta</dt><dd>{h.savasGunu} gün</dd></>}
+        <dt>Asker maaşı</dt><dd>{(h.maas / 1000).toFixed(2)} altın/gün <span class="soluk kucuk">kişi başı gelire bağlı{o.savasta.length ? ', savaşta ×2' : ''}</span></dd>
+      </dl>
+      {h.yol.length > 0 && <p class="kucuk"><strong>Seçilen yol:</strong> {h.yol.join(' · ')}</p>}
+      {o.etkiler.length > 0 && <><h4>Kararlarınızın süren etkileri</h4>
+        <ul class="liste">{o.etkiler.map((e: any, i: number) => <li key={i}><span>{ETKI_AD[e.tur] ?? e.tur} <strong class={e.deger >= 0 ? 'iyi-yazi' : 'kotu-yazi'}>{e.deger >= 0 ? '+' : ''}{e.tur.endsWith('Ay') ? `${e.deger / 1000} puan` : `%${e.deger / 10_000}`}</strong></span><span class="soluk kucuk">{e.kalan} gün</span></li>)}</ul></>}
+    </section>
   );
 }
 
@@ -184,7 +212,7 @@ function Ordu() {
                     <li key={x.id} class={sec.has(x.id) ? 'secili' : ''}>
                       <button class="satir-dugme" aria-pressed={sec.has(x.id)} onClick={() => tikla(x.id)}>
                         <BirlikPulu simge={s.simge} renk={o.ulke.renk} boy={26} />
-                        <span class="bl-ad"><strong>{x.ad}</strong><span class="soluk kucuk">{x.egitim ? `eğitimde ${x.egitim} gün` : x.muharebe ? 'muharebede' : x.hedefAd ? `→ ${x.hedefAd}` : x.durus}</span></span>
+                        <span class="bl-ad"><strong>{x.ad}</strong><span class="soluk kucuk">{x.egitim ? `eğitimde ${x.egitim} gün` : x.muharebe ? 'muharebede' : x.hedefAd ? `→ ${x.hedefAd}` : x.durus}</span>{x.neden && !x.egitim && <span class="kucuk kotu-yazi">{x.neden}</span>}</span>
                         <span class="sayi kucuk">{fmt(x.kisi)}<span class="soluk">/{kisalt(x.kisiHedef)}</span><br /><span class="soluk">ikmal {yuzde(Math.min(x.ikmalGida, x.ikmalMuh))}</span></span>
                         <OrgBar v={x.org / Math.max(1, x.orgMax)} />
                       </button>
@@ -392,6 +420,7 @@ function GorusBar({ v }: { v: number }) {
 // ---------- Araştırma ----------
 function Arastirma() {
   const a = useGorunum('arastirma');
+  const [dal, setDal] = useState(-1);
   if (!a) return null;
   const yuva = a.yuvalar.map((t: number) => (t >= 0 ? a.teknolojiler[t] : null));
   return (
@@ -403,10 +432,21 @@ function Arastirma() {
         {a.sirada.length > 0 && <p class="soluk kucuk">Sırada (yarın başlar): {a.sirada.map((i: number) => a.teknolojiler[i].ad).join(', ')}</p>}
       </section>
       <section>
-        <h3>Teknolojiler</h3>
-        <ul class="tek-liste">{a.teknolojiler.map((t: any) => (
+        <h3>Teknoloji ağacı · {a.bitenSay}/{a.teknolojiler.length}</h3>
+        <div class="sekme-satir" role="tablist">
+          <button role="tab" aria-selected={dal === -1} class={dal === -1 ? 'secili' : ''} onClick={() => setDal(-1)}>Uygun</button>
+          {a.dallar.map((d: string, i: number) => {
+            const n = a.teknolojiler.filter((t: any) => t.dal === i);
+            return <button key={d} role="tab" aria-selected={dal === i} class={dal === i ? 'secili' : ''} onClick={() => setDal(i)}>{d} <span class="soluk">{n.filter((t: any) => t.bitti).length}/{n.length}</span></button>;
+          })}
+        </div>
+        {dal === 1 && <p class="soluk kucuk">Doktrinler birbirini dışlar: ateş gücü, manevra ve kitle doktrininden yalnız biri seçilebilir.</p>}
+        <ul class="tek-liste">{a.teknolojiler.filter((t: any) => (dal === -1 ? !t.bitti && t.uygun : t.dal === dal)).map((t: any) => (
           <li key={t.i} class={t.bitti ? 'bitti' : !t.uygun ? 'kilit' : ''}>
-            <div><strong>{t.ad}</strong> <span class="soluk">{t.yil}</span><br /><span class="kucuk">{t.etki}</span>{t.on.length > 0 && <span class="kucuk soluk"> · ön koşul: {t.on.join(', ')}</span>}</div>
+            <div><strong>{t.ad}</strong> <span class="soluk">{t.yil}{t.doktrin ? ' · doktrin' : ''}</span><br /><span class="kucuk">{t.etki}</span>
+              {t.on.length > 0 && <span class="kucuk soluk"> · ön koşul: {t.on.join(', ')}</span>}
+              {t.kapali && <span class="kucuk kotu-yazi"> · {t.kapali} seçildi</span>}
+              {!t.bitti && t.uygun && <span class="kucuk soluk"> · ≈{t.kalanGun} gün{t.erken ? ' (zamanından önce)' : ''}</span>}</div>
             {t.bitti ? <span class="durum-cip iyi">Bitti</span> : t.arastiriliyor ? <span class="durum-cip orta">%{t.yuzde}</span> : t.sirada ? <span class="durum-cip orta">Sırada</span> : <button disabled={!t.uygun} onClick={() => onizle({ tur: 'arastir', tek: t.i })}>Araştır{t.yuzde > 0 ? ` (%${t.yuzde})` : ''}</button>}
           </li>
         ))}</ul>
@@ -477,9 +517,20 @@ const indirilebilir = (() => { try { return window.top === window || !!(window a
 export function senaryoAdi(k: { paket?: string; senaryo?: string }): string {
   return k.senaryo ?? SENARYOLAR.find((s) => s.kimlik === k.paket)?.ad ?? (k.paket === 'fixture-1a' || !k.paket ? 'Kurgusal dünya (1A)' : k.paket);
 }
+const SEMA = 6;
 function Kayit() {
   const [liste, setListe] = useState<any[]>([]);
   const [ad, setAd] = useState('');
+  const [depo, setDepo] = useState<{ kul: number; kota: number; oran: number; kalici?: boolean } | null>(null);
+  useEffect(() => {
+    void (async () => {
+      try {
+        const e = await navigator.storage?.estimate?.();
+        const kalici = await navigator.storage?.persisted?.();
+        if (e?.quota) setDepo({ kul: e.usage ?? 0, kota: e.quota, oran: (e.usage ?? 0) / e.quota, kalici });
+      } catch { /* desteklenmiyor */ }
+    })();
+  }, [liste]);
   const yenile = () => void istemci.istek('saves', null).then(setListe);
   useEffect(yenile, []);
   const disaAktar = async () => {
@@ -510,12 +561,13 @@ function Kayit() {
         <div class="satir-ayar"><label for="kayit-ad" class="gizli">Kayıt adı</label><input id="kayit-ad" value={ad} placeholder="Yuva adı (ör. osmanli-1600)" onInput={(e) => setAd((e.target as HTMLInputElement).value)} />
           <button class="ana" onClick={async () => { await istemci.istek('save', { yuva: ad.trim() || 'manuel' }); tost('Kaydedildi.', 'iyi'); yenile(); }}>Kaydet</button></div>
         <div class="dugmeler sar">{indirilebilir && <button onClick={disaAktar}>Dosyaya aktar (.tsk)</button>}<button onClick={async () => { await istemci.istek('branch', { ad: `dal-${Date.now() % 100000}` }); tost('Yeni dal açıldı.', 'iyi'); yenile(); }}>Bu günden dal aç</button></div>
-        <p class="soluk kucuk">Her tur sonunda “otomatik” yuvasına kaydedilir. Kayıtlar nesil dosyası ve A/B başlıkla yazılır; yarım kalan yazım bir önceki nesle döner.</p>
+        <p class="soluk kucuk">Her tur sonunda ve uygulama arka plana alınınca bu seferin kendi otomatik yuvasına (oto-senaryo-devlet) kaydedilir; başka bir sefer onu ezmez. Kayıtlar nesil dosyası ve A/B başlıkla yazılır; yarım kalan yazım bir önceki nesle döner.</p>
+        {depo && <p class={`kucuk ${depo.oran > 0.8 ? 'kotu-yazi' : 'soluk'}`}>Depolama: {(depo.kul / 1e6).toFixed(1)} MB / {(depo.kota / 1e6).toFixed(0)} MB{depo.oran > 0.8 ? ' — dolmak üzere: eski kayıtları silin ya da dosyaya aktarın.' : ''}{depo.kalici === false ? ' · Tarayıcı kayıtları silebilir (kalıcı depolama izni yok).' : ''}</p>}
       </section>
       <section>
         <h3>Kayıtlı oyunlar</h3>
         <ul class="liste">{liste.map((k) => (
-          <li key={k.yuva}><span><strong>{k.yuva}</strong> · {k.etiket}{k.sandbox ? ' · SANDBOX' : ''}<br /><span class="soluk kucuk">{senaryoAdi(k)} · nesil {k.nesil}</span></span>
+          <li key={k.yuva}><span><strong>{k.yuva.startsWith('oto-') ? 'Otomatik' : k.yuva}</strong> · {k.etiket}{k.sandbox ? ' · SANDBOX' : ''}<br /><span class="soluk kucuk">{senaryoAdi(k)} · nesil {k.nesil} · {(k.boyut / 1e6).toFixed(1)} MB{(k.sema ?? 5) < SEMA ? ' · eski sürüm: açılınca dönüştürülür' : (k.sema ?? 5) > SEMA ? ' · daha yeni bir sürümle kaydedildi' : ''}</span></span>
             <span class="dugmeler"><button onClick={async () => { try { await oyunAc({ tur: 'kayit', yuva: k.yuva }); tost('Yüklendi.', 'iyi'); } catch (e: any) { tost(e?.ayrinti ?? String(e?.message ?? e), 'hata'); } }}>Yükle</button><button onClick={async () => { setListe(await istemci.istek('deleteSave', k.yuva)); }}>Sil</button></span></li>
         ))}</ul>
       </section>

@@ -16,9 +16,15 @@ import '@fontsource/courier-prime/latin-700.css';
 import '@fontsource/courier-prime/latin-ext-700.css';
 import './stil.css';
 import { App } from './App.tsx';
-import { istemci, tost } from './durum.ts';
+import { istemci, tost, ozet } from './durum.ts';
 
 istemci.dinle = (t, p) => { if (t === 'error' && p?.kod !== 'paket') tost(`${p?.ayrinti ?? 'Hata'}${p?.oneri ? ' — ' + p.oneri : ''}`, 'hata'); };
 render(<App />, document.getElementById('app')!);
+// kalıcı depolama izni: tarayıcı/WebView yer daralınca kayıtları silmesin
+void navigator.storage?.persist?.().catch(() => undefined);
+// uygulama arka plana alınınca (ana ekran, arama, kilit) seferi otomatik kaydet
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden' && ozet.value) void istemci.istek('save', { yuva: '@oto' }).catch(() => undefined);
+});
 // yazı tipleri yüklenince haritayı yeniden çiz
 void document.fonts?.ready.then(() => window.dispatchEvent(new Event('resize')));

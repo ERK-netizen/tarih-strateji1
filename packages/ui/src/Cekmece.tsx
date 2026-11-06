@@ -53,6 +53,7 @@ function BolgeCekmece({ r, kapat }: { r: number; kapat: () => void }) {
           <h2>{v.baskent >= 0 && <span class="baskent-isaret" title="Başkent">★ </span>}{v.ad}</h2>
           <span class="soluk">{v.kontrolAd}{v.kontrolEden !== v.sahip ? ` işgalinde · asıl sahibi ${v.sahipAd}` : ''}</span>
           <span class="soluk kucuk">{v.arazi} · {v.yerlesim}{v.eyalet && v.eyalet !== v.ad ? ` · ${v.eyalet}` : ''}{v.cephe ? ' · ' : ''}{v.cephe && <b class="kotu-yazi">aktif cephe</b>}</span>
+          {v.tahkimat !== null && v.tahkimat > 0 && <span class="kucuk" title="Duran birlikler kazar; topçu bastırır, muharebe aşındırır">Tahkimat %{Math.floor((v.tahkimat * 100) / Math.max(1, v.tahkimatTavan))} · savunma ×{(v.savunma / 1e6).toFixed(2)}</span>}
         </div>
         <button class="kapat" onClick={kapat} aria-label="Kapat">×</button>
       </header>

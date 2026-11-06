@@ -166,6 +166,28 @@ export const S1939: SenaryoTanim = {
         { ad: 'Yasayı imzala', etki: 'Britanya ile ilişkiler güçlenir; Almanya ile gerginlik.', yz: 85, e: [['gorus', 'GBR', 'USA', 15], ['gorus', 'USA', 'GBR', 10], ['gorus', 'GER', 'USA', -15], ['hazine', 'GBR', 50000000]] },
         { ad: 'Tarafsızlık yasalarına bağlı kal', etki: 'Britanya ile ilişkiler soğur.', yz: 15, e: [['gorus', 'GBR', 'USA', -10]] },
       ] },
+    // ---- Türkiye: üçlü ittifak, Alman baskısı, tarafsızlık ya da savaş ----
+    { kod: 'tur_uclu', tarih: '1939-10-19', ulke: 'TUR', kosul: { savasta: ['GER', 'GBR'] }, pencere: 60, baslik: 'İngiliz-Fransız-Türk İttifakı', metin: 'Londra ve Paris, Akdeniz\'de bir saldırı hâlinde karşılıklı yardım öngören bir antlaşma öneriyor; karşılığında kredi ve silah. Moskova görüşmeleri sonuçsuz kaldı; Sovyetler Almanya ile pakt imzaladı.',
+      sec: [
+        { ad: 'Antlaşmayı imzala, Sovyet çekincesini koy', etki: 'Britanya ve Fransa ile karşılıklı yardım; İngiliz kredisi ve silah (hazine +, saldırı +%5, 1 yıl). Almanya ile ilişkiler soğur. Savaşa girme yükümlülüğü Sovyetlere karşı işlemez.', yz: 75, e: [['bayrak', 'tur_bati'], ['garanti', 'GBR', 'TUR'], ['garanti', 'FRA', 'TUR'], ['hazine', 'TUR', 3000000], ['etki', 'TUR', 'savunma', 5, 365], ['gorus', 'GER', 'TUR', -10], ['olay', 'tur_baski', 420]] },
+        { ad: 'Kesin tarafsızlık', etki: 'İki bloğa da mesafe; ticaret sürer (üretim +%4, 1 yıl).', yz: 25, e: [['bayrak', 'tur_tarafsiz'], ['etki', 'TUR', 'uretim', 4, 365], ['olay', 'tur_baski', 420]] },
+      ] },
+    { kod: 'tur_baski', tarih: null, ulke: 'TUR', kosul: { barisMi: 'TUR', savasta: ['GER', 'GBR'] }, baslik: 'Von Papen\'in Teklifi', metin: 'Almanya Balkanları ele geçirdi; Alman ordusu Bulgaristan\'da, Trakya sınırımızda. Büyükelçi von Papen bir dostluk antlaşması ve krom karşılığında silah öneriyor. Britanya ise krom satışlarının kesilmesini istiyor.',
+      sec: [
+        { ad: 'Türk-Alman Dostluk Antlaşması (tarafsızlık)', etki: 'Almanya ile saldırmazlık; krom ticareti (hazine +4 milyon). Britanya ile ilişkiler soğur.', yz: 60, e: [['saldirmazlik', 'TUR', 'GER'], ['hazine', 'TUR', 4000000], ['gorus', 'GBR', 'TUR', -10], ['bayrak', 'tur_tarafsiz'], ['olay', 'tur_kahire', 900]] },
+        { ad: 'Krom satışını kes, İngilizlere yaslan', etki: 'Britanya ile ilişkiler güçlenir; Almanya tehditkâr (gerginlik).', yz: 30, e: [['gorus', 'GBR', 'TUR', 15], ['gorus', 'GER', 'TUR', -25], ['olay', 'tur_kahire', 600]] },
+        { ad: 'Mihver safında savaşa gir', etki: 'Britanya ve Sovyetler ile savaş riski; Almanya silah ve Kafkasya vaat ediyor.', yz: 10, e: [['katil', 'TUR', 'GER', 'GBR'], ['bayrak', 'tur_mihver'], ['destek', 'TUR', -10]] },
+      ] },
+    { kod: 'tur_kahire', tarih: null, ulke: 'TUR', kosul: { barisMi: 'TUR', savasta: ['GER', 'GBR'], bayrakDegil: ['tur_mihver'] }, baslik: 'Kahire Konferansı', metin: 'Churchill ve Roosevelt Kahire\'de İnönü\'den savaşa girmesini istiyor: Ege adaları ve Balkan cephesi karşılığında. İnönü\'nün cevabı: "Ordumuz modern silahlardan yoksun."',
+      sec: [
+        { ad: 'Silah gelmeden savaşa girme', etki: 'Tarafsızlık korunur; Müttefikler ile ilişkiler biraz soğur.', yz: 70, e: [['gorus', 'GBR', 'TUR', -5], ['gorus', 'USA', 'TUR', -5]] },
+        { ad: 'Müttefik safında savaşa gir', etki: 'Almanya ile savaş; ödünç verme ve kiralama yardımı (hazine +6 milyon).', yz: 30, e: [['katil', 'TUR', 'GBR', 'GER'], ['hazine', 'TUR', 6000000], ['teknoloji', 'TUR', 'ikmal1']] },
+      ] },
+    { kod: 'stalingrad', tarih: '1942-08-23', ulke: 'SOV', kosul: { savasta: ['SOV', 'GER'], kayipUst: ['SOV', 10] }, pencere: 365, baslik: 'Tek Adım Geri Yok', metin: 'Alman orduları Volga\'ya ulaştı. Stalin\'in 227 sayılı emri: "Tek adım geri yok!" Komutanlar, şehri savunmak ile kuşatma karşı taarruzu için kuvvet biriktirmek arasında bölünmüş durumda.',
+      sec: [
+        { ad: 'Şehri her ne pahasına olursa savun', etki: 'Savunma +%20 (180 gün); insan gücü kaybı ağır (−%10, 1 yıl).', yz: 50, e: [['etki', 'SOV', 'savunma', 20, 180], ['etki', 'SOV', 'insan', -10, 365]] },
+        { ad: 'Uranüs: kanatlardan karşı taarruz hazırla', etki: 'Saldırı +%20 (120 gün), 30 gün sonra başlar; savaşa destek +5.', yz: 50, e: [['etki', 'SOV', 'saldiri', 20, 150], ['destek', 'SOV', 5]] },
+      ] },
     { kod: 'barbarossa', tarih: '1941-06-22', ulke: 'GER', kosul: { barista: ['GER', 'SOV'] }, baslik: 'Barbarossa Harekâtı', metin: 'Üç milyon asker Baltık\'tan Karadeniz\'e Sovyet sınırında bekliyor. Saldırmazlık paktı hâlâ yürürlükte.',
       sec: [
         { ad: 'Sovyetler Birliği\'ne saldır', etki: 'Sovyetler Birliği ile savaş; Romanya, Finlandiya ve Macaristan katılmaya çağrılır.', yz: 85, e: [['boz', 'GER', 'SOV', 1], ['savas', 'GER', 'SOV'], ['olay', 'barbarossaRom', 0], ['olay', 'barbarossaFin', 3], ['olay', 'barbarossaHun', 5]] },

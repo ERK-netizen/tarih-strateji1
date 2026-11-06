@@ -223,6 +223,21 @@ export const S1600: SenaryoTanim = {
         { ad: 'Fermanı imzala', etki: 'Hazineye ortaklık geliri; Babür ile ilişkiler gelişir.', yz: 85, e: [['hazine', 'ENG', 2000000], ['gorus', 'MUG', 'ENG', 10], ['ticaret', 'ENG', 'MUG']] },
         { ad: 'Reddet', etki: '—', yz: 15, e: [] },
       ] },
+    { kod: 'dhs', tarih: '1600-12-31', ulke: 'ENG', baslik: 'Doğu Hindistan Şirketi', metin: 'Londralı tüccarlar, Ümit Burnu\'nun doğusunda on beş yıl tekel hakkı isteyen bir berat için Kraliçe Elizabeth\'e başvurdu. Portekiz ve Hollanda baharat yolunu tutuyor.',
+      sec: [
+        { ad: 'Berat ver: şirket kurulsun', etki: 'Ticaret kumpanyası teknolojisi; hizmet geliri artar. Hollanda ile rekabet sertleşir.', yz: 80, e: [['teknoloji', 'ENG', 'ticaret1'], ['gorus', 'NLD', 'ENG', -10], ['bayrak', 'dhs_kuruldu']] },
+        { ad: 'Tekeli reddet, korsanlığı destekle', etki: 'Hazine +; İspanya ile ilişkiler kötüleşir.', yz: 20, e: [['hazine', 'ENG', 400000], ['gorus', 'SPA', 'ENG', -15]] },
+      ] },
+    { kod: 'voc', tarih: '1602-03-20', ulke: 'NLD', baslik: 'Birleşik Doğu Hindistan Kumpanyası', metin: 'Rakip Hollanda şirketlerinin birleşmesiyle hisseleri halka açık, kendi ordusu ve savaş ilan yetkisi olan bir kumpanya kurulabilir.',
+      sec: [
+        { ad: 'VOC\'yi kur', etki: 'Ticaret kumpanyası ve bankacılık; üretim +%5 (5 yıl).', yz: 85, e: [['teknoloji', 'NLD', 'ticaret1'], ['teknoloji', 'NLD', 'banka1'], ['etki', 'NLD', 'uretim', 5, 1825]] },
+        { ad: 'Şirketleri ayrı bırak', etki: 'İç rekabet sürer.', yz: 15, e: [] },
+      ] },
+    { kod: 'celali', tarih: '1600-06-01', ulke: 'OSM', kosul: { huzurAlt: ['OSM', 55] }, pencere: 2000, olasilik: 60, baslik: 'Celali İsyanları', metin: 'Anadolu\'da Karayazıcı Abdülhalim etrafında toplanan sekban ve levendler kasabaları yağmalıyor. Uzun Harp\'in yükü, enflasyon ve kıtlık köylüyü dağa çıkardı.',
+      sec: [
+        { ad: 'Kuyucu Murad Paşa: şiddetle bastır', etki: 'Huzur kısa vadede düşer (−6/ay etkisi, 6 ay), sonra döner; insan gücü −%5 (1 yıl).', yz: 55, e: [['etki', 'OSM', 'huzurAy', -6, 180], ['etki', 'OSM', 'insan', -5, 365], ['mesru', 'OSM', 3]] },
+        { ad: 'Elebaşılara sancakbeyliği ver', etki: 'Huzur +5; meşruiyet −5; vergi verimi −%5 (2 yıl).', yz: 45, e: [['huzur', 'OSM', 5], ['mesru', 'OSM', -5], ['etki', 'OSM', 'vergi', -5, 730]] },
+      ] },
     { kod: 'sitvatorok', tarih: '1606-11-11', ulke: 'OSM', kosul: { savasta: ['OSM', 'HAB'] }, baslik: 'Zitvatoruk', metin: 'On üç yıllık savaş iki tarafı da tüketti. Habsburg elçileri Zitva Nehri ağzında barış öneriyor.',
       sec: [
         { ad: 'Barışı imzala', etki: 'Habsburglarla beyaz barış.', yz: 70, e: [['baris', 'OSM', 'HAB']] },

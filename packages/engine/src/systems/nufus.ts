@@ -1,9 +1,10 @@
 // Bölüm 10: nüfus, kohort, iş gücü, yaralı, esir, köken muhasebesi. Nüfus yaratılmaz; yalnız transfer edilir.
 import type { World } from '../state/world.ts';
 import { hc, ek, ck } from '../state/world.ts';
-import { ST, YB, NHUCRE, NKIMLIK, ASKERLIK, K, tekIdx, NTEK } from '../catalog.ts';
-import { S, mulDiv, mulRatio, largestRemainder } from '../num/index.ts';
-import { uc, birlikIhtiyac, anlat, fmtSayi } from './ortak.ts';
+import { ST, YB, NHUCRE, NKIMLIK, ASKERLIK, K, tekIdx, NTEK, tekVar } from '../catalog.ts';
+import { MT } from '../state/world.ts';
+import { S, mulDiv, mulRatio, largestRemainder, clamp } from '../num/index.ts';
+import { uc, birlikIhtiyac, anlat, fmtSayi, modDeger } from './ortak.ts';
 import { KOL_E, KOL_OK, KOL_ON } from '../state/world.ts';
 import { trEkK } from '../tr.ts';
 
@@ -65,7 +66,10 @@ export function aylikNufus(w: World): void {
     }
     // kohort girişi: çocuk → askerlik çağı (yasa payıyla Y, kalanı S)
     const c = w.R.c.sahip[r]!;
-    const yPay = ASKERLIK[w.C.c.askerlik[c]!]!.y;
+    let yPay: number = ASKERLIK[w.C.c.askerlik[c]!]!.y;
+    if (c >= 0 && tekVar(w, c, 'dok_kitle')) yPay = Math.min(S, mulDiv(yPay, 11, 10).q);
+    const mi = c >= 0 ? modDeger(w, c, MT.insan) : 0;
+    if (mi) yPay = clamp(mulRatio(yPay, S + mi).q, 0, S);
     const g = Math.min(mulRatio(toplamlar[r]!, KOHORT_AY).q, w.pop[hc(r, YB.COCUK, ST.O)]!);
     w.pop[hc(r, YB.COCUK, ST.O)] = w.pop[hc(r, YB.COCUK, ST.O)]! - g;
     const gy = mulRatio(g, yPay).q;

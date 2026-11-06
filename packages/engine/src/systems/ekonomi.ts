@@ -1,11 +1,12 @@
 // Bölüm 11–13: tarım, gıda, sanayi, üretim hatları, projeler, araştırma, vergi, harcama, borç, pazar.
 import type { World } from '../state/world.ts';
 import { hc, ck, URUN_MUH, T_GIDA, T_MAL, T_PARA, H_EYALET, H_ULKE } from '../state/world.ts';
-import { ST, YB, NHUCRE, K, EKONOMI, YONETIM, ISGAL, EKIPMAN, MUHIMMAT, TEKNOLOJI, NTEK, tekIdx, PROJE, MAL, NMAL, MALI, ASKERLIK } from '../catalog.ts';
+import { ST, YB, NHUCRE, K, EKONOMI, YONETIM, ISGAL, EKIPMAN, MUHIMMAT, TEKNOLOJI, NTEK, tekIdx, PROJE, MAL, NMAL, MALI, ASKERLIK, AKTIF } from '../catalog.ts';
+import { MT } from '../state/world.ts';
 import { S, mulDiv, mulRatio, clamp, largestRemainder, sqrtRatio, approach } from '../num/index.ts';
 import { rng, AMAC, uniformInt } from '../rng/index.ts';
 import { tarih, gunNo, haftaGunu } from '../calendar/index.ts';
-import { uc, gorus, savasta, anlat, bildir, savastaMi, dostBolge, rota, eyaletUlke, kontrolB, sahipB } from './ortak.ts';
+import { uc, gorus, savasta, anlat, bildir, savastaMi, dostBolge, rota, eyaletUlke, kontrolB, sahipB, modDeger } from './ortak.ts';
 import { tarimIsciIhtiyac } from './nufus.ts';
 import { kapasiteAsimi, kapasiteAsimiHepsi, kontrolErisim } from './siyaset.ts';
 import { KOL_E } from '../state/world.ts';
@@ -55,6 +56,9 @@ export function tarimUretim(w: World, r: number): number {
   const doluluk = ih <= 0 ? 0 : Math.min(S, mulDiv(R.isTarim[r]!, S, ih).q);
   let verim = b.verim;
   if (tek(w, c, 'tarim2')) verim = mulDiv(verim, 1_100_000, S).q;
+  if (tek(w, c, 'tarim3')) verim = mulDiv(verim, 1_100_000, S).q;
+  const mt = modDeger(w, c, MT.tarim);
+  if (mt) verim = mulRatio(verim, Math.max(200_000, S + mt)).q;
   let g = mulDiv(b.alan * verim, 1, 30).q;
   g = mulRatio(g, doluluk).q;
   g = mulRatio(g, S + 150_000 * R.sulama[r]!).q;
@@ -193,7 +197,8 @@ export function aylikGida(w: World): void {
   for (let e = 0; e < w.nE; e++) {
     E.guvence[e] = E.ihtiyacAy[e]! <= 0 ? S : mulDiv(E.karsilananAy[e]!, S, E.ihtiyacAy[e]!).q;
     E.ihtiyacAy[e] = 0; E.karsilananAy[e] = 0;
-    const boz = mulRatio(E.gida[e]!, K.bozulmaAylik).q;
+    const c = eyaletUlke(w, e);
+    const boz = mulRatio(E.gida[e]!, c >= 0 && tek(w, c, 'depo1') ? K.bozulmaAylik >> 1 : K.bozulmaAylik).q;
     E.gida[e] = E.gida[e]! - boz;
   }
   for (let r = 0; r < w.nR; r++) w.R.c.yerelGida[r] = w.R.c.yerelGida[r]! - mulRatio(w.R.c.yerelGida[r]!, K.bozulmaAylik).q;
@@ -222,7 +227,9 @@ export function fabrikaCarpan(w: World, c: number): number {
   let m = S;
   if (tek(w, c, 'sanayi1')) m += 100_000;
   if (tek(w, c, 'sanayi2')) m += 100_000;
-  return m;
+  if (tek(w, c, 'sanayi3')) m += 50_000;
+  m += modDeger(w, c, MT.uretim);
+  return Math.max(200_000, m);
 }
 /** Bölgenin fabrika işçi doluluğu (S). */
 export function fabrikaDoluluk(w: World, r: number): number {
@@ -264,6 +271,7 @@ export function sanayiGunu(w: World): void {
       const h = mulRatio(S - w.R.c.hasar[r]!, erisim).q;
       celik += mulRatio(b.celik, h).q; komur += mulRatio(b.komur, h).q;
     }
+    if (tek(w, c, 'maden1')) { celik = mulDiv(celik, 6, 5).q; komur = mulDiv(komur, 6, 5).q; }
     C.celikDun[c] = celik; C.komurDun[c] = komur;
     C.celik[c] = C.celik[c]! + celik; C.komur[c] = C.komur[c]! + komur;
     // hatlar
@@ -304,8 +312,8 @@ export function sanayiGunu(w: World): void {
         if (adet > 0) { w.ekip[ck(c, urun)] = w.ekip[ck(c, urun)]! + adet; H.wip[s] = H.wip[s]! - adet * tarifSP; }
       }
       // verim (13.1): Δ = 0,01 × (tavan − mevcut) × çalışmaOranı
-      const tavan = tek(w, c, 'sanayi2') ? 600_000 : 500_000;
-      if (q > 0 && H.verim[s]! < tavan) H.verim[s] = H.verim[s]! + mulDiv(mulDiv(tavan - H.verim[s]!, 10_000, S).q, q, S).q;
+      const tavan = (tek(w, c, 'sanayi2') ? 600_000 : 500_000) + (tek(w, c, 'sanayi3') ? 50_000 : 0);
+      if (q > 0 && H.verim[s]! < tavan) H.verim[s] = H.verim[s]! + mulDiv(mulDiv(tavan - H.verim[s]!, tek(w, c, 'sanayi3') ? 15_000 : 10_000, S).q, q, S).q;
     }
     C.spDun[c] = spSivil + spAsk;
     // aylık olmayan kaynak kaybı: stok tavanı 30 günlük akış (akış soyutlaması)
@@ -359,8 +367,9 @@ export function tekMaliyetHesapla(w: World, c: number, t: number): number {
   const tgun = gunNo({ y: T.yil, m: 1, d: 1 });
   // Δy = (başlangıçGünü − teknolojiGünü)/365,2425 → rasyonel: ×10000/3652425
   const dyS = mulDiv(bas - tgun, S * 10_000, 3_652_425).q; // S ölçekli yıl
-  const ileri = Math.max(0, -dyS);
-  const geri = Math.max(0, dyS);
+  const olcek = AKTIF.yilOlcek;
+  const ileri = Math.floor(Math.max(0, -dyS) / olcek);
+  const geri = Math.floor(Math.max(0, dyS) / olcek);
   let paylasan = 0;
   for (let d = 0; d < w.nC; d++) if (d !== c && w.tekBitti[d * NTEK + t] && anlasmaIttifak(w, c, d)) paylasan++;
   const pay = S + mulDiv(1_500_000, ileri, S).q;
@@ -375,7 +384,8 @@ function anlasmaIttifak(w: World, a: number, b: number): boolean {
 export function arastirmaHizi(w: World, c: number): number {
   const bilim = mulDiv(butceEtki(w, c, 0), 500_000, S).q; // en çok +%50
   const egitim = mulDiv(w.C.c.egitim[c]!, S, 200_000).q;
-  return mulRatio(w.C.c.arastirmaHizi[c]!, S + bilim + egitim).q;
+  const ek = (tek(w, c, 'egitim1') ? 100_000 : 0) + modDeger(w, c, MT.arastirma);
+  return Math.max(0, mulRatio(w.C.c.arastirmaHizi[c]!, S + bilim + egitim + ek).q);
 }
 
 export function arastirmaGunu(w: World): void {
@@ -388,6 +398,7 @@ export function arastirmaGunu(w: World): void {
       w.tekIlerleme[i] = w.tekIlerleme[i]! + v;
       if (w.tekIlerleme[i]! >= w.tekMaliyet[i]!) {
         w.tekBitti[i] = 1;
+        w.C.c.tekSay[c] = w.C.c.tekSay[c]! + 1;
         w.arastirma[c * 3 + k] = -1;
         teknolojiEtki(w, c, t);
         anlat(w, `${w.pkg.ulkeler[c]!.kisa} araştırmacıları ${TEKNOLOJI[t]!.ad} çalışmasını tamamladı.`, 'arastirma', c, 0);
@@ -404,17 +415,20 @@ function teknolojiEtki(w: World, c: number, t: number): void {
 
 // ---------- Vergi, harcama, borç (12.2–12.4) ----------
 export function idariVerim(w: World, c: number, r: number): number {
-  const taban = YONETIM[w.pkg.ulkeler[c]!.yonetim]!.idari + (tek(w, c, 'idare') ? 50_000 : 0);
+  const taban = YONETIM[w.pkg.ulkeler[c]!.yonetim]!.idari + (tek(w, c, 'idare') ? 50_000 : 0) + (tek(w, c, 'maliye1') ? 50_000 : 0) + modDeger(w, c, MT.vergi);
   return clamp(taban + mulDiv(w.C.c.egitim[c]!, S, 400_000).q + mulDiv(w.R.c.altyapi[r]!, S, 40).q, 100_000, S);
 }
 
 /** Bölge katma değeri (altın/gün). */
 export function katmaDeger(w: World, r: number): number {
   const R = w.R.c;
-  const agri = mulDiv(R.uretimDun[r]!, w.fiyat[MALI.gida]!, 1000).q;
+  // tarım katma değeri oynak dünya fiyatını değil yerel değeri izler: taban fiyat ağırlıklı (çeyrek pay piyasadan)
+  const p0 = MAL[MALI.gida]!.p0;
+  const agri = mulDiv(R.uretimDun[r]!, Math.floor((3 * p0 + w.fiyat[MALI.gida]!) / 4), 1000).q;
   const f = mulRatio(mulRatio((R.sivilF[r]! + R.askeriF[r]!) * K.fabrikaSP, fabrikaDoluluk(w, r)).q, S - R.hasar[r]!).q;
   const sanayi = mulDiv(f, K.spDeger, 1000).q;
-  const hizmet = mulDiv(R.isHizmet[r]!, K.hizmetVerim, 1000).q;
+  const kc = R.kontrolEden[r]!;
+  const hizmet = mulDiv(R.isHizmet[r]!, kc >= 0 && tek(w, kc, 'ticaret1') ? mulDiv(K.hizmetVerim, 11, 10).q : K.hizmetVerim, 1000).q;
   return Math.max(0, agri + sanayi + hizmet);
 }
 
@@ -448,6 +462,20 @@ export function giderTabani(w: World): { personel: number[]; ekipDeger: number[]
   return { personel, ekipDeger, nufus };
 }
 
+/**
+ * Asker maaşı (mili-altın/kişi/gün): ülkenin kişi başı vergi gelirine bağlıdır, böylece her dönemde ve her ekonomide
+ * orduyu beslemek aynı ağırlıktadır (barışta ordu payı × 40). Savaşta seferber ordu iki kat pahalıdır (savaş fişi).
+ */
+export const MAAS_KAT = 40;
+export function maasHesap(gelirAy: number, nufus: number): number {
+  if (nufus <= 0 || gelirAy <= 0) return K.maasGun;
+  return clamp(mulDiv(gelirAy, 1000 * MAAS_KAT, 30 * nufus).q, 20, 20_000);
+}
+export function askerMaasi(w: World, c: number): number {
+  const m = w.C.c.maas[c]! || K.maasGun;
+  return savastaMi(w, c) ? m * 2 : m;
+}
+
 export function zorunluGider(w: World, c: number, taban?: { personel: number[]; ekipDeger: number[]; nufus: number[] }): Gider {
   let personel = 0, ekipDeger = 0, nufus = 0;
   if (taban) { personel = taban.personel[c]!; ekipDeger = taban.ekipDeger[c]!; nufus = taban.nufus[c]!; }
@@ -461,7 +489,7 @@ export function zorunluGider(w: World, c: number, taban?: { personel: number[]; 
     for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === c) for (let k = 0; k < NHUCRE; k++) nufus += w.pop[r * NHUCRE + k]!;
   }
   const bakimHedef = w.C.c.bakimHedef[c]!;
-  const per = mulRatio(mulDiv(personel, K.maasGun, 1000).q, bakimHedef).q;
+  const per = mulRatio(mulDiv(personel, askerMaasi(w, c), 1000).q, bakimHedef).q;
   const bak = mulRatio(mulDiv(ekipDeger, K.spDeger * K.ekipBakim, 1000 * 1000 * 10).q, bakimHedef).q;
   const idari = mulDiv(nufus, K.idariGider, 1000 * 365).q;
   const borc = mulDiv(w.C.c.borc[c]!, w.C.c.faiz[c]!, S * 365).q;
@@ -493,6 +521,7 @@ export function maliyeGunu(w: World): void {
     }
     C.hazine[c] = C.hazine[c]! + gelir;
     C.gelirAy[c] = C.gelirAy[c]! + gelir; C.gelirDun[c] = gelir;
+    if (C.maas[c] === 0 && gelir > 0) C.maas[c] = maasHesap(gelir * 30, tabanG.nufus[c]!);
     const g = zorunluGider(w, c, tabanG);
     // 1) borç servisi (kısmi ödenirse kalan nakit bakım ve personele kalmaz)
     let odenen = 0;
@@ -534,6 +563,7 @@ export function krediLimiti(w: World, c: number): number {
   const yillik = (C.g1[c]! + C.g2[c]! + C.g3[c]!) * 4;
   const carpan = clamp(500_000 + mulDiv(C.mesru[c]!, S, 100_000).q - (savastaMi(w, c) ? 200_000 : 0), 200_000, 1_500_000);
   let lim = mulRatio(yillik, carpan).q;
+  if (tek(w, c, 'banka1')) lim = mulDiv(lim, 3, 2).q;
   if (C.temerrut[c]! > w.gun) lim = Math.floor(lim / 2);
   return Math.max(0, lim - C.borc[c]!);
 }
@@ -541,15 +571,18 @@ export function krediLimiti(w: World, c: number): number {
 /** Aylık maliye kapanışı: gelir tarihçesi, faiz primi, eğitim. */
 export function aylikMaliye(w: World): void {
   const C = w.C.c;
+  const nufusU = giderTabani(w).nufus;
   for (let c = 0; c < w.nC; c++) {
     C.g3[c] = C.g2[c]!; C.g2[c] = C.g1[c]!; C.g1[c] = C.gelirAy[c]!;
     C.gelirAy[c] = 0; C.giderAy[c] = 0;
     const yillik = Math.max(1, C.g1[c]! * 12);
     const oran = mulDiv(C.borc[c]!, S, yillik).q;
-    C.faiz[c] = 50_000 + (oran > S ? Math.min(50_000, mulDiv(oran - S, 50_000, S).q) : 0);
+    C.faiz[c] = (tek(w, c, 'banka1') ? 40_000 : 50_000) + (oran > S ? Math.min(50_000, mulDiv(oran - S, 50_000, S).q) : 0);
     // eğitim: yılda en çok 2 puan (aylık 0,1667)
+    // asker maaşı: kişi başı gelirin yavaş izlenmesi (aylık %25)
+    if (C.g1[c]! > 0) { const hedef = maasHesap(C.g1[c]!, nufusU[c]!); C.maas[c] = C.maas[c]! > 0 ? C.maas[c]! + Math.trunc((hedef - C.maas[c]!) / 4) : hedef; }
     const ef = butceEtki(w, c, 1);
-    C.egitim[c] = Math.min(100_000, C.egitim[c]! + mulDiv(167, ef, S).q);
+    C.egitim[c] = Math.min(100_000, C.egitim[c]! + mulDiv(tek(w, c, 'egitim1') ? 250 : 167, ef, S).q);
   }
 }
 

@@ -13,6 +13,8 @@ export interface PaketUlke {
   /** Başlangıç deposu */
   depo?: { muhimmat: number; ekip: number[] };
   guc?: number;
+  /** Deniz gücü 0–10 (donanma soyutlaması: deniz geçişi ve abluka) */
+  deniz?: number;
   /** Barış zamanı hedef tümen sayısı (karar modülü) */
   ordu?: number;
   /** Başlangıç savaşa desteği (×1000; yoksa 40) */
@@ -38,9 +40,25 @@ export interface PaketBirlik { ulke: number; sablon: string; bolge: number; ad: 
 export interface PaketAnlasma { tur: string; a: number; b: number }
 export interface PaketOlay { kod: string; gun: number }
 export interface PaketEylem { t: string; a?: number; b?: number; d?: number; v?: number; olay?: string; gecikme?: number; cagri?: boolean }
+/** Olay koşulu: bütün verilen alanlar tutmalıdır. */
+export interface PaketKosul {
+  savasta?: [number, number]; barista?: [number, number]; kontrol?: [number, number]; kontrolDegil?: [number, number];
+  /** Kararlarla konan tarih bayrakları */
+  bayrak?: string[]; bayrakDegil?: string[];
+  /** Ülke herhangi biriyle savaşta / hiç savaşta değil */
+  savastaMi?: number; barisMi?: number;
+  /** [ülke, eşik ×1000] */
+  huzurAlt?: [number, number]; destekAlt?: [number, number]; yorgunlukUst?: [number, number];
+  /** [ülke, ana yurt kaybı ‰]: ana yurdun bu kadarı düşman kontrolünde */
+  kayipUst?: [number, number];
+}
 export interface PaketSenaryoOlay {
   kod: string; gun: number; ulke: number; baslik: string; metin: string; tekrar?: boolean;
-  kosul?: { savasta?: [number, number]; barista?: [number, number]; kontrol?: [number, number]; kontrolDegil?: [number, number] };
+  kosul?: PaketKosul;
+  /** Koşul tutmazsa bu kadar gün boyunca haftada bir yeniden denenir (tarih penceresi) */
+  pencere?: number;
+  /** Koşul tuttuğunda gerçekleşme olasılığı (%); tutmazsa pencere içinde yeniden denenir */
+  olasilik?: number;
   secenekler: { ad: string; etki: string; yz: number; e: PaketEylem[] }[];
 }
 

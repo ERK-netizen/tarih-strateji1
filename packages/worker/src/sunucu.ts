@@ -1,7 +1,7 @@
 // Simülasyon Worker'ının çekirdeği: tek yazar. Mesaj döngüsünden bağımsızdır (Node testlerinde de çalışır).
 import {
   type World, type Paket, senaryoBaslat, gunIlerle, onizle, kuyrugaAl, serilestir, coz, acikla, tarihMetni, ayEkle, dunyaHash, anlatiHash, kayitPaketi,
-  type Emir,
+  type Emir, SEMA_SURUM,
 } from '@ts/engine';
 import { ayristir, emirMetni, type Sonuc } from '@ts/command';
 import { KayitDeposu, type Depo } from '@ts/storage';
@@ -38,7 +38,7 @@ export class Sunucu {
         case 'stop': this.durdurIstek = true; return;
         case 'query': return this.query(m);
         case 'explain': return this.yanit(m.id, 'explanation', acikla(this.dunya(), String(m.p), this.dunya().oyuncu));
-        case 'save': return void (await this.kaydet(m.id, String((m.p as { yuva?: string })?.yuva ?? 'manuel')));
+        case 'save': { const y = String((m.p as { yuva?: string })?.yuva ?? 'manuel'); return void (await this.kaydet(m.id, y === '@oto' ? this.otoYuva() : y)); }
         case 'load': return void (await this.yukle(m));
         case 'branch': return void (await this.dal(m));
         case 'saves': return this.yanit(m.id, 'saveList', await this.kayit.yuvalar());
@@ -164,8 +164,8 @@ export class Sunucu {
       }
     } finally { this.calisiyor = false; }
     if (neden !== 'hata') this.son = serilestir(this.dunya());
-    // tur sonu otomatik kayıt
-    if (neden !== 'hata') await this.kaydet(-1, 'otomatik').catch(() => undefined);
+    // tur sonu otomatik kayıt: her sefer (senaryo + devlet) kendi yuvasında; hata sessizce yutulmaz
+    if (neden !== 'hata') await this.otoKaydet();
     this.yanit(m.id, 'stopped', { neden, durmalar, gun: this.dunya().gun, tarih: tarihMetni(this.dunya().gun), gecen: this.dunya().gun - bas, rapor: this.rapor(bas) });
   }
 
@@ -199,10 +199,26 @@ export class Sunucu {
     return w;
   }
 
+  /** Seferin otomatik kayıt yuvası: senaryo ve devlet başına bir yuva (başka sefer üzerine yazılmaz). */
+  otoYuva(): string {
+    const w = this.dunya();
+    return `oto-${w.pkg.kimlik}-${w.mod === 2 ? 'gozlem' : w.pkg.ulkeler[w.oyuncu]!.kod.toLowerCase()}`;
+  }
+  async otoKaydet(): Promise<void> {
+    try {
+      await this.kaydet(-1, this.otoYuva());
+      // en çok altı otomatik sefer yuvası tutulur (en eskiler silinir)
+      const oto = (await this.kayit.yuvalar()).filter((b) => b.yuva.startsWith('oto-'));
+      for (const b of oto.slice(6)) await this.kayit.sil(b.yuva);
+    } catch (e) {
+      this.yanit(-1, 'error', { kod: 'kayit', ayrinti: `Otomatik kayıt yazılamadı: ${String((e as Error)?.message ?? e)}`, oneri: 'Depolama dolu olabilir; Kayıt panelinden eski kayıtları silin ya da dosyaya aktarın.' });
+    }
+  }
+
   async kaydet(id: number, yuva: string) {
     const w = this.dunya();
     const b = this.paketle();
-    const bas = await this.kayit.kaydet(yuva, b, { gun: w.gun, etiket: `${w.pkg.ulkeler[w.oyuncu]!.kisa} · ${tarihMetni(w.gun)}`, sandbox: w.mod === 1, ulke: w.oyuncu, zaman: new Date().toISOString(), paket: w.pkg.kimlik, senaryo: w.pkg.senaryo.ad });
+    const bas = await this.kayit.kaydet(yuva, b, { gun: w.gun, etiket: `${w.pkg.ulkeler[w.oyuncu]!.kisa} · ${tarihMetni(w.gun)}`, sandbox: w.mod === 1, ulke: w.oyuncu, zaman: new Date().toISOString(), paket: w.pkg.kimlik, senaryo: w.pkg.senaryo.ad, sema: SEMA_SURUM });
     if (id >= 0) this.yanit(id, 'saveResult', bas);
     return bas;
   }

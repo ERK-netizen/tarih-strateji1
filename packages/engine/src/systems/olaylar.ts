@@ -1,11 +1,12 @@
 // Bölüm 21: olaylar, açılış krizi zinciri (Temmuz Krizi karşılığı), şablonlu Kronik.
 import type { World } from '../state/world.ts';
 import { A } from '../state/world.ts';
-import { KISILIK, MALI } from '../catalog.ts';
+import { KISILIK, MALI, TEKNOLOJI, NTEK } from '../catalog.ts';
 import { S, mulDiv } from '../num/index.ts';
 import { rng, AMAC, uniformInt } from '../rng/index.ts';
 import { tarih } from '../calendar/index.ts';
-import { anlat, bildir, savastaMi, anlasmaVar, savasta, tarafi, diploDegisti } from './ortak.ts';
+import { anlat, bildir, savastaMi, anlasmaVar, savasta, tarafi, diploDegisti, modEkle } from './ortak.ts';
+import { MT } from '../state/world.ts';
 import { gerekceBaslat, gorusDegis, savasIlan, savasaKatil, anlasmaKur, anlasmaBoz, barisUygula } from './diplomasi.ts';
 import type { PaketEylem, PaketSenaryoOlay, Paket } from '../paket.ts';
 import { clamp } from '../num/index.ts';
@@ -110,16 +111,42 @@ function ulkeVar(w: World, c: number): boolean {
   return false;
 }
 
-/** Olay koşulu: savaşta/barışta/bölge kontrolü. Koşul tutmazsa olay düşer. */
+/** Ana yurt kaybı (‰): ana yurdun düşman kontrolündeki nüfus payı. */
+function anaYurtKaybi(w: World, c: number): number {
+  let top = 0, kayip = 0;
+  for (let r = 0; r < w.nR; r++) {
+    if (w.R.c.sahip[r] !== c || !w.pkg.bolgeler[r]!.anaYurt.includes(c)) continue;
+    let n = 0; for (let k = 0; k < 32; k++) n += w.pop[r * 32 + k]!;
+    top += n; if (w.R.c.kontrolEden[r] !== c) kayip += n;
+  }
+  return top > 0 ? mulDiv(kayip, 1000, top).q : 0;
+}
+export const bayrakVar = (w: World, b: string): boolean => w.olayBayrak.includes(b);
+/** Tarih bayrağı koyar/kaldırır (kanonik: sıralı, tekil). */
+export function bayrakKoy(w: World, b: string, acik: boolean): void {
+  const i = w.olayBayrak.indexOf(b);
+  if (acik && i < 0) { w.olayBayrak.push(b); w.olayBayrak.sort(); }
+  else if (!acik && i >= 0) w.olayBayrak.splice(i, 1);
+}
+
+/** Olay koşulu: savaş/barış, bölge kontrolü, tarih bayrakları, iç durum. Koşul tutmazsa olay düşer (ya da pencere içinde bekler). */
 export function kosulTutar(w: World, o: PaketSenaryoOlay): boolean {
   if (!ulkeVar(w, o.ulke)) return false;
   const k = o.kosul;
   if (!k) return true;
+  const C = w.C.c;
   if (k.savasta && !savasta(w, k.savasta[0], k.savasta[1])) return false;
   if (k.barista && savasta(w, k.barista[0], k.barista[1])) return false;
-  const kk = k as { kontrol?: [number, number]; kontrolDegil?: [number, number] };
-  if (kk.kontrol && w.R.c.kontrolEden[kk.kontrol[0]] !== kk.kontrol[1]) return false;
-  if (kk.kontrolDegil && w.R.c.kontrolEden[kk.kontrolDegil[0]] === kk.kontrolDegil[1]) return false;
+  if (k.kontrol && w.R.c.kontrolEden[k.kontrol[0]] !== k.kontrol[1]) return false;
+  if (k.kontrolDegil && w.R.c.kontrolEden[k.kontrolDegil[0]] === k.kontrolDegil[1]) return false;
+  if (k.bayrak && !k.bayrak.every((b) => bayrakVar(w, b))) return false;
+  if (k.bayrakDegil && k.bayrakDegil.some((b) => bayrakVar(w, b))) return false;
+  if (k.savastaMi !== undefined && !savastaMi(w, k.savastaMi)) return false;
+  if (k.barisMi !== undefined && savastaMi(w, k.barisMi)) return false;
+  if (k.huzurAlt && C.huzur[k.huzurAlt[0]]! >= k.huzurAlt[1]) return false;
+  if (k.destekAlt && C.destek[k.destekAlt[0]]! >= k.destekAlt[1]) return false;
+  if (k.yorgunlukUst && C.yorgunluk[k.yorgunlukUst[0]]! <= k.yorgunlukUst[1]) return false;
+  if (k.kayipUst && anaYurtKaybi(w, k.kayipUst[0]) < k.kayipUst[1]) return false;
   return true;
 }
 
@@ -187,6 +214,25 @@ export function eylemUygula(w: World, e: PaketEylem): void {
       if (i >= 0) olayPlanlaIdx(w, PAKET_OLAY + i, w.pkg.olaylar![i]!.ulke, w.gun + (e.gecikme ?? 0));
       break;
     }
+    case 'iptal': {
+      // planlanmış (henüz gelmemiş) olayı düşürür: verilen karar o yolu kapattı
+      const i = w.pkg.olaylar?.findIndex((o) => o.kod === e.olay) ?? -1;
+      if (i >= 0) for (const s of w.OL.list()) if (w.OL.c.olay[s] === PAKET_OLAY + i && w.OL.c.gun[s]! > w.gun) w.OL.release(s);
+      break;
+    }
+    case 'bayrak': if (e.olay) bayrakKoy(w, e.olay, v !== 0); break;
+    case 'etki': {
+      // süreli değiştirici: a ülke, olay tür adı, v değer (S ya da puan ×1000), d gün
+      const tur = (MT as Record<string, number>)[e.olay ?? ''];
+      if (a >= 0 && tur !== undefined && (e.d ?? 0) > 0) modEkle(w, a, tur, v, e.d!);
+      break;
+    }
+    case 'yorgunluk': if (a >= 0) C.yorgunluk[a] = art(C.yorgunluk[a]!, v); break;
+    case 'teknoloji': {
+      const t = TEKNOLOJI.findIndex((x) => x.kod === e.olay);
+      if (a >= 0 && t >= 0 && !w.tekBitti[a * NTEK + t]) { w.tekBitti[a * NTEK + t] = 1; C.tekSay[a] = C.tekSay[a]! + 1; }
+      break;
+    }
   }
 }
 
@@ -251,7 +297,18 @@ export function olayGunu(w: World): void {
     if (g > w.gun) continue;
     const c = w.OL.c.ulke[s]!;
     const idx = w.OL.c.olay[s]!;
-    if (idx >= PAKET_OLAY && g === w.gun && !kosulTutar(w, w.pkg.olaylar![idx - PAKET_OLAY]!)) { w.OL.release(s); continue; }
+    if (idx >= PAKET_OLAY && g === w.gun) {
+      const po = w.pkg.olaylar![idx - PAKET_OLAY]!;
+      let tutar = kosulTutar(w, po);
+      if (tutar && po.olasilik !== undefined && po.olasilik < 100) tutar = uniformInt(rng(w.tohum, w.gun, 21, c, idx, AMAC.eventPick, 1, 0), 100) < po.olasilik;
+      if (!tutar) {
+        // tarih penceresi: koşul oluşana dek haftada bir yeniden denenir (p2 = pencere başlangıcı + 1)
+        const bas = w.OL.c.p2[s]! > 0 ? w.OL.c.p2[s]! - 1 : g;
+        if (po.pencere && w.gun + 7 <= bas + po.pencere && ulkeVar(w, c)) { w.OL.c.p2[s] = bas + 1; w.OL.c.gun[s] = w.gun + 7; }
+        else w.OL.release(s);
+        continue;
+      }
+    }
     if (c === w.oyuncu && w.mod !== 2) {
       if (g === w.gun) {
         const o = olayTanim(w, idx);

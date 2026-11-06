@@ -75,6 +75,8 @@ const DOLGU = new Set(['lutfen', 'hemen', 'derhal', 'artik', 'simdi', 've', 'de'
 
 interface Varlik { tur: string; id: number; hal: Hal; i0: number; i1: number; ad: string }
 
+/** Bakanlık adları (motor BAKAN sırası: ekonomi, araştırma, üretim, ordu, inşa). */
+export const BAKANLIK = ['Maliye', 'Araştırma', 'İmalat', 'Harbiye', 'Bayındırlık'] as const;
 interface Ad { anahtar: string[]; tur: string; id: number; ad: string }
 
 function adlar(k: Katalog): Ad[] {
@@ -95,6 +97,8 @@ function adlar(k: Katalog): Ad[] {
   k.sablonlar.forEach((s, i) => { for (const e of s.esanlam) ekleAd(e, 'sablon', i, s.ad); });
   k.askerlik.forEach((a, i) => ekleAd(a, 'askerlik', i));
   ekleAd('seferberlik', 'seferberlik', 0);
+  // bakanlıklar: alan adı + bakan sözcüğü birlikte (en uzun eşleşme) — tek başına alan adları başka anlamlara ayrılmış
+  BAKANLIK.forEach((a, i) => { for (const f of ['bakanı', 'bakanını', 'bakanlığı', 'bakanlığını', 'bakanlık', 'bakan']) ekleAd(`${a} ${f}`, 'bakanAlan', i, a); });
   k.ekonomi.forEach((a, i) => { ekleAd(`${a} ekonomi`, 'ekonomi', i, a); ekleAd(`${a} ekonomisi`, 'ekonomi', i, a); });
   ekleAd('savaş ekonomisi', 'ekonomi', 2, 'Savaş'); ekleAd('topyekûn', 'ekonomi', 3, 'Topyekûn'); ekleAd('topyekun savaş', 'ekonomi', 3, 'Topyekûn'); ekleAd('kısmi seferberlik', 'ekonomi', 1, 'Kısmi'); ekleAd('barış ekonomisi', 'ekonomi', 0, 'Sivil');
   [['yumuşak', 0], ['dengeli', 1], ['sert', 2]].forEach(([a, i]) => ekleAd(a as string, 'isgal', i as number));
@@ -282,6 +286,7 @@ export function ayristir(metin: string, k: Katalog): Sonuc {
   if (fiil?.fiil.niyet.includes('kabul')) niyetler.add('kabul');
   if (fiil?.fiil.niyet.includes('ret')) niyetler.add('ret');
   if (has('butce') && (yuzde !== undefined)) niyetler.add('butce');
+  if (has('bakanAlan')) niyetler.add('bakan');
   if (niyetler.size === 0) {
     return { tur: 'ret', neden: fiil ? 'Bu eylem katalogda yok.' : 'Komutta bilinen bir eylem bulunamadı.', oneriler: enYakinUc(metin), tanimsiz: true };
   }
@@ -544,6 +549,12 @@ function niyetKur(n: string, c: Baglam): Yorum | Yorum[] | string | null {
       if (!t) return null;
       return y({ tur: 'teklifYanit', ulke: P, teklif: t.id, kabul: n === 'kabul' ? 1 : 0 }, taban + 0.3, `${t.ad} ${n === 'kabul' ? 'kabul' : 'ret'}`, k);
     }
+    case 'bakan': {
+      const a = get('bakanAlan')[0];
+      if (!a) return null;
+      const kapat = olumsuz || c.fiil?.fiil.niyet.includes('otoKapat') || c.toks.some((t) => t.k === 'gorevden');
+      return y({ tur: 'bakan', ulke: P, alan: a.id, acik: kapat ? 0 : 1 }, taban + 0.35, `${BAKANLIK[a.id]} bakanlığı`, k);
+    }
     case 'otoCephe': case 'otoAc': case 'otoKapat': {
       if (!has('cephe') && !has('otomatik')) return null;
       const acik = n === 'otoKapat' || olumsuz ? 0 : 1;
@@ -614,6 +625,7 @@ export function emirMetni(e: Emir, k: Katalog): string {
     case 'borcAl': return `${sayi(Number(e.miktar))} altın borç al`;
     case 'borcOde': return `${sayi(Number(e.miktar))} altın borç öde`;
     case 'otoCephe': return Number(e.acik) ? 'Cepheyi otomatik yönet' : 'Cephe otomasyonunu kapat';
+    case 'bakan': return `${BAKANLIK[Number(e.alan)] ?? '?'} bakanlığını ${Number(e.acik) ? 'aç' : 'kapat'}`;
     case 'otoTakviye': return Number(e.acik) ? 'Otomatik takviyeyi aç' : 'Otomatik takviyeyi kapat';
     case 'kaliciGida': return Number(e.acik) ? 'Gıda azalınca otomatik satın al' : 'Gıda otomasyonunu kapat';
     case 'harcama': return `Gelir fazlasının %${Number(e.oran) / 10_000} kadarını harca`;

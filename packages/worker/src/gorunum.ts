@@ -2,7 +2,7 @@
 import {
   type World, tarihMetni, ortak, ekonomi, siyaset, nufus, diplomasi, olaylar, bolgeGozlem, istihbaratDuzeyi, aralik, hazineKademe,
   ARAZI, ASKERLIK, EKONOMI, ISGAL, YONETIM, KISILIK, TUTUM, TEKNOLOJI, NTEK, EKIPMAN, AILE_EKIP, TABUR, SABLON, MAL, PROJE, URUN_MUH, A, ANLASMA_TUR, K,
-  hc, ST, YB, kara, arastirmaYuvalari, AKTIF, DONEMLER, sablonIhtiyac,
+  hc, ST, YB, kara, arastirmaYuvalari, AKTIF, DONEMLER, sablonIhtiyac, TEK_DAL, BAKAN, BAKAN_AD, MOD_TUR,
 } from '@ts/engine';
 import { KOL_E, KOL_T } from '@ts/engine';
 
@@ -36,8 +36,37 @@ export function ozet(w: World) {
     teklifler: w.TK.list().filter((s) => w.TK.c.kime[s] === P && w.TK.c.durum[s] === 0).map((s) => teklifOzet(w, s)),
     ayarlar: { yasa: { askerlik: ASKERLIK.map((a) => a.ad), ekonomi: EKONOMI.map((a) => a.ad), isgal: ISGAL.map((a) => a.ad) } },
     baskent: pu.baskent, senaryo: w.pkg.senaryo.ad, paket: w.pkg.kimlik, donem: donemOzet(),
+    bakan: C.bakan[P]!, bakanlar: BAKAN.map((b, i) => ({ i, ad: BAKAN_AD[b] })),
+    hedef: hedefler(w, P, g.toplam),
+    etkiler: w.MOD.list().filter((s) => w.MOD.c.ulke[s] === P && w.MOD.c.bitis[s]! > w.gun).map((s) => ({ tur: MOD_TUR[w.MOD.c.tur[s]!]!, deger: w.MOD.c.deger[s]!, kalan: w.MOD.c.bitis[s]! - w.gun })),
   };
 }
+
+/** Hedefler (başlangıca göre) ve kriz göstergeleri: oyuncunun ne durumda olduğunu tek bakışta söyler. */
+function hedefler(w: World, P: number, zorunlu: number) {
+  const C = w.C.c;
+  let anaYurt = 0, dusen = 0;
+  for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === P && w.pkg.bolgeler[r]!.anaYurt.includes(P)) { anaYurt++; if (w.R.c.kontrolEden[r] !== P) dusen++; }
+  const kriz: { ad: string; duzey: 'orta' | 'kotu'; neden: string }[] = [];
+  if (C.huzur[P]! < 25_000) kriz.push({ ad: 'İç kriz', duzey: 'kotu', neden: 'Huzur çok düşük: isyan, verim kaybı ve rejim krizi riski.' });
+  else if (C.huzur[P]! < 40_000) kriz.push({ ad: 'Toplumsal gerginlik', duzey: 'orta', neden: 'Huzur düşüyor; vergi, gıda ve savaş yorgunluğuna bakın.' });
+  if (C.yorgunluk[P]! > 60_000) kriz.push({ ad: 'Savaş yorgunluğu', duzey: 'kotu', neden: 'Halk barış istiyor; başkent düşerse teslim gelir.' });
+  else if (C.yorgunluk[P]! > 35_000) kriz.push({ ad: 'Yorgunluk artıyor', duzey: 'orta', neden: 'Uzayan savaş desteği eritiyor.' });
+  if (C.gelirDun[P]! > 0 && zorunlu > C.gelirDun[P]!) kriz.push({ ad: 'Bütçe açığı', duzey: C.hazine[P]! < zorunlu * 30 ? 'kotu' : 'orta', neden: `Zorunlu giderler gelirin %${Math.floor((zorunlu * 100) / Math.max(1, C.gelirDun[P]!))}'i; savaşta asker maaşı iki katıdır.` });
+  if (dusen > 0) kriz.push({ ad: 'İşgal altında toprak', duzey: dusen * 4 >= anaYurt ? 'kotu' : 'orta', neden: `Ana yurttan ${dusen}/${anaYurt} bölge düşman elinde.` });
+  if (C.temerrut[P]! > w.gun) kriz.push({ ad: 'Temerrüt', duzey: 'kotu', neden: 'Borç ödenemedi: kredi kapalı, meşruiyet düşüyor.' });
+  return {
+    bolge: ortak.ulkeBolgeleri(w, P, false).length, bazBolge: C.bazBolge[P]!, tek: C.tekSay[P]!, bazTek: C.bazTek[P]!,
+    savasGunu: C.savasGunu[P]!, maas: C.maas[P]!, anaYurt, dusen, kriz,
+    yol: w.olayBayrak.filter((b) => YOL_AD[b]).map((b) => YOL_AD[b]!),
+  };
+}
+/** Tarih bayraklarının oyuncuya görünen adları (seçilen yol). */
+const YOL_AD: Record<string, string> = {
+  osm_ittifak: 'Gizli Alman ittifakı', osm_tarafsiz: 'Silahlı tarafsızlık', osm_itilaf: 'İtilaf\'a yakınlaşma', osm_goeben: 'Yavuz ve Midilli satın alındı', osm_savasta: 'Osmanlı savaşta',
+  osm_tarafsiz_kesin: 'Osmanlı kesin tarafsız', osm_itilaf_savas: 'Osmanlı İtilaf safında', sinirsiz_denizalti: 'Sınırsız denizaltı savaşı', lusitania: 'Lusitania krizi',
+  tur_bati: 'Türkiye–Batı ittifakı', tur_tarafsiz: 'Türkiye tarafsız', tur_mihver: 'Türkiye Mihver safında', ukr_masa: 'Ukrayna barış masasında', tayvan_karantina: 'Tayvan karantinası', dhs_kuruldu: 'Doğu Hindistan Şirketi',
+};
 
 /** Dönem adları ve görselleri: arayüz şablon, ürün ve tesis adlarını buradan alır. */
 export function donemOzet() {
@@ -132,6 +161,8 @@ export function bolge(w: World, r: number) {
     sahipAd: w.pkg.ulkeler[R.sahip[r]!]!.ad, kontrolAd: w.pkg.ulkeler[k]!.ad, sahipRenk: w.pkg.ulkeler[R.sahip[r]!]!.renk, kontrolRenk: w.pkg.ulkeler[k]!.renk, isyan: R.isyan[r]!, cephe: w.gun - R.sonMuharebe[r]! <= 7,
     kis: ortak.kisDuzey(w, r), camur: ortak.camurDuzey(w, r),
     komsu: b.komsu,
+    // tahkimat: kendi bölgesi kesin, yabancı bölge keşif/istihbarat varsa görünür
+    tahkimat: gorunur ? R.tahkimat[r]! : null, tahkimatTavan: k >= 0 ? kara.tahkimatTavan(w, k) : 0, savunma: gorunur ? kara.savunmaCarpan(w, r, 0) : null,
   };
 }
 
@@ -153,9 +184,29 @@ export function birlikler(w: World) {
       hedef: UU.hedef![u]!, hedefAd: UU.hedef![u]! >= 0 ? w.pkg.bolgeler[UU.hedef![u]!]!.ad : null, durus: kara.DURUS[UU.durus![u]!],
       kisi: UU.kisi![u]!, kisiHedef: s.kisiHedef, org: UU.org![u]!, orgMax: s.orgMax, YS: s.YS, SV: s.SV, YR: s.YR, dolu: s.dolu, genislik: s.genislik, hiz: s.hiz,
       deneyim: UU.deneyim![u]!, ikmalGida: ik.gida, ikmalMuh: ik.muh, muharebe: UU.muharebe![u]!, egitim: UU.egitimBitis![u]! > w.gun ? UU.egitimBitis![u]! - w.gun : 0,
-      aile, taburlar, savasGun: UU.savasGun![u]!,
+      aile, taburlar, savasGun: UU.savasGun![u]!, neden: yavasNeden(w, u, s, ik),
     };
   });
+}
+
+/** Birlik neden ilerlemiyor / neden zayıf? Oyuncuya tek satırlık açıklama. */
+function yavasNeden(w: World, u: number, s: ReturnType<typeof ortak.birlikIstat>, ik: ReturnType<typeof ortak.birlikIkmal>): string | null {
+  const UU = U(w);
+  const c = UU.ulke![u]!, r = UU.bolge![u]!, h = UU.hedef![u]!;
+  const n: string[] = [];
+  if (s.orgMax > 0 && UU.org![u]! * 10 < s.orgMax) n.push('organizasyon çok düşük: yarı hızla ilerler');
+  if (ik.gida < 300_000) n.push('erzak kesik: ikmal yolu yok ya da depolar boş');
+  else if (ik.muh < 300_000) n.push('cephane az: saldırı yarı güçte');
+  if (h >= 0 && h !== r) {
+    const sonraki = w.komsuluk[r]!.includes(h) ? h : -1;
+    if (sonraki >= 0 && !ortak.denizGecer(w, c, r, h)) n.push('düşman donanması deniz geçişini kapatıyor');
+    const k = w.R.c.kontrolEden[sonraki >= 0 ? sonraki : h]!;
+    if (ortak.savasta(w, c, k)) n.push('düşman toprağında ilerleme yavaş (keşif, yerel direniş)');
+    if (ortak.camurDuzey(w, r) >= 2) n.push('çamur mevsimi');
+    if (ortak.kisDuzey(w, r) >= 2) n.push('ağır kış');
+  }
+  if (UU.muharebe![u]! && w.R.c.tahkimat[h >= 0 ? h : r]! > 200_000) n.push('karşı taraf tahkim edilmiş: topçu hazırlığı gerekir');
+  return n.length ? n.join(' · ') : null;
 }
 
 export function diplomasiG(w: World) {
@@ -232,8 +283,17 @@ export function arastirmaG(w: World) {
       const ilerleme = w.tekIlerleme[P * NTEK + i]!;
       const onUygun = t.on.every((o) => w.tekBitti[P * NTEK + TEKNOLOJI.findIndex((x) => x.kod === o)]);
       const arastiriliyor = yv.yuva.includes(i);
-      return { i, ad: t.ad, yil: t.yil, etki: t.etki, on: t.on.map((o) => TEKNOLOJI.find((x) => x.kod === o)!.ad), bitti, arastiriliyor, sirada: yv.sirada.includes(i), uygun: onUygun, yuzde: Math.min(100, Math.floor((ilerleme * 100) / Math.max(1, maliyet))), kalanGun: Math.ceil(Math.max(0, maliyet - ilerleme) / Math.max(1, hiz)) };
+      // doktrin dışlaması: seçilmiş (bitmiş ya da süren) bir doktrin ötekileri kapatır
+      const kapatan = t.dislar.map((d) => TEKNOLOJI.findIndex((x) => x.kod === d)).find((j) => j >= 0 && (w.tekBitti[P * NTEK + j] === 1 || yv.yuva.includes(j) || yv.sirada.includes(j)));
+      return {
+        i, ad: t.ad, yil: t.yil, etki: t.etki, dal: t.dal, doktrin: t.dislar.length > 0, kapali: kapatan !== undefined ? TEKNOLOJI[kapatan]!.ad : null,
+        on: t.on.map((o) => TEKNOLOJI.find((x) => x.kod === o)!.ad), bitti, arastiriliyor, sirada: yv.sirada.includes(i), uygun: onUygun && kapatan === undefined,
+        yuzde: Math.min(100, Math.floor((ilerleme * 100) / Math.max(1, maliyet))), kalanGun: Math.ceil(Math.max(0, maliyet - ilerleme) / Math.max(1, hiz)),
+        erken: t.yil > w.pkg.senaryo.baslangic.y,
+      };
     }),
+    dallar: TEK_DAL,
+    bitenSay: w.C.c.tekSay[P]!,
   };
 }
 

@@ -396,3 +396,8 @@ details summary { cursor: pointer; min-height: var(--dokun); display: flex; alig
   .plan-izgara { margin: 2px 0; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* Araştırma dalları: yatay kaydırmalı sekme şeridi */
+.sekme-satir { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 8px; scrollbar-width: thin; }
+.sekme-satir button { flex: 0 0 auto; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--cizgi, #4444); background: transparent; color: inherit; font-size: 13px; white-space: nowrap; }
+.sekme-satir button.secili { background: var(--vurgu, #b08a3a); color: #fff; border-color: transparent; }

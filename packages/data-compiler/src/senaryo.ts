@@ -16,12 +16,53 @@ interface Harita { gen: number; yuk: number; bolgeler: HBolge[]; kenarlar: { a: 
 const H: Harita = JSON.parse(readFileSync(join(kok, 'data/derlenmis/harita.json'), 'utf8'));
 const NR = H.bolgeler.length;
 
+// ---------- Donanmalar ----------
+/** Senaryo başı deniz gücü (0–10): deniz geçişini ve çıkarmayı belirler (motor: denizKapali). */
+const DENIZ: Record<string, Record<string, number>> = {
+  s750: { BIZ: 6, ABB: 3, EMV: 4, TNG: 3, FRK: 2, JAP: 2, PAL: 2 },
+  s1600: { SPA: 9, NLD: 8, ENG: 7, OSM: 6, FRA: 5, VEN: 5, DEN: 4, SWE: 4, JOS: 4, JAP: 3, MNG: 4, MUG: 2 },
+  s1914: { GBR: 10, GER: 6, FRA: 5, USA: 6, JAP: 5, ITA: 4, AUH: 3, RUS: 3, OSM: 2, NLD: 2, SPA: 2 },
+  s1939: { GBR: 9, USA: 9, JAP: 7, FRA: 5, ITA: 4, GER: 4, SOV: 3, NLD: 2, CAN: 2 },
+  s2026: { USA: 10, CHN: 7, RUS: 5, GBR: 5, FRA: 5, JPN: 4, IND: 4, KOR: 3, TUR: 3, ITA: 3, AUS: 3 },
+};
+
+// ---------- Ek deniz yolları ----------
+// Harita derleyicisinin elle tanımlı geçişleri seyrek: imparatorluk ana yolları (Cebelitarık–Malta–Süveyş–Aden, Hint Okyanusu,
+// Güneydoğu Asya, Karayipler) eklenir. Yönetim mesafesi, ikmal ve deniz intikali bu yolları kullanır.
+const EK_DENIZ: [string, string, number][] = [
+  ['Londra', 'Lizbon', 2], ['Londra', 'Amsterdam', 1], ['Bristol', 'Lizbon', 2], ['Lizbon', 'Málaga', 1], ['Málaga', 'Malta', 2], ['Málaga', 'Cezayir', 1],
+  ['Malta', 'Kahire', 2], ['Kahire', 'Cidde', 1], ['Kahire', 'Aden', 2], ['Bombay', 'Karaçi', 1], ['Bombay', 'Colombo', 1], ['Colombo', 'Kalküta', 2],
+  ['Kalküta', 'Rangun', 1], ['Rangun', 'Singapore', 2], ['Singapore', 'Saygon', 2], ['Saygon', 'Guangzhou', 2], ['Guangzhou', 'Manila', 2], ['Singapore', 'Cakarta', 1],
+  ['Lizbon', 'Dakar', 2], ['Dakar', 'Freetown', 1], ['Freetown', 'Accra', 1], ['Durban', 'Mombasa', 2], ['Aden', 'Mogadişu', 2], ['Liverpool', 'Kingston', 2], ['Kingston', 'Port of Spain', 1],
+  ['Malta', 'Lefkoşa', 2], ['Bombay', 'Kuveyt', 2], ['Kuveyt', 'Manama', 1], ['Manama', 'Doha', 1], ['Doha', 'Abu Dabi', 1], ['Kingston', 'Belmopan', 2], ['Dakar', 'Banjul', 1],
+  ['Port of Spain', 'Georgetown', 1], ['Durban', 'Port Louis', 2],
+];
+{
+  const ad = new Map(H.bolgeler.map((b, i) => [b.ad, i] as const));
+  const var_ = new Set(H.kenarlar.map((k) => Math.min(k.a, k.b) * 4096 + Math.max(k.a, k.b)));
+  const rad = Math.PI / 180;
+  for (const [x, y, tur] of EK_DENIZ) {
+    const a = ad.get(x), b = ad.get(y);
+    if (a === undefined || b === undefined) throw new Error(`ek deniz yolu: bölge yok ${a === undefined ? x : y}`);
+    const lo = Math.min(a, b), hi = Math.max(a, b);
+    if (var_.has(lo * 4096 + hi)) continue;
+    var_.add(lo * 4096 + hi);
+    const A = H.bolgeler[a]!, B = H.bolgeler[b]!;
+    const h = Math.sin(((B.lat - A.lat) * rad) / 2) ** 2 + Math.cos(A.lat * rad) * Math.cos(B.lat * rad) * Math.sin(((B.lon - A.lon) * rad) / 2) ** 2;
+    const km = Math.round(2 * 6371 * Math.asin(Math.sqrt(h)) * (tur === 2 ? 1.15 : 1.3));
+    H.kenarlar.push({ a: lo, b: hi, km: Math.max(60, km), sinir: tur === 1 ? 6 : 4, tur });
+    A.komsu = [...A.komsu, b].sort((m, n) => m - n); B.komsu = [...B.komsu, a].sort((m, n) => m - n);
+  }
+}
+
 // ---------- Tanım tipleri ----------
 /** Yönetim: 0 mutlak monarşi, 1 meşruti monarşi, 2 cumhuriyet, 3 tek parti, 4 askerî. Kişilik: 0 yayılmacı, 1 temkinli, 2 fırsatçı, 3 ticari, 4 ideolojik. */
 export interface Devlet {
   k: string; ad: string; kisa: string; sifat: string; renk: string;
   y: number; ks: number; yAd?: string; lider: string;
   bas: string; guc: number; eko: number;
+  /** Deniz gücü 0–10 (yoksa DENIZ tablosu, o da yoksa güç/2) */
+  deniz?: number;
   /** ISO seçiciler: "FR DE<10 RU^55" (< > boylam, ^ _ enlem) */
   t?: string;
   /** Açık bölge adları (harita adı) */
@@ -41,7 +82,18 @@ export type Iliski =
   | ['savas', string[], string[], number?];
 export interface OlayTanim {
   kod: string; tarih: string | null; ulke: string; baslik: string; metin: string;
-  kosul?: { savasta?: [string, string]; barista?: [string, string]; kontrol?: [string, string]; kontrolDegil?: [string, string] };
+  kosul?: {
+    savasta?: [string, string]; barista?: [string, string]; kontrol?: [string, string]; kontrolDegil?: [string, string];
+    bayrak?: string[]; bayrakDegil?: string[]; savastaMi?: string; barisMi?: string;
+    /** [ülke, puan] */
+    huzurAlt?: [string, number]; destekAlt?: [string, number]; yorgunlukUst?: [string, number];
+    /** [ülke, yüzde]: ana yurdun bu kadarı düşman elinde */
+    kayipUst?: [string, number];
+  };
+  /** Koşul tutmazsa kaç gün boyunca haftalık yeniden denenir */
+  pencere?: number;
+  /** Koşul tutunca gerçekleşme olasılığı (%) */
+  olasilik?: number;
   sec: { ad: string; etki: string; yz: number; e: (string | number | boolean)[][] }[];
 }
 export interface SenaryoTanim {
@@ -368,6 +420,7 @@ export function derle(t: SenaryoTanim): { paket: Paket; ozet: string } {
   });
 
   // 9) devletler
+  for (const k of Object.keys(DENIZ[t.kimlik] ?? {})) if (!devletler.some((d) => d.k === k)) throw new Error(`${t.kimlik}: donanma tablosunda bilinmeyen devlet ${k}`);
   const ulkeler: PaketUlke[] = devletler.map((d, c) => {
     const popM = dNufus[c]! / 1e6;
     const n = hedefOrdu[c]!;
@@ -384,7 +437,7 @@ export function derle(t: SenaryoTanim): { paket: Paket; ozet: string } {
       pg: d.pasif ? 0 : 50_000 + d.guc * 2000, vergi: d.pasif ? 80_000 : 110_000 + d.eko * 5000, askerlik: d.askerlik ?? 1, ekonomi: savasVar ? 2 : d.guc >= 7 ? 1 : 0,
       huzur: d.pasif ? 60_000 : 58_000 + (d.eko - 5) * 1000, mesru: 60_000, kultur: kI(devletHalk[c]![0]), inanc: iI(devletHalk[c]![1]),
       yedekOran: Math.round((d.pasif ? 0.03 : 0.04 + d.guc / 250) * 1_000_000), tekler: d.eko >= 8 && !d.pasif ? ['tarim1', 'sanayi1'] : d.eko >= 6 && !d.pasif ? ['tarim1'] : [],
-      lider: d.lider, pasif: d.pasif || undefined, yonetimAd: d.yAd, guc: d.guc, ordu: n, destek: savasVar ? 65_000 : undefined,
+      lider: d.lider, pasif: d.pasif || undefined, yonetimAd: d.yAd, guc: d.guc, deniz: d.deniz ?? DENIZ[t.kimlik]?.[d.k] ?? Math.floor(d.guc / 2), ordu: n, destek: savasVar ? 65_000 : undefined,
       depo: { muhimmat: d.pasif ? 2000 : Math.round(n * 6500 * ekoF), ekip },
     } as PaketUlke;
   });
@@ -401,10 +454,22 @@ export function derle(t: SenaryoTanim): { paket: Paket; ozet: string } {
       barista: o.kosul.barista ? [K(o.kosul.barista[0], o.kod), K(o.kosul.barista[1], o.kod)] : undefined,
       kontrol: o.kosul.kontrol ? [bolgeAd(o.kosul.kontrol[0], o.kod), K(o.kosul.kontrol[1], o.kod)] : undefined,
       kontrolDegil: o.kosul.kontrolDegil ? [bolgeAd(o.kosul.kontrolDegil[0], o.kod), K(o.kosul.kontrolDegil[1], o.kod)] : undefined,
+      bayrak: o.kosul.bayrak, bayrakDegil: o.kosul.bayrakDegil,
+      savastaMi: o.kosul.savastaMi ? K(o.kosul.savastaMi, o.kod) : undefined, barisMi: o.kosul.barisMi ? K(o.kosul.barisMi, o.kod) : undefined,
+      huzurAlt: o.kosul.huzurAlt ? [K(o.kosul.huzurAlt[0], o.kod), o.kosul.huzurAlt[1] * 1000] : undefined,
+      destekAlt: o.kosul.destekAlt ? [K(o.kosul.destekAlt[0], o.kod), o.kosul.destekAlt[1] * 1000] : undefined,
+      yorgunlukUst: o.kosul.yorgunlukUst ? [K(o.kosul.yorgunlukUst[0], o.kod), o.kosul.yorgunlukUst[1] * 1000] : undefined,
+      kayipUst: o.kosul.kayipUst ? [K(o.kosul.kayipUst[0], o.kod), o.kosul.kayipUst[1] * 10] : undefined,
     } : undefined,
+    pencere: o.pencere, olasilik: o.olasilik,
     secenekler: o.sec.map((s) => ({ ad: s.ad, etki: s.etki, yz: s.yz, e: s.e.map((x) => eylem(x, K, o.kod)) })),
   }));
-  for (const o of olaylar) for (const s of o.secenekler) for (const e of s.e) if (e.t === 'olay' && !olaylar.some((x) => x.kod === e.olay)) throw new Error(`${t.kimlik}: zincir olayı yok: ${e.olay}`);
+  for (const o of olaylar) for (const s of o.secenekler) for (const e of s.e) if ((e.t === 'olay' || e.t === 'iptal') && !olaylar.some((x) => x.kod === e.olay)) throw new Error(`${t.kimlik}: zincir olayı yok: ${e.olay}`);
+  // bayrak denetimi: koşulda aranan her bayrak bir kararla konabilmeli (yazım hatası yakalanır)
+  const konan = new Set<string>();
+  for (const o of olaylar) for (const s of o.secenekler) for (const e of s.e) if (e.t === 'bayrak' && e.olay) konan.add(e.olay);
+  for (const o of olaylar) for (const b of [...(o.kosul?.bayrak ?? []), ...(o.kosul?.bayrakDegil ?? [])]) if (!konan.has(b)) throw new Error(`${t.kimlik}/${o.kod}: bayrak hiçbir kararla konmuyor: ${b}`);
+  for (const o of olaylar) if (o.gun < 0 && !olaylar.some((x) => x.secenekler.some((s) => s.e.some((e) => e.t === 'olay' && e.olay === o.kod)))) throw new Error(`${t.kimlik}: ${o.kod} tarihsiz ve hiçbir zincirden çağrılmıyor`);
 
   const paket: Paket = {
     kimlik: t.kimlik, surum: '2.0.0', donem: t.donem, alt: t.alt, aciklama: t.aciklama,
@@ -446,6 +511,20 @@ function eylem(x: (string | number | boolean)[], K: (k: string, c: string) => nu
     case 'boz': return { t, a: c(p[0]), b: c(p[1]), v: Number(p[2]) };
     case 'bolge': return { t, a: bolgeAd(String(p[0]), ctx), b: c(p[1]) };
     case 'olay': return { t, olay: String(p[0]), gecikme: Number(p[1] ?? 0) };
+    case 'iptal': return { t, olay: String(p[0]) };
+    case 'bayrak': return { t, olay: String(p[0]), v: p[1] === false ? 0 : 1 };
+    case 'yorgunluk': return { t, a: c(p[0]), v: Number(p[1]) * 1000 };
+    case 'teknoloji': {
+      if (!DONEMLER.buyuk.teknoloji.some((x) => x.kod === p[1])) throw new Error(`${ctx}: teknoloji yok ${String(p[1])}`);
+      return { t, a: c(p[0]), olay: String(p[1]) };
+    }
+    case 'etki': {
+      // ['etki', ülke, tür, değer, gün]: tür uretim/vergi/arastirma/saldiri/savunma/insan/tarim (%), huzurAy/destekAy/mesruAy (puan)
+      const tur = String(p[1]);
+      const puan = tur.endsWith('Ay');
+      if (!['uretim', 'vergi', 'huzurAy', 'destekAy', 'arastirma', 'saldiri', 'savunma', 'insan', 'tarim', 'mesruAy'].includes(tur)) throw new Error(`${ctx}: etki türü yok ${tur}`);
+      return { t, a: c(p[0]), olay: tur, v: Number(p[2]) * (puan ? 1000 : 10_000), d: Number(p[3]) };
+    }
   }
   throw new Error(`${ctx}: bilinmeyen eylem ${t}`);
 }

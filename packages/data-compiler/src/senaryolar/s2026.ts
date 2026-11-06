@@ -242,8 +242,29 @@ export const S2026: SenaryoTanim = {
   olaylar: [
     { kod: 'baris26', tarih: '2026-03-01', ulke: 'UKR', kosul: { savasta: ['RUS', 'UKR'] }, baslik: 'Barış Planı Masada', metin: 'Washington\'un arabuluculuğundaki görüşmelerde mevcut temas hattında ateşkes ve güvenlik güvenceleri tartışılıyor. Kiev, toprak tavizi vermeden ateşkes istiyor.',
       sec: [
-        { ad: 'Görüşmeleri sürdür', etki: 'ABD ve Avrupa ile ilişkiler güçlenir; savaşa destek −5.', yz: 60, e: [['gorus', 'USA', 'UKR', 8], ['destek', 'UKR', -5]] },
+        { ad: 'Görüşmeleri sürdür', etki: 'ABD ve Avrupa ile ilişkiler güçlenir; savaşa destek −5. Ateşkes masası kurulur.', yz: 60, e: [['gorus', 'USA', 'UKR', 8], ['destek', 'UKR', -5], ['bayrak', 'ukr_masa'], ['olay', 'ateskes26', 60]] },
         { ad: 'Önce toprak bütünlüğü', etki: 'Savaşa destek +5; ABD ile ilişkiler soğur.', yz: 40, e: [['destek', 'UKR', 5], ['gorus', 'USA', 'UKR', -8]] },
+      ] },
+    { kod: 'ateskes26', tarih: null, ulke: 'RUS', kosul: { savasta: ['RUS', 'UKR'], bayrak: ['ukr_masa'] }, baslik: 'Temas Hattında Ateşkes', metin: 'Arabulucular mevcut temas hattında ateşkes ve yaptırımların kademeli gevşetilmesini öneriyor. Ordu yorgun, ekonomi yaptırımlar altında; ancak Kiev\'in NATO yolu kapanmış değil.',
+      sec: [
+        { ad: 'Ateşkesi kabul et', etki: 'Ukrayna ile beyaz barış; yaptırımlar gevşer (üretim +%5, 1 yıl); meşruiyet −5.', yz: 45, e: [['baris', 'RUS', 'UKR'], ['etki', 'RUS', 'uretim', 5, 365], ['mesru', 'RUS', -5]] },
+        { ad: 'Savaşı sürdür', etki: 'Savaş yorgunluğu +5; yaptırımlar ağırlaşır (üretim −%5, 1 yıl).', yz: 55, e: [['yorgunluk', 'RUS', 5], ['etki', 'RUS', 'uretim', -5, 365]] },
+      ] },
+    { kod: 'tayvan26', tarih: '2027-03-15', ulke: 'CHN', kosul: { barista: ['CHN', 'TWN'] }, pencere: 720, olasilik: 40, baslik: 'Tayvan Boğazı Krizi', metin: 'Halk Kurtuluş Ordusu Tayvan çevresinde şimdiye dek görülmemiş büyüklükte bir tatbikat başlattı. Politbüro, abluka, karantina ya da diplomatik baskı arasında seçim yapacak; ABD donanması bölgeye yöneliyor.',
+      sec: [
+        { ad: 'Diplomatik baskıyla yetin', etki: 'Gerginlik düşer; ABD ile ticaret sürer (üretim +%3, 1 yıl).', yz: 70, e: [['gerginlik', 'CHN', -5], ['etki', 'CHN', 'uretim', 3, 365]] },
+        { ad: 'Gümrük karantinası uygula', etki: 'Tayvan\'da üretim −%15 (6 ay); ABD ve Japonya ile ilişkiler sert bozulur; dünya gerginliği artar.', yz: 25, e: [['etki', 'TWN', 'uretim', -15, 180], ['gorus', 'USA', 'CHN', -25], ['gorus', 'JPN', 'CHN', -20], ['gerginlik', 'CHN', 10], ['bayrak', 'tayvan_karantina'], ['olay', 'tayvan_abd', 20]] },
+        { ad: 'Çıkarma harekâtı', etki: 'Tayvan ile savaş; ABD müdahalesi beklenir.', yz: 5, e: [['savas', 'CHN', 'TWN'], ['bayrak', 'tayvan_karantina'], ['olay', 'tayvan_abd', 7]] },
+      ] },
+    { kod: 'tayvan_abd', tarih: null, ulke: 'USA', kosul: { bayrak: ['tayvan_karantina'] }, baslik: 'Tayvan\'a Destek', metin: 'Pekin, Tayvan\'a karantina uyguluyor. Kongre, Tayvan\'a silah ve konvoy refakati için baskı yapıyor; müttefikler Washington\'un adımını bekliyor.',
+      sec: [
+        { ad: 'Konvoy refakati ve silah yardımı', etki: 'Tayvan\'a silah teknolojisi; Çin ile ilişkiler bozulur.', yz: 60, e: [['teknoloji', 'TWN', 'tahkimat2'], ['gorus', 'CHN', 'USA', -20], ['garanti', 'USA', 'TWN']] },
+        { ad: 'Yaptırımlarla sınırlı kal', etki: 'Çin\'de üretim −%5 (1 yıl); ABD\'de üretim −%2 (1 yıl).', yz: 40, e: [['etki', 'CHN', 'uretim', -5, 365], ['etki', 'USA', 'uretim', -2, 365]] },
+      ] },
+    { kod: 'kizildeniz26', tarih: '2026-02-01', ulke: 'HUT', kosul: {}, pencere: 300, olasilik: 50, baslik: 'Kızıldeniz Saldırıları', metin: 'Ensarullah, Bab-ül Mendep\'ten geçen ticaret gemilerini İHA ve füzelerle hedef almaya devam etmek istiyor. Suudi Arabistan ile gizli görüşmeler sürüyor.',
+      sec: [
+        { ad: 'Saldırıları sürdür', etki: 'Mısır ve Suudi Arabistan\'da üretim −%3 (6 ay); ABD ve Britanya ile ilişkiler kötüleşir.', yz: 65, e: [['etki', 'EGY', 'uretim', -3, 180], ['etki', 'SAU', 'uretim', -3, 180], ['gorus', 'USA', 'HUT', -10]] },
+        { ad: 'Suudi ateşkesine yanaş', etki: 'Hazine +; savaşa destek −5.', yz: 35, e: [['hazine', 'HUT', 500000], ['destek', 'HUT', -5], ['gorus', 'SAU', 'HUT', 15]] },
       ] },
   ],
 };

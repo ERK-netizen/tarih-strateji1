@@ -1,6 +1,7 @@
 // Bölüm 19.1 ve 19.4: gözlem görünümü ve istihbarat aralığı. Karar modülü yalnız bu katmanı okur.
 import type { World } from '../state/world.ts';
 import { A } from '../state/world.ts';
+import { tekVar } from '../catalog.ts';
 import { S, mulDiv, clamp } from '../num/index.ts';
 import { rng, AMAC, uniformInt } from '../rng/index.ts';
 import { tarih } from '../calendar/index.ts';
@@ -47,6 +48,7 @@ export function istihbaratDuzeyi(w: World, gozlemci: number, hedef: number, bolg
   if (anlasmaVar(w, A.ittifak, gozlemci, hedef) >= 0) I += 10_000;
   // kendi birliği aynı ya da komşu bölgedeyse keşif +20
   if (bolge >= 0 && kesifMenzili(w, gozlemci)[bolge]) I += 20_000;
+  if (tekVar(w, gozlemci, 'istihbarat1')) I += 20_000;
   return clamp(I, 0, 100_000);
 }
 

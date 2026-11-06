@@ -1,23 +1,26 @@
 // Bölüm 19: karar modülü. Yalnız gözlem görünümü, kamu bilgisi ve kendi verisini kullanır;
 // emirlerini oyuncuyla aynı doğrulama yolundan (orders.uygula) geçirir.
 import type { World } from '../state/world.ts';
-import { A, URUN_MUH, ck } from '../state/world.ts';
-import { KISILIK, SABLON, TEKNOLOJI, NTEK, MALI, ASKERLIK, EKIPMAN, NEKIP } from '../catalog.ts';
+import { A, URUN_MUH, ck, BK } from '../state/world.ts';
+import { KISILIK, SABLON, TEKNOLOJI, NTEK, MALI, ASKERLIK, EKIPMAN, NEKIP, AKTIF } from '../catalog.ts';
 import { S, mulDiv, clamp } from '../num/index.ts';
 import { rng, AMAC, uniformInt } from '../rng/index.ts';
 import { uygula, teklifSonuc, type Emir } from '../orders.ts';
 import { bolgeGozlem, bolgeGozlemBolgeler, ulkeGozlem } from '../observe/index.ts';
 import {
-  uc, savasta, savastaMi, dusmanlar, anlasmaVar, gorus, birlikIstat, birlikIkmal, sinirKomsusu, muttefik, essavasan, iddiaVar, savasUyeleri, pasif, rotaTip, kontrolB, sahipB,
+  uc, savasta, savastaMi, dusmanlar, anlasmaVar, gorus, birlikIstat, birlikIkmal, sinirKomsusu, muttefik, essavasan, iddiaVar, savasUyeleri, pasif, rotaTip, kontrolB, sahipB, denizGecer,
 } from '../systems/ortak.ts';
 import { insanGucu } from '../systems/nufus.ts';
 import { ulkeGidaStok, zorunluGider, krediLimiti } from '../systems/ekonomi.ts';
+import { savunmaCarpan, topcuBaski } from '../systems/kara.ts';
 import { TK, ESIK, gerekceVar, gerekceSurecte, barisKabul, savasSkoru, istekliligi, tavizButcesi, bolgeDegeri, teslimKosulu, teklifBolgeleri } from '../systems/diplomasi.ts';
 
 const ESIK_SALDIRI = [1_300_000, 1_800_000, 1_400_000, 1_600_000, 1_500_000]; // kişiliğe göre (Atılgan/Temkinli/...)
 
+/** Karar modülünün emirleri bakan emri olarak işaretlenir (oyuncu adına verilen emir bakanı görevden almaz). */
+let bakanCagri = false;
 function emir(w: World, c: number, tur: string, p: Record<string, unknown>): boolean {
-  return uygula(w, { tur, ulke: c, ...p } as Emir).ok;
+  return uygula(w, { tur, ulke: c, ...p, ...(bakanCagri || c !== w.oyuncu ? { yz: 1 } : {}) } as Emir).ok;
 }
 
 /** Gözlenen yabancı güç (temkinli: aralığın üst ucu). */
@@ -62,7 +65,14 @@ export function kararGunu(w: World): void {
     if (pasif(w, c) && c !== w.oyuncu) continue; // pasif topluluklar karar vermez
     const oyuncu = c === w.oyuncu && w.mod !== 2;
     if (!oyuncu || w.C.c.otoCephe[c]) cepheYonet(w, c);
-    if (oyuncu) { oyuncuKalici(w, c); continue; }
+    if (oyuncu) {
+      oyuncuKalici(w, c);
+      // bakanlar: oyuncunun devrettiği alanlar aylık planlanır (oyuncunun elle emri bakanı görevden alır: orders)
+      const m = w.C.c.bakan[c]!;
+      const gunAy = ((w.gun % 30) + 30) % 30;
+      if (m && (gunAy === 3 || w.C.c.sonPlan[c] === 0)) { w.C.c.sonPlan[c] = w.gun; ekonomiPlan(w, c, m); if (m & BK.ordu) { bakanCagri = true; try { orduPlan(w, c); } finally { bakanCagri = false; } } }
+      continue;
+    }
     // planlama günü: 1 + hash(c) % 28, aylık
     const gunAy = ((w.gun % 30) + 30) % 30;
     if (gunAy === (1 + ((c * 7919) % 28)) % 30 || w.C.c.sonPlan[c] === 0) {
@@ -133,11 +143,29 @@ function kabulEder(w: World, b: number, a: number, tur: number, p1: number, p2: 
 }
 
 // ---------- Ekonomi planı ----------
-function ekonomiPlan(w: World, c: number): void {
+/** Kişiliğe göre araştırma önceliği; doktrin kişilikten seçilir, kalan teknolojiler katalog sırasıyla gelir. */
+const SIRA_ON: Record<string, string[]> = {
+  Askeri: ['piyade2', 'taktik1', 'sanayi1', 'kurmay', 'DOK', 'topcu1', 'demiryolu', 'tahkimat1', 'agirtop2', 'sihhiye', 'seferberlik', 'ikmal1', 'tarim1', 'zirh1', 'propaganda', 'sanayi2', 'taktik2', 'piyade3', 'topcu2', 'tahkimat2', 'ikmal2', 'idare', 'maliye1', 'maden1'],
+  Temkinli: ['tahkimat1', 'sanayi1', 'piyade2', 'kurmay', 'DOK', 'topcu1', 'demiryolu', 'tarim1', 'tahkimat2', 'sihhiye', 'agirtop2', 'idare', 'maliye1', 'ikmal1', 'taktik1', 'sanayi2', 'depo1', 'egitim1', 'propaganda', 'seferberlik'],
+  Ticari: ['sanayi1', 'ticaret1', 'tarim1', 'maliye1', 'idare', 'demiryolu', 'insaat1', 'sanayi2', 'maden1', 'tarim2', 'banka1', 'egitim1', 'depo1', 'sihhiye', 'piyade2', 'kurmay', 'tahkimat1', 'DOK'],
+};
+const DOK_KIS: Record<string, string> = { 'Yayılmacı': 'dok_manevra', Temkinli: 'dok_ates', 'Fırsatçı': 'dok_manevra', Ticari: 'dok_ates', 'İdeolojik': 'dok_kitle' };
+function arastirmaSirasi(kis: string): string[] {
+  const on = (SIRA_ON[kis] ?? SIRA_ON.Askeri!).map((k) => (k === 'DOK' ? DOK_KIS[kis] ?? 'dok_manevra' : k));
+  return [...on, ...TEKNOLOJI.map((t) => t.kod).filter((k) => !on.includes(k) && !k.startsWith('dok_'))];
+}
+
+function ekonomiPlan(w: World, c: number, mask = -1): void {
+  bakanCagri = true;
+  try { ekonomiPlanIc(w, c, mask); } finally { bakanCagri = false; }
+}
+function ekonomiPlanIc(w: World, c: number, mask: number): void {
+  const ac = (b: number) => (mask & b) !== 0;
   const C = w.C.c;
   const g = zorunluGider(w, c);
   const gunluk = Math.max(1, g.toplam);
   const runway = Math.floor(C.hazine[c]! / gunluk);
+  if (ac(BK.ekonomi)) {
   // vergi
   if (runway < 45 && C.vergi[c]! < 300_000) emir(w, c, 'vergi', { oran: C.vergi[c]! + 20_000 });
   else if (runway > 300 && C.huzur[c]! < 50_000 && C.vergi[c]! > 100_000) emir(w, c, 'vergi', { oran: C.vergi[c]! - 10_000 });
@@ -146,10 +174,11 @@ function ekonomiPlan(w: World, c: number): void {
     const m = Math.min(krediLimiti(w, c), gunluk * 60);
     if (m > 0) emir(w, c, 'borcAl', { miktar: m });
   } else if (C.borc[c]! > 0 && runway > 200) emir(w, c, 'borcOde', { miktar: Math.floor(C.hazine[c]! / 3) });
+  }
   // araştırma
+  if (ac(BK.arastirma)) {
   const kis = KISILIK[w.pkg.ulkeler[c]!.kisilik]!;
-  const sira = kis === 'Ticari' ? ['sanayi1', 'tarim1', 'idare', 'demiryolu', 'sanayi2', 'tarim2', 'sihhiye', 'piyade2', 'kurmay', 'propaganda', 'agirtop2', 'piyade3']
-    : ['piyade2', 'sanayi1', 'kurmay', 'demiryolu', 'agirtop2', 'sihhiye', 'tarim1', 'propaganda', 'sanayi2', 'piyade3', 'idare', 'tarim2'];
+  const sira = arastirmaSirasi(kis);
   for (let k = 0; k < 3; k++) {
     if (w.arastirma[c * 3 + k]! >= 0) continue;
     for (const kod of sira) {
@@ -158,7 +187,10 @@ function ekonomiPlan(w: World, c: number): void {
       if (emir(w, c, 'arastir', { tek: t })) break;
     }
   }
-  // ticaret: kalıcı haftalık alım/satım emirleri (gıda, çelik, kömür)
+  }
+  // ticaret
+  // kalıcı haftalık alım/satım emirleri (gıda, çelik, kömür)
+  if (ac(BK.ekonomi)) {
   const { stok, gunluk: gGun } = ulkeGidaStok(w, c);
   const gunStok = gGun > 0 ? Math.floor(stok / gGun) : 999;
   const birim = (milli: number) => Math.max(0, Math.floor(milli / 1000));
@@ -170,7 +202,10 @@ function ekonomiPlan(w: World, c: number): void {
   kaliciSiparis(w, c, MALI.celik, 1, celikAkis > (talep.celik * 13) / 10 ? birim(((celikAkis - talep.celik) * 7 * 7) / 10) : 0);
   kaliciSiparis(w, c, MALI.komur, 0, komurAkis < talep.komur && C.hazine[c]! > gunluk * 40 ? birim((talep.komur - komurAkis) * 7) : 0);
   kaliciSiparis(w, c, MALI.komur, 1, komurAkis > (talep.komur * 13) / 10 ? birim(((komurAkis - talep.komur) * 7 * 7) / 10) : 0);
-  // üretim: piyade silahı açığına göre
+  }
+  // üretim
+  // piyade silahı açığına göre
+  if (ac(BK.uretim)) {
   const U = uc(w);
   let piyadeIh = 0, sahip = 0;
   for (const u of w.U.rows()) if (U.ulke![u] === c) { piyadeIh += 400; sahip += U.e0![u]! + U.e1![u]! + U.e2![u]!; }
@@ -182,7 +217,10 @@ function ekonomiPlan(w: World, c: number): void {
   // hat dengesini yalnız 3 ayda bir değiştir
   if (w.gun % 90 < 30) urunler.forEach((ur, i) => emir(w, c, 'uretim', { urun: ur, fabrika: mulDiv(toplam, pay[i]!, S).q }));
   if (iyiPiyade) emir(w, c, 'uretim', { urun: 0, fabrika: 0 });
-  // proje: hazine güçlüyse sivil fabrika veya demiryolu
+  }
+  // proje
+  // hazine güçlüyse sivil fabrika veya demiryolu
+  if (ac(BK.insa)) {
   if (runway > 180 && !savastaMi(w, c)) {
     const rs: number[] = [];
     for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === c && w.R.c.kontrolEden[r] === c) rs.push(r);
@@ -191,14 +229,15 @@ function ekonomiPlan(w: World, c: number): void {
     const proje = [0, 1, 3][secim]!;
     for (const r of rs) if (emir(w, c, 'insa', { proje, bolge: r })) break;
   }
+  }
   // yasa: savaşta ekonomi ve askerlik
-  if (savastaMi(w, c)) {
+  if (ac(BK.ekonomi) && savastaMi(w, c)) {
     if (C.ekonomi[c]! < 2 && C.destek[c]! >= 60_000) emir(w, c, 'ekonomi', { yasa: 2 });
     else if (C.ekonomi[c]! < 1) emir(w, c, 'ekonomi', { yasa: 1 });
     const ig = insanGucu(w, c);
     if (ig.erisimY < 15_000 && C.askerlik[c]! < 3) emir(w, c, 'askerlik', { yasa: C.askerlik[c]! + 1 });
   }
-  if (!savastaMi(w, c) && C.ekonomi[c]! >= 2) emir(w, c, 'ekonomi', { yasa: 1 });
+  if (ac(BK.ekonomi) && !savastaMi(w, c) && C.ekonomi[c]! >= 2) emir(w, c, 'ekonomi', { yasa: 1 });
   void ASKERLIK; void NEKIP; void clamp;
 }
 
@@ -246,14 +285,24 @@ function orduPlan(w: World, c: number): void {
   const tufek = w.ekip[ck(c, 0)]! + w.ekip[ck(c, 1)]! + w.ekip[ck(c, 2)]!;
   const { stok, gunluk } = ulkeGidaStok(w, c);
   const gidaGun = gunluk > 0 ? Math.floor(stok / gunluk) : 999;
-  if (birlik < hedef && ig.erisimY > 25_000 && C.hazine[c]! > gider * 60 + 120_000 && tufek >= 300 && gidaGun >= 30) {
+  // barışta ordu gelirle karşılanabilmeli; savaşta açık bütçe ve borç göze alınır
+  const karsilanir = savas || C.gelirDun[c]! > gider + Math.floor(gider / 6);
+  if (birlik < hedef && karsilanir && ig.erisimY > 25_000 && C.hazine[c]! > gider * 60 + 120_000 && tufek >= 300 && gidaGun >= 30) {
     const sab = savas && birlik % 5 === 4 && w.ekip[ck(c, 5)]! >= 24 ? 2 : 0;
     emir(w, c, 'birlikKur', { sablon: sab, adet: savas && tufek >= 700 ? 2 : 1 });
+  } else if (!savas && !tehdit && birlik > taban && C.gelirDun[c]! < gider && C.hazine[c]! < gider * 90) {
+    // barışta taşınamayan ordu: en zayıf birlik terhis edilir
+    const U = uc(w);
+    const zayif = ulkeBirimleri(w, c).filter((u) => U.egitimBitis![u]! <= w.gun).sort((a, b) => U.kisi![a]! - U.kisi![b]! || a - b)[0];
+    if (zayif !== undefined) emir(w, c, 'terhis', { birlikler: [w.U.id(zayif)] });
   }
   void SABLON;
 }
 
 // ---------- Diplomasi planı ----------
+/** Nükleer güçler (çağdaş senaryo): karar modülü bunlara savaş açmaz. */
+const NUKLEER = new Set(['USA', 'RUS', 'CHN', 'GBR', 'FRA', 'IND', 'PAK', 'ISR', 'PRK']);
+
 function diplomasiPlan(w: World, c: number): void {
   const kis = KISILIK[w.pkg.ulkeler[c]!.kisilik]!;
   // anlaşma önerileri
@@ -306,6 +355,12 @@ function diplomasiPlan(w: World, c: number): void {
     else if (kis === 'Fırsatçı') gerekli = iddia && firsat ? 1_100_000 : iddia ? 1_500_000 : firsat ? 1_400_000 : null;
     else if (iddia) gerekli = kis === 'Temkinli' || kis === 'Ticari' ? 1_600_000 : 1_300_000;
     if (gerekli === null) continue;
+    // çağdaş dönem: nükleer caydırıcılık (savaşta değilse saldırılmaz), demokrasilerde savaş eşiği yüksek
+    if (AKTIF.donem === 'modern') {
+      if (NUKLEER.has(w.pkg.ulkeler[d]!.kod)) continue;
+      if (w.pkg.ulkeler[c]!.yonetim === 2) gerekli += 400_000;
+      gerekli += 200_000;
+    }
     if (gerekceVar(w, c, d)) {
       if (oran >= Math.max(ESIK_SALDIRI[0]!, gerekli - 100_000) && w.C.c.destek[c]! >= 25_000) { emir(w, c, 'savasIlan', { hedef: d }); return; }
     } else if (gerekceSurecte(w, c, d) < 0 && oran >= gerekli && gorus(w, c, d) < 45_000 && w.C.c.pg[c]! >= 80_000) {
@@ -353,7 +408,8 @@ function cepheYonet(w: World, c: number): void {
   const U = uc(w);
   const kis = w.pkg.ulkeler[c]!.kisilik;
   const esik = c === w.oyuncu ? 1_500_000 : ESIK_SALDIRI[kis]!;
-  const birimler = ulkeBirimleri(w, c).filter((u) => U.egitimBitis![u]! <= w.gun);
+  // oyuncunun elle yönettiği birlikler (son 30 gün) otomasyonun dışında kalır
+  const birimler = ulkeBirimleri(w, c).filter((u) => U.egitimBitis![u]! <= w.gun && !(c === w.oyuncu && w.U.c.elle[u]! > w.gun));
   if (birimler.length === 0) return;
   const dusman = dusmanlar(w, c);
   const savas = dusman.length > 0;
@@ -383,15 +439,21 @@ function cepheYonet(w: World, c: number): void {
   const gerekL = [...gerek].sort((a, b) => a - b);
   const gozlem = gozlenenGuc(w, c, gerekL);
   const tehdit = new Map<number, number>();
+  /** Sınır bölgesinin karşısındaki gözlenen düşman gücü (savunma için tutulması gereken güç hesabı). */
+  const karsiGuc = new Map<number, number>();
   for (const { r, v: vs } of sinirlarHam) {
-    let t = 0;
+    let t = 0, kg = 0;
     for (const v of vs) {
       const k = R.kontrolEden[v]!;
       const dus = savasta(w, c, k);
       const o = gozlem.get(v);
-      if (o) for (const [u2, gg] of o) if (u2 === k || savasta(w, c, u2)) t += gg;
+      if (o) for (const [u2, gg] of o) if (u2 === k || savasta(w, c, u2)) { t += gg; if (savasta(w, c, u2)) kg += gg; }
       t += dus ? 20_000 : 5000;
     }
+    karsiGuc.set(r, kg);
+    // ana yurt ve başkent önce korunur; uzak sömürge sınırları daha az birlik çeker
+    if (!w.pkg.bolgeler[r]!.anaYurt.includes(c)) t = Math.floor(t / 2);
+    else if (w.pkg.ulkeler[c]!.baskent === r || w.komsuluk[w.pkg.ulkeler[c]!.baskent]!.includes(r)) t = Math.floor((t * 3) / 2);
     tehdit.set(r, t);
   }
   if (tehdit.size === 0) {
@@ -405,7 +467,7 @@ function cepheYonet(w: World, c: number): void {
     for (const r of gerekL) {
       const k = R.kontrolEden[r]!;
       if (!savasta(w, c, k)) continue;
-      const komsuDost = w.komsuluk[r]!.filter((v) => R.kontrolEden[v] === c);
+      const komsuDost = w.komsuluk[r]!.filter((v) => R.kontrolEden[v] === c && denizGecer(w, c, v, r));
       if (komsuDost.length === 0) continue;
       const kaynak = birimler.filter((u) => komsuDost.includes(U.bolge![u]!) && U.org![u]! > mulDiv(birlikIstat(w, u).orgMax, 600_000, S).q && birlikIkmal(w, u).oran >= 400_000);
       if (kaynak.length === 0) continue;
@@ -414,6 +476,10 @@ function cepheYonet(w: World, c: number): void {
       let onlar = 0;
       const o = gozlem.get(r);
       if (o) for (const [, gg] of o) onlar += gg;
+      // arazi ve tahkimat savunanı güçlendirir; topçu hazırlığı tahkimatı bastırır
+      let top = 0, ys = 0;
+      for (const u of kaynak) { const s = birlikIstat(w, u); top += s.topcu; ys += s.YS; }
+      onlar = mulDiv(onlar, savunmaCarpan(w, r, topcuBaski(w, c, top, ys)), S).q;
       const oran = onlar <= 0 ? 10 * S : mulDiv(benim, S, onlar).q;
       let deger = bolgeDegeri(w, r) * 1000;
       if (iddiaVar(w, r, c) || R.sahip[r] === c) deger *= 2;
@@ -421,19 +487,26 @@ function cepheYonet(w: World, c: number): void {
       adaylar.push({ hedef: r, deger, kaynak, oran });
     }
     adaylar.sort((a, b) => b.oran - a.oran || b.deger - a.deger || a.hedef - b.hedef);
+    // kaynak bölgede kalması gereken güç: karşıdaki düşman gücünün %70'i, bölgenin savunma çarpanıyla bölünür
+    const bolgeGuc = new Map<number, number>();
+    for (const u of birimler) { const s = birlikIstat(w, u); bolgeGuc.set(U.bolge![u]!, (bolgeGuc.get(U.bolge![u]!) ?? 0) + s.YS + s.SV); }
+    const tutGerek = (r: number) => mulDiv(mulDiv(karsiGuc.get(r) ?? 0, 700_000, S).q, S, Math.max(S, savunmaCarpan(w, r, 0))).q;
     let say = 0;
     for (const a of adaylar) {
       if (say >= 3) break;
       if (a.oran < esik) continue;
-      // savunmayı boşaltmamak için kaynak bölgesinde en az bir birlik kalsın (tehdit varsa)
-      const kullan = a.kaynak.filter((u) => !atanmis.has(u));
-      const kalsin = new Set<number>();
+      // savunmayı boşaltmamak için kaynak bölgede tehdide yetecek güç kalır; boş bölgeye en çok iki birlik yeter
+      const kullan = a.kaynak.filter((u) => !atanmis.has(u)).sort((x, y) => birlikIstat(w, y).YS - birlikIstat(w, x).YS || x - y);
+      const giden: number[] = [];
       for (const u of kullan) {
         const r = U.bolge![u]!;
-        const ayni = kullan.filter((x) => U.bolge![x] === r);
-        if ((tehdit.get(r) ?? 0) > 0 && ayni.length > 1 && !kalsin.has(r)) kalsin.add(r);
+        const s = birlikIstat(w, u);
+        const kalan = (bolgeGuc.get(r) ?? 0) - s.YS - s.SV;
+        if (kalan < tutGerek(r)) continue;
+        bolgeGuc.set(r, kalan);
+        giden.push(u);
+        if (a.oran >= 10 * S && giden.length >= 2) break;
       }
-      const giden = kullan.filter((u, i) => !(kalsin.has(U.bolge![u]!) && kullan.findIndex((x) => U.bolge![x] === U.bolge![u]) === i));
       if (giden.length === 0) continue;
       for (const u of giden) { atanmis.add(u); if (U.hedef![u] !== a.hedef) { U.hedef![u] = a.hedef; U.durus![u] = 2; U.atamaGun![u] = w.gun; } }
       say++;

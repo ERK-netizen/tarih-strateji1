@@ -169,6 +169,16 @@ export const S750: SenaryoTanim = {
         { ad: 'Mısır\'a çekil', etki: 'Suriye ve Filistin Abbâsîlere geçer; ordu Mısır\'da toplanır.', yz: 65, e: [['bolge', 'Şam', 'ABB'], ['bolge', 'Halep', 'ABB'], ['bolge', 'Deir ez-Zor', 'ABB'], ['bolge', 'Beyrut', 'ABB'], ['bolge', 'Tel Aviv', 'ABB'], ['bolge', 'Amman', 'ABB'], ['huzur', 'EMV', -10]] },
         { ad: 'Dımaşk\'ta son ana dek diren', etki: 'Huzur −20, savaşa destek −15.', yz: 35, e: [['huzur', 'EMV', -20], ['destek', 'EMV', -15], ['destek', 'ABB', 10]] },
       ] },
+    { kod: 'kagit', tarih: '751-10-01', ulke: 'ABB', kosul: { savasta: ['ABB', 'TNG'] }, pencere: 365, baslik: 'Semerkant Kâğıdı', metin: 'Talas\'ta esir düşen Çinli zanaatkârlar arasında kâğıt yapımını bilenler var. Semerkant valisi bir kâğıthane kurmak için izin istiyor.',
+      sec: [
+        { ad: 'Kâğıthane kur, bilginleri davet et', etki: 'Araştırma +%15 (5 yıl); hazine −.', yz: 80, e: [['etki', 'ABB', 'arastirma', 15, 1825], ['hazine', 'ABB', -100000]] },
+        { ad: 'Esirleri fidyeyle sat', etki: 'Hazine +.', yz: 20, e: [['hazine', 'ABB', 150000]] },
+      ] },
+    { kod: 'bagdat', tarih: '762-07-30', ulke: 'ABB', kosul: { barisMi: 'ABB' }, pencere: 720, baslik: 'Medinetü\'s-Selam', metin: 'Halife Mansur, Dicle kıyısında, ticaret yollarının kavşağında yuvarlak planlı yeni bir başkent kurmak istiyor. Yüz bin işçi ve hazinenin büyük bölümü gerekecek.',
+      sec: [
+        { ad: 'Bağdat\'ı kur', etki: 'Hazine −; üretim +%8 ve araştırma +%10 (10 yıl), meşruiyet +5.', yz: 75, e: [['hazine', 'ABB', -400000], ['etki', 'ABB', 'uretim', 8, 3650], ['etki', 'ABB', 'arastirma', 10, 3650], ['mesru', 'ABB', 5]] },
+        { ad: 'Kûfe\'de kal', etki: 'Hazine korunur.', yz: 25, e: [] },
+      ] },
     { kod: 'nanzhao', tarih: '751-04-01', ulke: 'TNG', kosul: { barista: ['TNG', 'NAN'] }, baslik: 'Nanzhao Seferi', metin: 'Yunnan valisi Xianyu Zhongtong, Geluofeng\'in Tibet\'le yakınlaşmasını cezalandırmak için Dali\'ye yürümek istiyor.',
       sec: [
         { ad: 'Seferi onayla', etki: 'Nanzhao ile savaş; Tibet çağrılabilir.', yz: 75, e: [['savas', 'TNG', 'NAN']] },

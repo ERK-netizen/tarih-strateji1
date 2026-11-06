@@ -1,7 +1,7 @@
 // Kanonik dünya durumu. Tek yazar: çözümleyici (faz hattı). Bütün değerler tamsayıdır.
 import { Table, fixedTable, type ColType } from './table.ts';
 import type { Paket } from '../paket.ts';
-import { NHUCRE, NKIMLIK, NEKIP, NTEK, NMAL, MAL, BAYRAK, ST, YB, TABUR, SABLON, AILE_EKIP, EKIPMAN, MAX_TABUR, K, donemYukle } from '../catalog.ts';
+import { NHUCRE, NKIMLIK, NEKIP, NTEK, NMAL, MAL, BAYRAK, ST, YB, TABUR, SABLON, AILE_EKIP, EKIPMAN, MAX_TABUR, K, TEKNOLOJI, donemYukle } from '../catalog.ts';
 import type { DonemKod } from '../donem.ts';
 import { gunNo } from '../calendar/index.ts';
 import { largestRemainder, S } from '../num/index.ts';
@@ -31,6 +31,8 @@ export const ULKE_KOL = [
   ['spDun', f], ['muhimmat', f], ['celikDun', f], ['komurDun', f], ['celikKayip', f],
   ['arastirmaHizi', f], ['otoCephe', i32], ['tamPuan', f], ['yasakGun', f], ['krizAsama', i32], ['gerginlik', f],
   ['olu', f], ['sonPlan', f], ['hedefUlke', i32], ['bakimHedef', f], ['propaganda', f], ['celik', f], ['komur', f], ['tuketimYet', f], ['bakimOdenen', f], ['harcamaOran', f], ['otoTakviye', i32], ['vergiAy', f], ['kaliciGida', i32], ['olayEsik', f], ['pasif', i32],
+  // şema 6: bakanlar (alan bit maskesi), başlangıç tabanları (hedefler), savaşta geçen gün, seçilen doktrin
+  ['bakan', i32], ['bazBolge', f], ['bazYasam', f], ['bazTek', f], ['bazNufus', f], ['savasGunu', f], ['tekSay', f], ['maas', f],
 ] as const;
 export type UlkeK = (typeof ULKE_KOL)[number][0];
 
@@ -42,6 +44,8 @@ export const BIRLIK_KOL = [
   ['ulke', i32], ['sablon', i32], ['bolge', i32], ['hedef', i32], ['sonraki', i32], ['ilerleme', f], ['durus', i32],
   ['org', f], ['deneyim', f], ['kisi', f], ['gida', f], ['muhimmatS', f], ['egitimBitis', f], ['muharebe', i32],
   ['savasGun', f], ['adNo', f], ['atamaGun', f], ['taburSay', i32], ...taburKol, ...ekipKol, ...kokenKol, ...kokenSay,
+  // şema 6: oyuncunun elle verdiği emrin önceliği bitene dek (gün) bakanlık bu birliğe dokunmaz
+  ['elle', f],
 ] as const;
 
 export const TRANSIT_KOL = [
@@ -68,6 +72,17 @@ export const KALICI_KOL = [['ulke', i32], ['tur', i32], ['p1', f], ['p2', f], ['
 export const TEKLIF_KOL = [['kimden', i32], ['kime', i32], ['tur', i32], ['p1', f], ['p2', f], ['gun', f], ['durum', i32]] as const;
 export const SIPARIS_KOL = [['ulke', i32], ['mal', i32], ['miktar', f], ['yon', i32], ['karsi', i32], ['kalici', i32]] as const;
 export const OLAY_KOL = [['olay', i32], ['ulke', i32], ['gun', f], ['p1', f], ['p2', f], ['secim', i32]] as const;
+/** Süreli etkiler (şema 6): olay kararlarının kalıcı/süreli sonuçları. deger S ölçekli ek oran ya da puan. */
+export const MOD_KOL = [['ulke', i32], ['tur', i32], ['deger', f], ['bitis', f]] as const;
+export const MOD_TUR = ['uretim', 'vergi', 'huzurAy', 'destekAy', 'arastirma', 'saldiri', 'savunma', 'insan', 'tarim', 'mesruAy'] as const;
+export const MT = Object.fromEntries(MOD_TUR.map((t, i) => [t, i])) as Record<(typeof MOD_TUR)[number], number>;
+/** Bakanlık alanları (bit). */
+/** Oyuncunun bakanları (bit maskesi C.bakan): açık alanı karar modülü oyuncu adına yürütür; cephe ve takviye otoCephe/otoTakviye ile ayrıdır. */
+export const BAKAN = ['ekonomi', 'arastirma', 'uretim', 'ordu', 'insa'] as const;
+export const BAKAN_AD: Record<(typeof BAKAN)[number], string> = { ekonomi: 'Maliye (vergi, borç, ticaret, yasalar)', arastirma: 'Araştırma', uretim: 'Savaş sanayii (üretim hatları)', ordu: 'Harbiye (birlik kurma)', insa: 'Bayındırlık (inşa)' };
+export const BK = Object.fromEntries(BAKAN.map((t, i) => [t, 1 << i])) as Record<(typeof BAKAN)[number], number>;
+/** Oyuncu için başlangıçta açık bakanlıklar: cephe, takviye, üretim, ekonomi, araştırma. */
+export const BAKAN_VARSAYILAN = BK.arastirma;
 
 export interface AnlatiKaydi { gun: number; metin: string; tur: string; ulke: number; onem: number }
 export interface Bildirim { tur: string; metin: string; ulke: number; durdur: boolean; gun: number; kimlik: number }
@@ -111,6 +126,9 @@ export interface World {
   TK: Table<(typeof TEKLIF_KOL)[number][0]>;
   SP: Table<(typeof SIPARIS_KOL)[number][0]>;
   OL: Table<(typeof OLAY_KOL)[number][0]>;
+  MOD: Table<(typeof MOD_KOL)[number][0]>;
+  /** Olay kararlarıyla açılan tarih bayrakları (sıralı küme; dallanan senaryo akışı) */
+  olayBayrak: string[];
   birlikAd: string[]; // adNo indeksli dizge tablosu
   rotaEpoch: number;
   savasTaraf: Int8Array; // SV_MAX × C: 0 yok, 1 saldıran tarafı, 2 savunan tarafı
@@ -175,6 +193,7 @@ export function yeniDunya(pkg: Paket, oyuncu: number): World {
     SV: new Table('savas', SAVAS_KOL, 4), GR: new Table('gerekce', GEREKCE_KOL, 4), HT: new Table('hat', HAT_KOL, 32),
     PR: new Table('proje', PROJE_KOL, 16), YR: new Table('yarali', YARALI_KOL, 32), KE: new Table('kalici', KALICI_KOL, 8),
     TK: new Table('teklif', TEKLIF_KOL, 8), SP: new Table('siparis', SIPARIS_KOL, 16), OL: new Table('olay', OLAY_KOL, 8),
+    MOD: new Table('mod', MOD_KOL, 8), olayBayrak: [],
     birlikAd: [], rotaEpoch: 1, kuyruk: [], emirSira: 0,
     savasTaraf: new Int8Array(SV_MAX * nC), iddia: new Int16Array(nR * IDDIA_MAX), teklifBolge: {}, diploSurum: 1, savasSurum: 1, anSurum: 1,
     artik: { dogum: 0, olum: 0, kohort: 0 },
@@ -205,7 +224,10 @@ export function yeniDunya(pkg: Paket, oyuncu: number): World {
     C.guvenilir[c] = 50_000; C.faiz[c] = 50_000; C.arastirmaHizi[c] = 1000; C.hedefUlke[c] = -1; C.bakimHedef[c] = S;
     C.muhimmat[c] = 0; C.bakimOdenen[c] = S; C.harcamaOran[c] = 700_000; C.otoTakviye[c] = 1; C.tuketimYet[c] = S;
     C.celik[c] = 20_000; C.komur[c] = 20_000; C.pasif[c] = u.pasif ? 1 : 0;
+    C.bakan[c] = c === oyuncu ? BAKAN_VARSAYILAN : 0;
     for (let d = 0; d < nC; d++) w.gorus[c * nC + d] = pkg.gorus[c]![d]!;
+    // senaryonun verdiği başlangıç teknolojileri
+    for (const kod of u.tekler ?? []) { const t = TEKNOLOJI.findIndex((x) => x.kod === kod); if (t >= 0 && !w.tekBitti[c * NTEK + t]) { w.tekBitti[c * NTEK + t] = 1; C.tekSay[c] = C.tekSay[c]! + 1; } }
   });
   for (const a of pkg.anlasmalar) {
     const s = w.AN.alloc();

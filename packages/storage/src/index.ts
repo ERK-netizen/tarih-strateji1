@@ -83,7 +83,7 @@ export async function varsayilanDepo(): Promise<Depo> {
 }
 
 // ---------- Nesil dosyaları + A/B başlık ----------
-export interface Baslik { yuva: string; nesil: number; boyut: number; ozet: string; gun: number; etiket: string; sandbox: boolean; ulke: number; zaman: string; paket?: string; senaryo?: string }
+export interface Baslik { yuva: string; nesil: number; boyut: number; ozet: string; gun: number; etiket: string; sandbox: boolean; ulke: number; zaman: string; paket?: string; senaryo?: string; sema?: number }
 
 function crc32(b: Uint8Array): number {
   let c = ~0;

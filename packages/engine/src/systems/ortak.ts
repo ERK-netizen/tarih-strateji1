@@ -1,7 +1,7 @@
 // Sistemlerin paylaştığı saf yardımcılar: ilişki, erişim, rota, birlik istatistikleri.
 import type { World } from '../state/world.ts';
 import { A, cc, kenarKey, IDDIA_MAX } from '../state/world.ts';
-import { AKTIF, TABUR, EKIPMAN, AILE_EKIP, ARAZI, K, KIS_HAREKET, KIS_KAPASITE, CAMUR_HAREKET } from '../catalog.ts';
+import { AKTIF, TABUR, EKIPMAN, AILE_EKIP, ARAZI, K, KIS_HAREKET, KIS_KAPASITE, CAMUR_HAREKET, tekVar } from '../catalog.ts';
 import { S, mulDiv, clamp } from '../num/index.ts';
 import { tarih } from '../calendar/index.ts';
 import { KOL_E, KOL_T } from '../state/world.ts';
@@ -51,6 +51,32 @@ function savasMatris(w: World): Uint8Array {
   w.onbellek.set('savasM', { s: w.savasSurum, m });
   return m;
 }
+/**
+ * Deniz üstünlüğü (soyut donanma): savaştaki düşman ittifakının en güçlü donanması bizimkinin 1,25 katını aşarsa
+ * açık deniz geçişi ve düşman kıyısına çıkarma kapanır. Kendi kıyıları arasındaki boğaz geçişi (kıyı topçusu) açık kalır.
+ */
+export function denizKapali(w: World, c: number): boolean {
+  let o = w.onbellek.get('denizK') as { s: number; m: Uint8Array } | undefined;
+  if (!o || o.s !== w.savasSurum) {
+    const n = w.nC, m = new Uint8Array(n), sm = savasMatris(w);
+    const g = (x: number) => w.pkg.ulkeler[x]!.deniz ?? Math.floor((w.pkg.ulkeler[x]!.guc ?? 4) / 2);
+    for (let x = 0; x < n; x++) {
+      let biz = g(x), onlar = 0;
+      for (let y = 0; y < n; y++) { const t = sm[x * n + y]; if (t === 2) biz = Math.max(biz, g(y)); else if (t === 1) onlar = Math.max(onlar, g(y)); }
+      m[x] = onlar >= 3 && onlar * 4 > biz * 5 ? 1 : 0;
+    }
+    o = { s: w.savasSurum, m }; w.onbellek.set('denizK', o);
+  }
+  return o.m[c] === 1;
+}
+/** Bu deniz kenarından geçiş serbest mi? (kara kenarı her zaman serbest) */
+export function denizGecer(w: World, c: number, a: number, b: number): boolean {
+  const t = kenarTur(w, a, b);
+  if (t === 0 || !denizKapali(w, c)) return true;
+  const ka = w.R.c.kontrolEden[a]!, kb = w.R.c.kontrolEden[b]!;
+  return t === 1 && (ka === c || essavasan(w, c, ka)) && (kb === c || essavasan(w, c, kb));
+}
+
 export function savasta(w: World, a: number, b: number): boolean {
   if (a === b || a < 0 || b < 0) return false;
   return savasMatris(w)[a * w.nC + b] === 1;
@@ -168,11 +194,16 @@ export function kenarKapasite(w: World, a: number, b: number): number {
   cap = mulDiv(cap, 1 + dy, 1).q;
   cap = mulDiv(cap, mevsim, S).q;
   cap = mulDiv(cap, hasar, S).q;
+  const c = R.kontrolEden[a]!;
+  if (c >= 0) {
+    if (tekVar(w, c, 'demiryolu')) cap = mulDiv(cap, 11, 10).q;
+    if (tekVar(w, c, 'ikmal2')) cap = mulDiv(cap, 5, 4).q;
+  }
   return Math.max(0, cap);
 }
 
 /** İkili yığınlı Dijkstra; eşitlik (uzaklık, kalıcı kimlik) ile çözülür. izin yalnız ara düğümlere uygulanır. */
-function dijkstra(w: World, kaynak: number, izin: (r: number) => boolean): { dist: Float64Array; prev: Int32Array } {
+function dijkstra(w: World, kaynak: number, izin: (r: number) => boolean, kenarIzin?: (a: number, b: number) => boolean): { dist: Float64Array; prev: Int32Array } {
   const n = w.nR;
   const dist = new Float64Array(n).fill(Infinity);
   const prev = new Int32Array(n).fill(-1);
@@ -201,7 +232,7 @@ function dijkstra(w: World, kaynak: number, izin: (r: number) => boolean): { dis
     done[u] = 1;
     if (u !== kaynak && !izin(u)) continue; // izinsiz düğüme varılır ama içinden geçilmez
     for (const v of w.komsuluk[u]!) {
-      if (done[v]) continue;
+      if (done[v] || (kenarIzin && !kenarIzin(u, v))) continue;
       const d = dist[u]! + (w.kenarKm.get(kenarKey(u, v)) ?? 150);
       if (d < dist[v]! || (d === dist[v] && u < prev[v]!)) { dist[v] = d; prev[v] = u; push(d, v); }
     }
@@ -226,12 +257,13 @@ export function rota(w: World, kaynak: number, hedef: number, izin: (r: number) 
 /** Önbellekli rota. tip: 0 girebilir (hareket), 1 dost bölge (ikmal), 2 barışçıl intikal (savaş bölgesine girmeden). */
 export function rotaTip(w: World, c: number, tip: number, kaynak: number, hedef: number): { yol: number[]; km: number } | null {
   if (kaynak === hedef) return { yol: [kaynak], km: 0 };
-  if (w.ayarlar.onbellekKapali) return rota(w, kaynak, hedef, izinFn(w, c, tip));
+  const ki = (a: number, b: number) => denizGecer(w, c, a, b);
+  if (w.ayarlar.onbellekKapali) return yolCikar(dijkstra(w, kaynak, izinFn(w, c, tip), ki), kaynak, hedef);
   let o = w.onbellek.get('rota') as { e: number; m: Map<number, { dist: Float64Array; prev: Int32Array }> } | undefined;
   if (!o || o.e !== w.rotaEpoch || o.m.size > 4000) { o = { e: w.rotaEpoch, m: new Map() }; w.onbellek.set('rota', o); }
   const key = (c * 4 + tip) * 8192 + kaynak;
   let agac = o.m.get(key);
-  if (!agac) { agac = dijkstra(w, kaynak, izinFn(w, c, tip)); o.m.set(key, agac); }
+  if (!agac) { agac = dijkstra(w, kaynak, izinFn(w, c, tip), ki); o.m.set(key, agac); }
   return yolCikar(agac, kaynak, hedef);
 }
 function izinFn(w: World, c: number, tip: number): (r: number) => boolean {
@@ -240,7 +272,13 @@ function izinFn(w: World, c: number, tip: number): (r: number) => boolean {
   return (r) => girebilir(w, c, r) && !savasta(w, c, w.R.c.kontrolEden[r]!);
 }
 
-/** Yönetim mesafesi (gün): başkentten erişimli ağda taban hız ve demiryoluyla. */
+/** Yönetim yazışmasının deniz hızı (km/gün): yelkenliden buharlı gemiye. */
+const DENIZ_YONETIM: Record<string, number> = { orta: 120, barut: 180, buyuk: 450, ikinci: 600, modern: 900 };
+/**
+ * Yönetim mesafesi (gün): başkentten erişimli ağda taban hız ve demiryoluyla.
+ * Deniz yolu tarafsız kıyılardan geçebilir (gemiler kıyı boyunca seyreder); yalnız düşman kıyısı yolu keser.
+ * Tarafsız kıyıdan karaya geçilmez.
+ */
 export function yonetimMesafeleri(w: World, c: number): number[] {
   const n = w.nR;
   const bas = w.pkg.ulkeler[c]!.baskent;
@@ -250,17 +288,21 @@ export function yonetimMesafeleri(w: World, c: number): number[] {
   const hd: number[] = [], hn: number[] = [];
   const push = (d: number, v: number) => { hd.push(d); hn.push(v); let i = hd.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (hd[p]! < hd[i]! || (hd[p] === hd[i] && hn[p]! <= hn[i]!)) break; [hd[i], hd[p]] = [hd[p]!, hd[i]!]; [hn[i], hn[p]] = [hn[p]!, hn[i]!]; i = p; } };
   const pop = () => { const v = hn[0]!; const ld = hd.pop()!, ln = hn.pop()!; if (hd.length) { hd[0] = ld; hn[0] = ln; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < hd.length && (hd[l]! < hd[m]! || (hd[l] === hd[m] && hn[l]! < hn[m]!))) m = l; if (r < hd.length && (hd[r]! < hd[m]! || (hd[r] === hd[m] && hn[r]! < hn[m]!))) m = r; if (m === i) break; [hd[i], hd[m]] = [hd[m]!, hd[i]!]; [hn[i], hn[m]] = [hn[m]!, hn[i]!]; i = m; } } return v; };
+  const denizHiz = DENIZ_YONETIM[AKTIF.donem] ?? 200;
   dist[bas] = 0; push(0, bas);
   while (hd.length) {
     const u = pop();
     if (done[u]) continue;
     done[u] = 1;
+    const uTransit = u !== bas && !dostBolge(w, c, u);
     for (const v of w.komsuluk[u]!) {
-      if (done[v] || !dostBolge(w, c, v)) continue;
-      const km = w.kenarKm.get(kenarKey(u, v)) ?? 150;
+      if (done[v]) continue;
       const tur = kenarTur(w, u, v);
+      if (uTransit && tur === 0) continue;
+      if (!dostBolge(w, c, v) && (tur === 0 || savasta(w, c, w.R.c.kontrolEden[v]!))) continue;
+      const km = w.kenarKm.get(kenarKey(u, v)) ?? 150;
       const dy = Math.min(w.R.c.demiryolu[u]!, w.R.c.demiryolu[v]!);
-      const hiz = tur > 0 ? 200 : dy >= 1 ? 75 : 25; // km/gün
+      const hiz = tur > 0 ? denizHiz : dy >= 1 ? 75 : 25; // km/gün
       const d = dist[u]! + Math.floor((km * 1000) / hiz);
       if (d < dist[v]!) { dist[v] = d; push(d, v); }
     }
@@ -269,7 +311,35 @@ export function yonetimMesafeleri(w: World, c: number): number[] {
 }
 
 // ---------- Birlik istatistikleri ----------
-export interface Istat { YS: number; SV: number; YR: number; orgMax: number; genislik: number; hiz: number; dolu: number; kisiHedef: number; aileIhtiyac: Record<string, number> }
+export interface Istat { YS: number; SV: number; YR: number; orgMax: number; genislik: number; hiz: number; dolu: number; kisiHedef: number; aileIhtiyac: Record<string, number>; topcu: number }
+
+/** Ülkenin süreli değiştiricilerinin toplamı (S; olay sonuçları: MOD tablosu). */
+export function modDeger(w: World, c: number, tur: number): number {
+  if (w.MOD.count() === 0) return 0;
+  let t = 0;
+  for (const s of w.MOD.rows()) if (w.MOD.c.ulke[s] === c && w.MOD.c.tur[s] === tur && w.MOD.c.bitis[s]! > w.gun) t += w.MOD.c.deger[s]!;
+  return t;
+}
+
+/** Süresi dolan değiştiricileri siler. */
+export function modTemizle(w: World): void {
+  for (const s of w.MOD.list()) if (w.MOD.c.bitis[s]! <= w.gun) w.MOD.release(s);
+}
+/** Süreli değiştirici ekler (olay sonucu). deger S ölçekli; gun süre. */
+export function modEkle(w: World, c: number, tur: number, deger: number, gun: number): void {
+  const s = w.MOD.alloc();
+  w.MOD.c.ulke[s] = c; w.MOD.c.tur[s] = tur; w.MOD.c.deger[s] = deger; w.MOD.c.bitis[s] = w.gun + gun;
+}
+
+/** Teknoloji ve doktrinlerin aile saldırı çarpanı (S). */
+function aileSaldiri(w: World, c: number, aile: string): number {
+  let m = S;
+  if (aile === 'piyade' || aile === 'mt') { if (tekVar(w, c, 'taktik1')) m += 80_000; if (tekVar(w, c, 'taktik2')) m += 80_000; }
+  if (aile === 'sahra' || aile === 'agir') { if (tekVar(w, c, 'topcu1')) m += 150_000; if (tekVar(w, c, 'dok_ates')) m += 100_000; }
+  if (aile === 'suvari' && tekVar(w, c, 'zirh1')) m += 150_000;
+  if (tekVar(w, c, 'dok_manevra')) m += 50_000;
+  return m;
+}
 
 const ihtiyacOn = new Map<number, { kisi: number; aile: Record<string, number> }>();
 let ihtiyacSurum = -1;
@@ -305,8 +375,10 @@ export function birlikIstat(w: World, u: number): Istat {
   const ih = birlikIhtiyac(w, u);
   const n = U.taburSay![u]!;
   const kisiOran = clamp(mulDiv(U.kisi![u]!, S, Math.max(1, ih.kisi)).q, 0, S);
-  let YS = 0, SV = 0, YR = 0, orgT = 0, gen = 0, hiz = 1e9;
+  let YS = 0, SV = 0, YR = 0, orgT = 0, gen = 0, hiz = 1e9, topcu = 0;
   let dolu = 0, doluN = 0;
+  const c = U.ulke![u]!;
+  const carp: Record<string, number> = {};
   const aileOran: Record<string, { oran: number; YS: number; SV: number; YR: number }> = {};
   for (const [aile, gerek] of Object.entries(ih.aile)) {
     let sahip = 0, ys = 0, sv = 0, yr = 0;
@@ -319,19 +391,33 @@ export function birlikIstat(w: World, u: number): Istat {
     const ortSV = sahip > 0 ? Math.floor(sv / sahip) : ilk.SV;
     const ortYR = sahip > 0 ? Math.floor(yr / sahip) : ilk.YR;
     aileOran[aile] = { oran: clamp(mulDiv(sahip, S, gerek).q, 0, S), YS: ortYS, SV: ortSV, YR: ortYR };
+    carp[aile] = aileSaldiri(w, c, aile);
   }
+  let zirhli = false;
   for (let k = 0; k < n; k++) {
     const t = TABUR[U[KOL_T[k]!]![u]!]!;
     const a = aileOran[t.aile]!;
     // Tabur doluluğu: personel ve ağırlıklı ekipman oranının küçüğü (15.1). Referans adetle tekrar çarpılmaz.
     const e = Math.min(kisiOran, a.oran);
-    YS += mulDiv(a.YS, e, S).q; SV += mulDiv(a.SV, e, S).q; YR += mulDiv(a.YR, e, S).q;
+    const ys = mulDiv(mulDiv(a.YS, e, S).q, carp[t.aile]!, S).q;
+    YS += ys; SV += mulDiv(a.SV, e, S).q; YR += mulDiv(a.YR, e, S).q;
+    if (t.aile === 'sahra' || t.aile === 'agir') topcu += ys;
+    if (t.aile === 'suvari') zirhli = true;
     orgT += t.org * t.kisi; gen += t.genislik; hiz = Math.min(hiz, t.hiz);
     dolu += e; doluN++;
   }
+  // savunma ve organizasyon doktrinleri, hız
+  let svC = S, orgC = S, hizC = S;
+  if (tekVar(w, c, 'dok_ates')) svC += 100_000;
+  if (tekVar(w, c, 'tahkimat2')) svC += 100_000;
+  if (tekVar(w, c, 'dok_kitle')) orgC -= 50_000;
+  if (tekVar(w, c, 'dok_manevra')) hizC += 150_000;
+  if (zirhli && tekVar(w, c, 'zirh1')) hizC += 100_000;
+  if (hiz < 1e9 && hizC !== S) hiz = mulDiv(hiz, hizC, S).q;
+  const orgMax = ih.kisi > 0 ? Math.floor(orgT / ih.kisi) : 0;
   return {
-    YS, SV, YR, orgMax: ih.kisi > 0 ? Math.floor(orgT / ih.kisi) : 0, genislik: gen, hiz,
-    dolu: doluN > 0 ? Math.floor(dolu / doluN) : 0, kisiHedef: ih.kisi, aileIhtiyac: ih.aile,
+    YS, SV: svC === S ? SV : mulDiv(SV, svC, S).q, YR, orgMax: orgC === S ? orgMax : mulDiv(orgMax, orgC, S).q, genislik: gen, hiz,
+    dolu: doluN > 0 ? Math.floor(dolu / doluN) : 0, kisiHedef: ih.kisi, aileIhtiyac: ih.aile, topcu,
   };
 }
 
@@ -341,7 +427,8 @@ export function birlikGidaGun(w: World, u: number): number {
   const kat = U.muharebe![u]! ? 2 : 1.5;
   void kat;
   const esdeger = U.muharebe![u]! ? U.kisi![u]! * 2 : Math.floor((U.kisi![u]! * 3) / 2);
-  return mulDiv(esdeger, 1000, K.gidaKisiGun).q;
+  const g = mulDiv(esdeger, 1000, K.gidaKisiGun).q;
+  return tekVar(w, U.ulke![u]!, 'ikmal1') ? mulDiv(g, 85, 100).q : g;
 }
 
 export function araziBilgi(w: World, r: number) { return ARAZI[w.pkg.bolgeler[r]!.arazi]!; }
@@ -362,7 +449,8 @@ export function birlikMuhimmatGunU(w: World, u: number): number {
   for (let k = 0; k < U.taburSay![u]!; k++) m += TABUR[U[KOL_T[k]!]![u]!]!.muhimmat;
   // personel oranına göre
   const ih = birlikIhtiyac(w, u).kisi;
-  return mulDiv(m, U.kisi![u]!, Math.max(1, ih)).q;
+  const v = mulDiv(m, U.kisi![u]!, Math.max(1, ih)).q;
+  return tekVar(w, U.ulke![u]!, 'ikmal1') ? mulDiv(v, 85, 100).q : v;
 }
 
 export function birlikAdi(w: World, u: number): string {
@@ -426,7 +514,13 @@ export function bildir(w: World, tur: string, metin: string, ulke: number, durdu
 
 export function anlat(w: World, metin: string, tur: string, ulke: number, onem = 1): void {
   w.anlati.push({ gun: w.gun, metin, tur, ulke, onem });
-  if (w.anlati.length > 600) w.anlati.splice(0, w.anlati.length - 600);
+  // kronik tavanı: önce önemsiz (onem ≤ 1) eski kayıtlar düşer; büyük olaylar ve oyuncunun kararları uzun süre kalır
+  if (w.anlati.length > 1500) {
+    const fazla = w.anlati.length - 1200;
+    let at = 0;
+    w.anlati = w.anlati.filter((a) => (at < fazla && a.onem <= 1 && a.ulke !== w.oyuncu ? (at++, false) : true));
+    if (w.anlati.length > 1500) w.anlati.splice(0, w.anlati.length - 1500);
+  }
 }
 
 /** Binlik ayırıcılı metin (anlatı için; Intl/toLocaleString motorda yasaktır). */

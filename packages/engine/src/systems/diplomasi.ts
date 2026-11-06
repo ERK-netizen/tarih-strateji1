@@ -215,12 +215,17 @@ export function tavizButcesi(w: World, kaybeden: number, kazanan: number): numbe
 /** Teslim koşulu (18.5): başkent kaybı + ana yurt değerinin yarısı + organize savunmanın %20 altı. */
 export function teslimKosulu(w: World, c: number): boolean {
   const bas = w.pkg.ulkeler[c]!.baskent;
-  if (w.R.c.kontrolEden[bas] === c) return false;
+  const baskentDustu = w.R.c.kontrolEden[bas] !== c;
   let top = 0, kayip = 0;
   for (let r = 0; r < w.nR; r++) {
     if (w.R.c.sahip[r] !== c || !w.pkg.bolgeler[r]!.anaYurt.includes(c)) continue;
     const v = bolgeDegeri(w, r); top += v; if (w.R.c.kontrolEden[r] !== c) kayip += v;
   }
+  // ana yurdun dörtte üçü düştüyse başkent elde olsa da direniş biter
+  if (top > 0 && kayip * 4 >= top * 3) return true;
+  if (!baskentDustu) return false;
+  // başkent düştü ve halk savaştan bıktı: iç çöküş
+  if (w.C.c.huzur[c]! < 20_000 && w.C.c.yorgunluk[c]! > 60_000) return true;
   if (kayip * 2 < top) return false;
   const U = uc(w);
   let ordu = 0;

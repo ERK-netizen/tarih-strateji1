@@ -1,13 +1,16 @@
 // Bölüm 15: kara hareketi, çekirdek muharebe modu, kayıp, geri çekilme, kontrol devri.
 import type { World } from '../state/world.ts';
 import { ck, hc } from '../state/world.ts';
-import { ARAZI, K, EKIPMAN, NEKIP, ST, YB, NTEK, tekIdx } from '../catalog.ts';
+import { ARAZI, K, EKIPMAN, NEKIP, ST, YB, NTEK, tekIdx, tekVar, AKTIF } from '../catalog.ts';
+import { MT } from '../state/world.ts';
+import type { DonemKod } from '../donem.ts';
 import { S, mulDiv, mulRatio, clamp, largestRemainder } from '../num/index.ts';
 import { rng, AMAC, combatR } from '../rng/index.ts';
 import {
   uc, rotaTip, kenarTur, savasta, essavasan, muttefik, birlikIstat, birlikIkmal, birlikGidaGun, birlikMuhimmatGunU,
-  deneyimCarpan, hareketMevsim, camurDuzey, kisDuzey, birlikAdi, anlat, bildir, fmtSayi,
+  deneyimCarpan, hareketMevsim, camurDuzey, kisDuzey, birlikAdi, anlat, bildir, fmtSayi, modDeger, denizGecer,
 } from './ortak.ts';
+import type { Istat } from './ortak.ts';
 import { kayipYaz, birlikKisiCikar } from './nufus.ts';
 import { baslangicItaat } from './siyaset.ts';
 import { kenarKey } from '../state/world.ts';
@@ -41,8 +44,11 @@ export function hareketGunu(w: World): Muharebe[] {
     const r = U.bolge![u]!;
     if (r === hedef) { U.hedef![u] = -1; U.sonraki![u] = -1; continue; }
     // komşu hedefe doğrudan (sık durum: cephe hareketi), uzak hedefe önbellekli rota
-    const y = w.komsuluk[r]!.includes(hedef) ? { yol: [r, hedef], km: 0 } : rotaTip(w, c, 0, r, hedef);
-    if (!y || y.yol.length < 2) { U.hedef![u] = -1; continue; }
+    const y = w.komsuluk[r]!.includes(hedef) && denizGecer(w, c, r, hedef) ? { yol: [r, hedef], km: 0 } : rotaTip(w, c, 0, r, hedef);
+    if (!y || y.yol.length < 2) {
+      if (c === w.oyuncu && w.mod !== 2 && kenarTur(w, r, hedef) > 0) bildir(w, 'birlik', `${birlikAdi(w, u)}: düşman donanması deniz geçişini kapatıyor`, c, false);
+      U.hedef![u] = -1; continue;
+    }
     const sonraki = y.yol[1]!;
     if (U.sonraki![u] !== sonraki) { U.sonraki![u] = sonraki; U.ilerleme![u] = 0; }
     const kontrol = w.R.c.kontrolEden[sonraki]!;
@@ -66,6 +72,8 @@ export function hareketGunu(w: World): Muharebe[] {
       const demir = w.R.c.demiryolu[r]! >= 1 && w.R.c.demiryolu[sonraki]! >= 1 && w.R.c.kontrolEden[r] === c && w.R.c.kontrolEden[sonraki] === c;
       if (demir) hiz *= 3;
       if (U.org![u]! < mulDiv(ist.orgMax, 100_000, S).q) hiz = Math.floor(hiz / 2);
+      // düşman toprağına giriş: keşif, yerel direniş ve köprü yıkımı ilerlemeyi yarıya indirir; ana yurtta daha da yavaş
+      if (savasta(w, c, kontrol)) hiz = w.pkg.bolgeler[sonraki]!.anaYurt.includes(kontrol) ? Math.floor(hiz * 2 / 5) : Math.floor(hiz / 2);
     }
     U.ilerleme![u] = U.ilerleme![u]! + hiz;
     const km = (w.kenarKm.get(kenarKey(r, sonraki)) ?? 150) * 1000;
@@ -100,6 +108,8 @@ export function tahminiGun(w: World, u: number, yol: number[]): number {
       hiz = mulRatio(hiz, hareketMevsim(w, q)).q;
       hiz = mulRatio(hiz, ARAZI[w.pkg.bolgeler[q]!.arazi]!.hareket).q;
       if (w.R.c.demiryolu[r]! >= 1 && w.R.c.demiryolu[q]! >= 1 && w.R.c.kontrolEden[r] === c && w.R.c.kontrolEden[q] === c) hiz *= 3;
+      const k = w.R.c.kontrolEden[q]!;
+      if (savasta(w, c, k)) hiz = w.pkg.bolgeler[q]!.anaYurt.includes(k) ? Math.floor(hiz * 2 / 5) : Math.floor(hiz / 2);
     }
     const km = (w.kenarKm.get(kenarKey(r, q)) ?? 150) * 1000;
     gun += Math.ceil(km / Math.max(1, hiz));
@@ -130,7 +140,51 @@ function genislikSec(w: World, birimler: number[], genislik: number): { aktif: n
   return { aktif, ceza };
 }
 
-interface Taraf { u: number; v: number; k: number; gen: number; orgMax: number }
+interface Taraf { u: number; v: number; k: number; gen: number; orgMax: number; okC: number }
+
+// ---------- Tahkimat (siper, sur, mevzi) ----------
+/** Dönem tahkimat tavanı (S): savunma çarpanına eklenen en yüksek pay. Büyük Savaş siper çağıdır. */
+const TAHKIMAT_TAVAN: Record<DonemKod, number> = { orta: 200_000, barut: 300_000, buyuk: 600_000, ikinci: 350_000, modern: 300_000 };
+export function tahkimatTavan(w: World, c: number): number {
+  let t = TAHKIMAT_TAVAN[AKTIF.donem];
+  if (tekVar(w, c, 'tahkimat1')) t = mulDiv(t, 115, 100).q;
+  if (tekVar(w, c, 'tahkimat2')) t = mulDiv(t, 115, 100).q;
+  return t;
+}
+/** Saldıran topçusunun tahkimatı bastırma payı (S, en çok %60). */
+export function topcuBaski(w: World, c: number, topcu: number, ys: number): number {
+  if (ys <= 0 || topcu <= 0) return 0;
+  const pay = mulDiv(topcu, S, ys).q;
+  return Math.min(600_000, mulDiv(pay, tekVar(w, c, 'topcu2') ? 2 : 3, tekVar(w, c, 'topcu2') ? 1 : 2).q);
+}
+/** Bölgenin etkin savunma çarpanı (S): arazi × (1 + 0,8 × etkin tahkimat). Önizleme ve karar için de kullanılır. */
+export function savunmaCarpan(w: World, r: number, baski: number): number {
+  const arazi = ARAZI[w.pkg.bolgeler[r]!.arazi]!;
+  const tah = mulDiv(w.R.c.tahkimat[r]!, S - baski, S).q;
+  return mulDiv(arazi.savunma, S + mulDiv(tah, 800_000, S).q, S).q;
+}
+/** Günlük tahkimat: bölgeyi tutan ülkenin duran birlikleri kazar; birlik yoksa çürür. Başkentte kalıcı sur/mevzi tabanı vardır. */
+export function tahkimatGunu(w: World): void {
+  const U = uc(w), R = w.R.c;
+  const var_ = new Uint8Array(w.nR);
+  for (const u of w.U.rows()) {
+    const r = U.bolge![u]!;
+    if (U.ulke![u] !== R.kontrolEden[r] || U.egitimBitis![u]! > w.gun) continue;
+    if (U.hedef![u]! >= 0 && U.hedef![u] !== r) continue;
+    var_[r] = 1;
+  }
+  for (let r = 0; r < w.nR; r++) {
+    const c = R.kontrolEden[r]!;
+    if (c < 0) continue;
+    const tavan = tahkimatTavan(w, c);
+    const taban = w.pkg.ulkeler[c]!.baskent === r && R.sahip[r] === c ? tavan >> 1 : 0;
+    const t = R.tahkimat[r]!;
+    if (var_[r]) {
+      if (R.sonMuharebe[r] !== w.gun && t < tavan) R.tahkimat[r] = Math.min(tavan, t + mulDiv(Math.floor(tavan / 30), tekVar(w, c, 'tahkimat1') ? 3 : 2, 2).q);
+    } else if (t > taban) R.tahkimat[r] = Math.max(taban, t - Math.max(1, Math.floor(tavan / 120)));
+    if (R.tahkimat[r]! < taban) R.tahkimat[r] = taban;
+  }
+}
 
 /** P9: eşzamanlı kara çatışması. Bütün hedefler aynı alt faz başlangıcından hesaplanır (T054). */
 export function muharebeGunu(w: World, list: Muharebe[]): void {
@@ -146,8 +200,19 @@ export function muharebeGunu(w: World, list: Muharebe[]): void {
     const ikmal = (u: number) => 500_000 + mulDiv(500_000, birlikIkmal(w, u).oran, S).q;
     const r = (u: number, taraf: number) => combatR(rng(w.tohum, w.gun, 8, u, w.U.gen[u]!, AMAC.combatRoll, b, taraf));
     const camur = camurDuzey(w, b) >= 2 ? 800_000 : S;
+    const ist = new Map<number, Istat>();
+    for (const u of [...sGen.aktif, ...dGen.aktif]) ist.set(u, birlikIstat(w, u));
+    // topçu hazırlığı tahkimatı bastırır; farklı bölgelerden gelen saldırı kuşatma etkisi yapar
+    let topTop = 0, ysTop = 0;
+    for (const u of sGen.aktif) { topTop += ist.get(u)!.topcu; ysTop += ist.get(u)!.YS; }
+    const sc = sGen.aktif.length > 0 ? U.ulke![sGen.aktif[0]!]! : -1;
+    const baski = sc >= 0 ? topcuBaski(w, sc, topTop, ysTop) : 0;
+    const savCarpan = savunmaCarpan(w, b, baski);
+    const kaynak = new Set(m.saldiran.map((u) => U.bolge![u]!));
+    const sv = sGen.aktif.length > 0 && dGen.aktif.length > 0;
     const sald: Taraf[] = sGen.aktif.map((u) => {
-      const s = birlikIstat(w, u);
+      const s = ist.get(u)!;
+      const c = U.ulke![u]!;
       let v = mulRatio(s.YS, deneyimCarpan(U.deneyim![u]!)).q;
       v = mulRatio(v, ikmal(u)).q;
       const atli = U.sablon![u] === 1 ? arazi.atli : S;
@@ -156,19 +221,28 @@ export function muharebeGunu(w: World, list: Muharebe[]): void {
       v = mulRatio(v, r(u, 0)).q;
       if (birlikIkmal(w, u).muh <= 0) v = mulRatio(v, 500_000).q;
       if (kenarTur(w, U.bolge![u]!, b) > 0) v = mulRatio(v, K.cikarmaCarpan).q; // denizden çıkarma
-      return { u, v, k: s.YR, gen: Math.max(1, s.genislik), orgMax: s.orgMax };
+      if (kaynak.size >= 2) v = mulRatio(v, tekVar(w, c, 'dok_manevra') ? 1_200_000 : 1_100_000).q; // kuşatma
+      const md = modDeger(w, c, MT.saldiri);
+      if (md) v = mulRatio(v, Math.max(200_000, S + md)).q;
+      return { u, v, k: s.YR, gen: Math.max(1, s.genislik), orgMax: s.orgMax, okC: tekVar(w, c, 'taktik2') ? 900_000 : S };
     });
     const sav: Taraf[] = dGen.aktif.map((u) => {
-      const s = birlikIstat(w, u);
+      const s = ist.get(u)!;
+      const c = U.ulke![u]!;
       let v = mulRatio(s.YS, deneyimCarpan(U.deneyim![u]!)).q;
       v = mulRatio(v, ikmal(u)).q;
       v = mulRatio(v, S - dGen.ceza).q;
       v = mulRatio(v, r(u, 1)).q;
-      let k = mulRatio(s.SV, arazi.savunma).q;
+      // tahkimat yalnız bölgeyi tutan ülkenin birliklerine yarar
+      let k = mulRatio(s.SV, w.R.c.kontrolEden[b] === c ? savCarpan : arazi.savunma).q;
       k = mulRatio(k, ikmal(u)).q;
       if (U.durus![u] === 1) k = mulRatio(k, 1_100_000).q;
-      return { u, v, k, gen: Math.max(1, s.genislik), orgMax: s.orgMax };
+      const md = modDeger(w, c, MT.savunma);
+      if (md) k = mulRatio(k, Math.max(200_000, S + md)).q;
+      return { u, v, k, gen: Math.max(1, s.genislik), orgMax: s.orgMax, okC: S };
     });
+    // muharebe tahkimatı aşındırır (topçu ile daha hızlı)
+    if (sv && w.R.c.tahkimat[b]! > 0) w.R.c.tahkimat[b] = w.R.c.tahkimat[b]! - mulDiv(w.R.c.tahkimat[b]!, 5_000 + mulDiv(baski, 20_000, S).q, S).q;
     // saldırı hedeflere genişlik payıyla paylaştırılır (T057)
     const vur = (atan: Taraf[], hedef: Taraf[]) => {
       const genTop = hedef.reduce((a, t) => a + t.gen, 0);
@@ -177,7 +251,7 @@ export function muharebeGunu(w: World, list: Muharebe[]): void {
         for (const a of atan) gelen += mulDiv(a.v, h.gen, genTop).q;
         const etkin = mulDiv(Math.min(gelen, h.k), 100_000, S).q + mulDiv(Math.max(0, gelen - h.k), 400_000, S).q;
         const tavan = mulDiv(h.orgMax, K.orgTavan, S).q;
-        const ok = Math.min(tavan, mulDiv(etkin, K.lambda, S).q);
+        const ok = mulRatio(Math.min(tavan, mulDiv(etkin, K.lambda, S).q), h.okC).q;
         orgKayip.set(h.u, (orgKayip.get(h.u) ?? 0) + ok);
         const oran = Math.min(30_000, mulDiv(ok, 300_000, Math.max(1, h.orgMax)).q);
         const tutan = U.ulke![atan[0]!.u]!;
@@ -252,6 +326,7 @@ export function sonucGunu(w: World, list: Muharebe[]): void {
     }
   }
   kisYipranmasi(w);
+  tahkimatGunu(w);
 }
 
 function geriCekil(w: World, u: number, saldiranlar: number[]): void {
@@ -295,6 +370,7 @@ export function kontrolDegistir(w: World, r: number, yeni: number): void {
   // kurtarma: sahip yeni kontrolcünün eş savaşanıysa kontrol sahibe döner
   const hedefK = sahip !== yeni && essavasan(w, yeni, sahip) && !savasta(w, yeni, sahip) ? sahip : yeni;
   R.kontrolEden[r] = hedefK;
+  R.tahkimat[r] = 0; // siperler ve mevziler yeni sahibine dönük değildir
   w.rotaEpoch++;
   const ad = w.pkg.bolgeler[r]!.ad;
   if (hedefK === sahip) {
@@ -303,7 +379,6 @@ export function kontrolDegistir(w: World, r: number, yeni: number): void {
     bildir(w, 'bolge', `${ad} geri alındı`, sahip, false);
   } else {
     R.itaat[r] = baslangicItaat(w, r, hedefK); R.direnis[r] = 20_000; R.isgalGun[r] = 0;
-    R.tahkimat[r] = Math.floor(R.tahkimat[r]! / 2);
     // yerel gıda: eyalet deposu sahibinde kalır, bölgeye 10 günlük yerel stok
     anlat(w, `${w.pkg.ulkeler[hedefK]!.sifat} kuvvetleri ${ad}'ı ele geçirdi.`, 'muharebe', hedefK, 2);
     bildir(w, 'bolge', `${ad} düştü (${w.pkg.ulkeler[hedefK]!.kisa})`, sahip, w.pkg.ulkeler[sahip]!.baskent === r);

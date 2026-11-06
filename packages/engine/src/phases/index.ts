@@ -15,7 +15,7 @@ import { olayGunu, aylikOlaylar, hasatAnlat, acilisOlaylari } from '../systems/o
 import { serilestir } from '../serialize/index.ts';
 import { fazDegisti } from '../observe/index.ts';
 import { hashV1 } from '../hash/index.ts';
-import { uc, anlat, savasta as ortakSavasta, eyaletUlke } from '../systems/ortak.ts';
+import { uc, anlat, savasta as ortakSavasta, eyaletUlke, savastaMi, modTemizle, yonetimMesafeleri } from '../systems/ortak.ts';
 import { sayac } from '../num/index.ts';
 import { yeniDunya } from '../state/world.ts';
 import type { Paket } from '../paket.ts';
@@ -30,6 +30,11 @@ export function senaryoBaslat(pkg: Paket, oyuncu: number, mod = 0): World {
   isDagit(w, true);
   hasatKademeSec(w);
   acilisOlaylari(w);
+  // yönetim mesafeleri ilk aylık kapanıştan önce de doğru olsun
+  for (let c = 0; c < w.nC; c++) { const m = yonetimMesafeleri(w, c); for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === c) w.R.c.mesafe[r] = m[r]!; }
+  // hedef ve kriz göstergeleri için başlangıç tabanları
+  for (let r = 0; r < w.nR; r++) { const c = w.R.c.sahip[r]!; if (c >= 0) { w.C.c.bazBolge[c] = w.C.c.bazBolge[c]! + 1; let n = 0; for (let k = 0; k < NHUCRE; k++) n += w.pop[r * NHUCRE + k]!; w.C.c.bazNufus[c] = w.C.c.bazNufus[c]! + n; } }
+  for (let c = 0; c < w.nC; c++) w.C.c.bazTek[c] = w.C.c.tekSay[c]!;
   // aylık kapanışların başlangıç değerleri: gelir tarihçesi için ilk gün tahmini
   for (let c = 0; c < w.nC; c++) w.C.c.sonPlan[c] = 0;
   baslangicNufus.set(w, toplamNufus(w));
@@ -78,6 +83,8 @@ export function gunIlerle(w: World, kesinlestir = true): GunSonuc {
   // P3: diplomasi
   teklifYanitlari(w);
   gerekceGunu(w);
+  for (let c = 0; c < w.nC; c++) w.C.c.savasGunu[c] = savastaMi(w, c) ? w.C.c.savasGunu[c]! + 1 : 0;
+  modTemizle(w);
   fazDegisti(w);
   // P4: varışlar
   varislar(w);

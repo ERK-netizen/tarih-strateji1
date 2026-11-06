@@ -1,11 +1,18 @@
 // Bölüm 6.6: kanonik serileştirme (küçük-endian, şema sırası) ve hash. Görsel durum ve önbellek dışarıda kalır.
 import type { World } from '../state/world.ts';
-import { yeniDunya } from '../state/world.ts';
+import { yeniDunya, BAKAN_VARSAYILAN } from '../state/world.ts';
 import type { Table } from '../state/table.ts';
 import type { Paket } from '../paket.ts';
 import { hashV1, hashText } from '../hash/index.ts';
 
-export const SEMA_SURUM = 5;
+export const SEMA_SURUM = 6;
+/** Şema 6'da eklenen kolonlar: 5 sürümlü kayıt okunurken atlanır, varsayılanla doldurulur. */
+const YENI6: Record<string, string[]> = {
+  ulke: ['bakan', 'bazBolge', 'bazYasam', 'bazTek', 'bazNufus', 'savasGunu', 'tekSay', 'maas'],
+  birlik: ['elle'],
+};
+/** Şema 5'te teknoloji yuvası sayısı (dönem başına 12). */
+const NTEK5 = 12;
 const MAGIC = 0x314b5354; // 'TSK1'
 
 class Yazici {
@@ -94,8 +101,10 @@ function diziler(w: World): [string, ArrayLike<number>][] {
   return [['pop', w.pop], ['kim', w.kim], ['ekip', w.ekip], ['tekIlerleme', w.tekIlerleme], ['tekBitti', w.tekBitti], ['tekMaliyet', w.tekMaliyet], ['arastirma', w.arastirma], ['gorus', w.gorus], ['tutum', w.tutum], ['tutumKilit', w.tutumKilit], ['kokenDefter', w.kokenDefter], ['esir', w.esir], ['fiyat', w.fiyat], ['pazarHacim', w.pazarHacim], ['savasTaraf', w.savasTaraf], ['iddia', w.iddia]];
 }
 
-function tablolar(w: World): Table[] {
-  return [w.R, w.E, w.C, w.U, w.T, w.AN, w.SV, w.GR, w.HT, w.PR, w.YR, w.KE, w.TK, w.SP, w.OL] as unknown as Table[];
+function tablolar(w: World, sv = SEMA_SURUM): Table[] {
+  const l = [w.R, w.E, w.C, w.U, w.T, w.AN, w.SV, w.GR, w.HT, w.PR, w.YR, w.KE, w.TK, w.SP, w.OL] as unknown as Table[];
+  if (sv >= 6) l.push(w.MOD as unknown as Table);
+  return l;
 }
 
 function tabloYaz(y: Yazici, t: Table): void {
@@ -106,7 +115,8 @@ function tabloYaz(y: Yazici, t: Table): void {
   y.arrS(t.alive.subarray(0, t.hw));
   for (const [k] of t.defs) { y.etiket(k); y.arrS((t.ci[k] as Float64Array).subarray(0, t.hw)); }
 }
-function tabloOku(o: Okuyucu, t: Table): void {
+function tabloOku(o: Okuyucu, t: Table, sv = SEMA_SURUM): void {
+  const atla = sv < 6 ? new Set(YENI6[t.name] ?? []) : new Set<string>();
   const ad = o.str();
   if (ad !== t.name) throw new Error(`tablo sırası bozuk: ${ad} ≠ ${t.name}`);
   const hw = o.u32();
@@ -116,6 +126,7 @@ function tabloOku(o: Okuyucu, t: Table): void {
   const gen = o.arrS(), alive = o.arrS();
   for (let i = 0; i < hw; i++) { t.gen[i] = gen[i]!; t.alive[i] = alive[i]!; }
   for (const [k] of t.defs) {
+    if (atla.has(k)) continue;
     const kk = o.str();
     if (kk !== k) throw new Error(`kolon sırası bozuk: ${kk}`);
     const a = o.arrS();
@@ -138,6 +149,7 @@ export function serilestir(w: World): Uint8Array {
   y.str(kanonikJson(w.teklifBolge));
   y.u32(w.birlikAd.length); for (const s of w.birlikAd) y.str(s);
   y.str(kanonikJson(w.kuyruk));
+  y.str(kanonikJson(w.olayBayrak));
   return y.bytes();
 }
 
@@ -158,7 +170,7 @@ export function coz(bytes: Uint8Array, pkg: Paket): World {
   const o = new Okuyucu(bytes);
   if (o.u32() !== MAGIC) throw new Error('kayıt dosyası değil');
   const sv = o.u32();
-  if (sv !== SEMA_SURUM) throw new Error(`şema sürümü uyumsuz: ${sv}`);
+  if (sv !== SEMA_SURUM && sv !== 5) throw new Error(`şema sürümü uyumsuz: ${sv}`);
   const pid = o.str(), psur = o.str();
   if (pid !== pkg.kimlik || psur !== pkg.surum) throw new Error(`paket uyumsuz: ${pid}@${psur}`);
   const gun = o.f64(), surum = o.f64(), tohum = o.f64(), oyuncu = o.f64(), mod = o.f64(), emirSira = o.f64(), rotaEpoch = o.f64();
@@ -167,17 +179,40 @@ export function coz(bytes: Uint8Array, pkg: Paket): World {
   const ar = o.arr(); w.artik = { dogum: ar[0]!, olum: ar[1]!, kohort: ar[2]! };
   const sy = o.arr(); w.sayac = { dogum: sy[0]!, dogalOlum: sy[1]!, askerOlum: sy[2]!, ekOlum: sy[3]! };
   w.bayrak.set(o.arr()); w.hasatKademe.set(o.arr());
-  for (const t of tablolar(w)) tabloOku(o, t);
+  for (const t of tablolar(w, sv)) tabloOku(o, t, sv);
+  const tekDizi = new Set(['tekIlerleme', 'tekBitti', 'tekMaliyet']);
   for (const [ad, a] of diziler(w)) {
     const k = o.str();
     if (k !== ad) throw new Error(`dizi sırası bozuk: ${k} ≠ ${ad}`);
-    (a as unknown as { set(x: ArrayLike<number>): void }).set(o.arrS());
+    const v = o.arrS();
+    if (sv < 6 && tekDizi.has(ad)) {
+      // şema 5: ülke başına 12 teknoloji; ilk 12 yuva aynı kodlarla korunur
+      const hedef = a as unknown as Float64Array;
+      const nt = hedef.length / w.nC;
+      hedef.fill(0);
+      for (let c = 0; c < w.nC; c++) for (let t = 0; t < NTEK5; t++) hedef[c * nt + t] = v[c * NTEK5 + t]!;
+    } else (a as unknown as { set(x: ArrayLike<number>): void }).set(v);
   }
   w.teklifBolge = JSON.parse(o.str()) as Record<string, number[]>;
   w.diploSurum++;
   const nb = o.u32(); w.birlikAd = []; for (let i = 0; i < nb; i++) w.birlikAd.push(o.str());
   w.kuyruk = JSON.parse(o.str());
+  if (sv >= 6) w.olayBayrak = JSON.parse(o.str()) as string[];
+  else gocDoldur5(w);
   return w;
+}
+
+/** Şema 5 → 6 göçü: yeni kolonların varsayılanları (bakanlar, hedef tabanları). */
+function gocDoldur5(w: World): void {
+  const C = w.C.c;
+  w.olayBayrak = [];
+  for (let c = 0; c < w.nC; c++) {
+    C.bakan[c] = c === w.oyuncu && w.mod !== 2 ? BAKAN_VARSAYILAN : 0;
+    let n = 0; for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === c) n++;
+    C.bazBolge[c] = n;
+    let t = 0; for (let k = 0; k < NTEK5; k++) t += w.tekBitti[c * (w.tekBitti.length / w.nC) + k]!;
+    C.tekSay[c] = t; C.bazTek[c] = t;
+  }
 }
 
 /** Boş dünya iskeleti (başlangıç birlikleri ve hatlar olmadan) — çözümleme için. */
@@ -186,7 +221,7 @@ function yeniDunyaBos(pkg: Paket, oyuncu: number): World {
   const w = yeniDunya(bos, oyuncu);
   w.pkg = pkg;
   // hatları temizle (çözümleme tablodan yükler)
-  for (const t of [w.HT, w.U, w.AN]) { t.hw = 0; t.free = []; t.alive.fill(0); t.gen.fill(0); }
+  for (const t of [w.HT, w.U, w.AN, w.MOD]) { t.hw = 0; t.free = []; t.alive.fill(0); t.gen.fill(0); }
   w.birlikAd = [];
   return w;
 }

@@ -150,10 +150,73 @@ export const S1914: SenaryoTanim = {
         { ad: 'Almanya\'ya savaş ilan et', etki: 'İtilaf safında savaşa girersiniz.', yz: 85, e: [['katil', 'JAP', 'GBR', 'GER']] },
         { ad: 'Tarafsız kal', etki: 'Britanya ile ilişkiler soğur.', yz: 15, e: [['gorus', 'GBR', 'JAP', -20]] },
       ] },
-    { kod: 'osmanli', tarih: '1914-10-29', ulke: 'OSM', kosul: { savasta: ['GER', 'RUS'] }, baslik: 'Karadeniz Baskını', metin: 'Yavuz ve Midilli zırhlıları Amiral Souchon komutasında Rus limanlarını bombaladı. Harbiye Nazırı Enver Paşa, 2 Ağustos\'taki gizli Alman ittifakının yürürlüğe girmesini istiyor.',
+    // ---- Osmanlı yol ayrımı: gizli ittifak → Goeben → Karadeniz baskını; ya da tarafsızlık / İtilaf pazarlığı ----
+    { kod: 'osm_ittifak', tarih: '1914-08-02', ulke: 'OSM', kosul: { savasta: ['GER', 'RUS'] }, pencere: 20, baslik: 'Gizli Alman İttifakı', metin: 'Avrupa savaşta. Harbiye Nazırı Enver Paşa ile Alman Büyükelçisi Wangenheim, Rusya\'ya karşı gizli bir ittifak antlaşmasını imzaya hazır. Sadrazam Said Halim Paşa ve Maliye Nazırı Cavid Bey tarafsızlıktan yana: hazine boş, ordu Balkan Savaşları\'ndan yeni çıktı.',
       sec: [
-        { ad: 'İttifak Devletleri safında savaşa gir', etki: 'Almanya ile ittifak; Rusya ve müttefikleriyle savaş.', yz: 85, e: [['ittifak', 'OSM', 'GER'], ['katil', 'OSM', 'GER', 'RUS'], ['katil', 'OSM', 'GER', 'GBR'], ['katil', 'OSM', 'GER', 'FRA']] },
-        { ad: 'Baskından özür dile, tarafsız kal', etki: 'Almanya ile ilişkiler soğur; huzur +3.', yz: 15, e: [['gorus', 'GER', 'OSM', -25], ['huzur', 'OSM', 3]] },
+        { ad: 'Gizli ittifakı imzala', etki: 'Almanya ile gizli ittifak: Alman askerî heyeti ve yardım (saldırı +%5, 1 yıl). Rusya ile gerginlik artar. Savaşa giriş henüz kesin değil.', yz: 75, e: [['bayrak', 'osm_ittifak'], ['gorus', 'GER', 'OSM', 20, true], ['gorus', 'RUS', 'OSM', -10], ['etki', 'OSM', 'saldiri', 5, 365], ['olay', 'goeben', 8]] },
+        { ad: 'Silahlı tarafsızlık ilan et', etki: 'Seferberlik sürer ama hiçbir bloğa bağlanılmaz. İki taraf da teklif getirecek.', yz: 20, e: [['bayrak', 'osm_tarafsiz'], ['gorus', 'GER', 'OSM', -10], ['olay', 'goeben', 8]] },
+        { ad: 'İtilaf\'a yanaş', etki: 'Britanya, Fransa ve Rusya ile görüşme; Almanya ile ilişkiler bozulur. Boğazlar ve kapitülasyonlar masada.', yz: 5, e: [['bayrak', 'osm_itilaf'], ['gorus', 'GER', 'OSM', -25], ['gorus', 'GBR', 'OSM', 10], ['gorus', 'FRA', 'OSM', 10], ['gorus', 'RUS', 'OSM', 5], ['olay', 'itilaf_pazarlik', 25]] },
+      ] },
+    { kod: 'goeben', tarih: null, ulke: 'OSM', kosul: { bayrakDegil: ['osm_itilaf'] }, baslik: 'Goeben ve Breslau', metin: 'Akdeniz\'de İngiliz filosundan kaçan Alman zırhlısı Goeben ile kruvazör Breslau Çanakkale önünde geçiş izni istiyor. Britanya, halkın bağışlarıyla yaptırılan Sultan Osman ve Reşadiye zırhlılarına el koydu; İstanbul öfkeli.',
+      sec: [
+        { ad: 'Gemileri satın al: Yavuz ve Midilli', etki: 'Donanma güçlenir, savaşa destek +10. Alman subaylar gemilerde kalır: Karadeniz\'de oldubitti riski. Britanya ile ilişkiler bozulur.', yz: 80, e: [['bayrak', 'osm_goeben'], ['destek', 'OSM', 10], ['gorus', 'GBR', 'OSM', -15], ['olay', 'karadeniz', 80]] },
+        { ad: 'Gemileri enterne et', etki: 'Tarafsızlık güçlenir; Almanya öfkelenir, Britanya yumuşar. Berlin baskıyı artıracak.', yz: 20, e: [['gorus', 'GER', 'OSM', -15], ['gorus', 'GBR', 'OSM', 10], ['olay', 'alman_baskisi', 60]] },
+      ] },
+    { kod: 'karadeniz', tarih: null, ulke: 'OSM', kosul: { bayrak: ['osm_goeben'], savasta: ['GER', 'RUS'], barista: ['OSM', 'RUS'], bayrakDegil: ['osm_tarafsiz_kesin'] }, baslik: 'Karadeniz Baskını', metin: 'Amiral Souchon, Yavuz ve Midilli ile Karadeniz\'e çıkıp Rus limanlarını bombalamak istiyor. Enver Paşa onay verdi; kabinenin çoğu habersiz. Bu bir oldubitti olacak.',
+      sec: [
+        { ad: 'Baskına göz yum: savaşa gir', etki: 'Almanya ile ittifak; Rusya, Britanya ve Fransa ile savaş. Kafkas ve Süveyş cepheleri açılır.', yz: 85, e: [['ittifak', 'OSM', 'GER'], ['katil', 'OSM', 'GER', 'RUS'], ['katil', 'OSM', 'GER', 'GBR'], ['katil', 'OSM', 'GER', 'FRA'], ['bayrak', 'osm_savasta'], ['iptal', 'alman_baskisi'], ['iptal', 'alman_baskisi2'], ['olay', 'cihat', 14], ['olay', 'sarikamis', 50], ['olay', 'arap_isyani', 590]] },
+        { ad: 'Baskını yasakla, Alman subayları geri çağır', etki: 'Savaştan kaçınılır. Almanya ile ilişkiler sert bozulur; İttihatçı subaylar huzursuz (meşruiyet −5).', yz: 15, e: [['gorus', 'GER', 'OSM', -25], ['mesru', 'OSM', -5], ['olay', 'alman_baskisi', 45]] },
+      ] },
+    { kod: 'alman_baskisi', tarih: null, ulke: 'OSM', kosul: { barista: ['OSM', 'RUS'], savasta: ['GER', 'RUS'], bayrakDegil: ['osm_tarafsiz_kesin', 'osm_savasta'] }, baslik: 'Berlin\'in Altın Teklifi', metin: 'Almanya, Rusya\'ya karşı savaşa girmemiz karşılığında iki milyon lira altın, cephane ve Kafkasya\'da toprak vaat ediyor. İtilaf elçileri ise tarafsızlığımıza karşılık toprak bütünlüğü güvencesi öneriyor.',
+      sec: [
+        { ad: 'Altını al, savaşa gir', etki: 'Hazineye altın girer; Almanya\'nın yanında savaş başlar.', yz: 55, e: [['hazine', 'OSM', 8000000], ['ittifak', 'OSM', 'GER'], ['katil', 'OSM', 'GER', 'RUS'], ['katil', 'OSM', 'GER', 'GBR'], ['katil', 'OSM', 'GER', 'FRA'], ['bayrak', 'osm_savasta'], ['iptal', 'alman_baskisi'], ['iptal', 'alman_baskisi2'], ['olay', 'cihat', 14], ['olay', 'sarikamis', 50], ['olay', 'arap_isyani', 590]] },
+        { ad: 'İtilaf güvencesini kabul et: kesin tarafsızlık', etki: 'Britanya ve Fransa toprak bütünlüğünü güvenceler, Rusya ile saldırmazlık. Boğazlar ticarete açık: üretim +%8 (2 yıl), huzur artar. Almanya ile ilişkiler kopar.', yz: 30, e: [['bayrak', 'osm_tarafsiz_kesin'], ['iptal', 'karadeniz'], ['iptal', 'alman_baskisi'], ['iptal', 'alman_baskisi2'], ['garanti', 'GBR', 'OSM'], ['garanti', 'FRA', 'OSM'], ['saldirmazlik', 'OSM', 'RUS'], ['gorus', 'GER', 'OSM', -30], ['etki', 'OSM', 'uretim', 8, 730], ['etki', 'OSM', 'huzurAy', 5, 365], ['olay', 'tarafsiz_ticaret', 120]] },
+        { ad: 'Oyalamaya devam et', etki: 'Taraflar beklemeye devam eder; Berlin\'in sabrı tükeniyor (Almanya görüşü −10). Teklif birkaç ay sonra sertleşerek yinelenir.', yz: 15, e: [['gorus', 'GER', 'OSM', -10], ['olay', 'alman_baskisi2', 120]] },
+      ] },
+    { kod: 'alman_baskisi2', tarih: null, ulke: 'OSM', kosul: { barista: ['OSM', 'RUS'], savasta: ['GER', 'RUS'], bayrakDegil: ['osm_tarafsiz_kesin', 'osm_savasta'] }, baslik: 'Son Alman Ültimatomu', metin: 'Berlin artık açık konuşuyor: ya İttifak safında savaşa girersiniz ya da askerî heyet ve krediler geri çekilir. İstanbul\'daki Alman yanlısı subaylar darbe söylentileri yayıyor.',
+      sec: [
+        { ad: 'Savaşa gir', etki: 'Almanya\'nın yanında savaş başlar.', yz: 55, e: [['ittifak', 'OSM', 'GER'], ['katil', 'OSM', 'GER', 'RUS'], ['katil', 'OSM', 'GER', 'GBR'], ['katil', 'OSM', 'GER', 'FRA'], ['bayrak', 'osm_savasta'], ['iptal', 'alman_baskisi'], ['iptal', 'alman_baskisi2'], ['olay', 'cihat', 14], ['olay', 'sarikamis', 50], ['olay', 'arap_isyani', 590]] },
+        { ad: 'Tarafsızlığı ilan et, Alman heyetini gönder', etki: 'Kesin tarafsızlık: üretim +%6 (2 yıl), huzur +5; meşruiyet −8 (ordu içi huzursuzluk). Almanya ile ilişkiler kopar.', yz: 45, e: [['bayrak', 'osm_tarafsiz_kesin'], ['iptal', 'karadeniz'], ['iptal', 'alman_baskisi'], ['iptal', 'alman_baskisi2'], ['gorus', 'GER', 'OSM', -40], ['mesru', 'OSM', -8], ['huzur', 'OSM', 5], ['etki', 'OSM', 'uretim', 6, 730], ['olay', 'tarafsiz_ticaret', 90]] },
+      ] },
+    { kod: 'itilaf_pazarlik', tarih: null, ulke: 'OSM', kosul: { bayrak: ['osm_itilaf'], bayrakDegil: ['osm_savasta'] }, baslik: 'İtilaf ile Pazarlık', metin: 'Rus Dışişleri Bakanı Sazonov Boğazlar\'a göz dikmiş durumda; Britanya ve Fransa ise kapitülasyonların kaldırılmasına ve Alman heyetinin gönderilmesine karşılık yardım öneriyor. İtilaf safında savaş, Balkanlarda Almanya ve Avusturya-Macaristan\'a karşı yeni bir cephe demek.',
+      sec: [
+        { ad: 'İtilaf safında savaşa gir', etki: 'Kapitülasyonlar kalkar (meşruiyet +10), İngiliz kredisi gelir. Almanya ve Avusturya-Macaristan\'a karşı savaş; Rusya ile aynı safta.', yz: 35, e: [['bayrak', 'osm_itilaf_savas'], ['mesru', 'OSM', 10], ['hazine', 'OSM', 4000000], ['katil', 'OSM', 'RUS', 'GER'], ['katil', 'OSM', 'RUS', 'AUH'], ['ittifak', 'OSM', 'GBR'], ['gorus', 'GER', 'OSM', -40]] },
+        { ad: 'Tarafsız kal, güvenceleri al', etki: 'Britanya ve Fransa toprak bütünlüğünü güvenceler; tarafsız ticaret (üretim +%8, 2 yıl).', yz: 65, e: [['bayrak', 'osm_tarafsiz_kesin'], ['iptal', 'karadeniz'], ['iptal', 'alman_baskisi'], ['iptal', 'alman_baskisi2'], ['garanti', 'GBR', 'OSM'], ['garanti', 'FRA', 'OSM'], ['etki', 'OSM', 'uretim', 8, 730], ['olay', 'tarafsiz_ticaret', 120]] },
+      ] },
+    { kod: 'tarafsiz_ticaret', tarih: null, ulke: 'OSM', kosul: { barisMi: 'OSM' }, baslik: 'Tarafsız İstanbul', metin: 'Savaşan devletler buğday, pamuk ve tütün için İstanbul limanına akın ediyor. Boğazlar açık kaldıkça gümrük gelirleri rekor kırıyor; ancak Rusya Boğazlar meselesini savaş sonrasına bırakmış görünmüyor.',
+      sec: [
+        { ad: 'Ticareti genişlet, gelirle orduyu yenile', etki: 'Hazine +5 milyon; üretim +%5 (1 yıl).', yz: 60, e: [['hazine', 'OSM', 5000000], ['etki', 'OSM', 'uretim', 5, 365], ['olay', 'bogaz_talebi', 300]] },
+        { ad: 'Gelirleri Düyun-u Umumiye borcuna ayır', etki: 'Meşruiyet +5, siyasi güç +30.', yz: 40, e: [['mesru', 'OSM', 5], ['pg', 'OSM', 30], ['olay', 'bogaz_talebi', 300]] },
+      ] },
+    { kod: 'bogaz_talebi', tarih: null, ulke: 'OSM', kosul: { barisMi: 'OSM', savasta: ['RUS', 'GER'] }, baslik: 'Rusya\'nın Boğazlar Talebi', metin: 'Petrograd, savaş sonunda Boğazlar\'ın uluslararası denetime verilmesini istiyor; Britanya ve Fransa bu konuda Rusya\'ya söz vermiş görünüyor. Tarafsızlığın bedeli artıyor.',
+      sec: [
+        { ad: 'Reddet, Boğazları tahkim et', etki: 'Rusya ile ilişkiler bozulur; savunma +%10 (1 yıl).', yz: 70, e: [['gorus', 'RUS', 'OSM', -20], ['etki', 'OSM', 'savunma', 10, 365]] },
+        { ad: 'Uluslararası konferans öner', etki: 'Huzur −3; Rusya yatışır, Britanya ile ilişkiler iyileşir.', yz: 30, e: [['huzur', 'OSM', -3], ['gorus', 'RUS', 'OSM', 10], ['gorus', 'GBR', 'OSM', 10]] },
+      ] },
+    { kod: 'cihat', tarih: null, ulke: 'OSM', kosul: { savasta: ['OSM', 'GBR'] }, baslik: 'Cihad-ı Ekber', metin: 'Şeyhülislam, İtilaf Devletleri\'ne karşı cihat fetvası yayımlamaya hazır. Hindistan, Mısır ve Kuzey Afrika\'daki Müslüman tebaanın ayaklanması umuluyor.',
+      sec: [
+        { ad: 'Fetvayı yayımla', etki: 'Savaşa destek +10; Britanya ve Fransa\'da huzur −3 (1 yıl).', yz: 80, e: [['destek', 'OSM', 10], ['etki', 'GBR', 'huzurAy', -3, 365], ['etki', 'FRA', 'huzurAy', -3, 365]] },
+        { ad: 'Dinî söylemden kaçın', etki: 'Meşruiyet +3.', yz: 20, e: [['mesru', 'OSM', 3]] },
+      ] },
+    { kod: 'sarikamis', tarih: null, ulke: 'OSM', kosul: { savasta: ['OSM', 'RUS'] }, baslik: 'Kafkas Cephesi: Kış Harekâtı', metin: 'Enver Paşa, Allahuekber Dağları üzerinden Rus ordusunu kuşatacak cüretkâr bir kış harekâtı planladı. Kurmaylar kar ve erzaksızlık yüzünden ordunun donabileceği uyarısında.',
+      sec: [
+        { ad: 'Kış taarruzunu başlat', etki: 'Saldırı +%15 (60 gün) ama ağır kayıp: insan gücü −%15 (1 yıl), savaş yorgunluğu +10.', yz: 60, e: [['etki', 'OSM', 'saldiri', 15, 60], ['etki', 'OSM', 'insan', -15, 365], ['yorgunluk', 'OSM', 10]] },
+        { ad: 'Baharı bekle, savunmada kal', etki: 'Savunma +%10 (180 gün); Enver Paşa\'nın prestiji sarsılır (siyasi güç −20).', yz: 40, e: [['etki', 'OSM', 'savunma', 10, 180], ['pg', 'OSM', -20]] },
+      ] },
+    { kod: 'gelibolu', tarih: '1915-02-19', ulke: 'GBR', kosul: { savasta: ['GBR', 'OSM'] }, pencere: 300, baslik: 'Churchill\'in Çanakkale Planı', metin: 'Bahriye Nazırı Churchill, eski zırhlılarla Çanakkale Boğazı\'nın zorlanmasını ve İstanbul\'un savaş dışı bırakılmasını öneriyor. Rusya\'ya giden yol açılabilir; Kitchener ise Batı Cephesi\'nden asker ayrılmasına karşı.',
+      sec: [
+        { ad: 'Boğaz harekâtını başlat', etki: 'Osmanlı başkenti tehdit edilir; başarısızlık hâlinde savaşa destek düşer.', yz: 70, e: [['olay', 'canakkale', 20], ['etki', 'GBR', 'destekAy', -3, 365]] },
+        { ad: 'Batı Cephesi\'ne odaklan', etki: 'Saldırı +%5 (180 gün).', yz: 30, e: [['etki', 'GBR', 'saldiri', 5, 180]] },
+      ] },
+    { kod: 'canakkale', tarih: null, ulke: 'OSM', kosul: { savasta: ['OSM', 'GBR'] }, baslik: 'Çanakkale Geçilmez', metin: 'İngiliz ve Fransız zırhlıları Boğaz tabyalarını bombalıyor; Gelibolu\'ya çıkarma hazırlanıyor. Liman von Sanders yedekleri geride tutmak istiyor; Yarbay Mustafa Kemal Arıburnu sırtlarının tutulmasında ısrarcı.',
+      sec: [
+        { ad: 'Sırtları tutun: Mustafa Kemal\'e yetki ver', etki: 'Savunma +%25 (1 yıl), savaşa destek +10, meşruiyet +5. Britanya\'da savaşa destek düşer.', yz: 75, e: [['etki', 'OSM', 'savunma', 25, 365], ['destek', 'OSM', 10], ['mesru', 'OSM', 5], ['etki', 'GBR', 'destekAy', -5, 365]] },
+        { ad: 'Başkenti boşaltmaya hazırlan', etki: 'Hazine ve arşivler Eskişehir\'e taşınır: huzur −8, meşruiyet −8; savunma +%10.', yz: 25, e: [['huzur', 'OSM', -8], ['mesru', 'OSM', -8], ['etki', 'OSM', 'savunma', 10, 365]] },
+      ] },
+    { kod: 'arap_isyani', tarih: null, ulke: 'OSM', kosul: { savasta: ['OSM', 'GBR'] }, pencere: 180, baslik: 'Arap İsyanı', metin: 'Mekke Emiri Şerif Hüseyin, İngilizlerle anlaşarak Hicaz\'da ayaklandı. Medine kuşatılıyor; Hicaz Demiryolu tehlikede.',
+      sec: [
+        { ad: 'Fahreddin Paşa: Medine savunulsun', etki: 'Huzur −6 (1 yıl); kuvvetler bölünür (saldırı −%5).', yz: 60, e: [['etki', 'OSM', 'huzurAy', -6, 365], ['etki', 'OSM', 'saldiri', -5, 365]] },
+        { ad: 'Özerklik teklif et', etki: 'Hazine −3 milyon; huzur +4; meşruiyet −5.', yz: 40, e: [['hazine', 'OSM', -3000000], ['huzur', 'OSM', 4], ['mesru', 'OSM', -5]] },
       ] },
     { kod: 'italya', tarih: '1915-05-23', ulke: 'ITA', kosul: { savasta: ['FRA', 'AUH'] }, baslik: 'Londra Antlaşması', metin: 'İtilaf Devletleri, savaşa girmemiz karşılığında Trentino, Güney Tirol, Trieste ve Dalmaçya\'yı vaat ediyor. Meclisteki tarafsızlar azınlıkta.',
       sec: [
@@ -170,12 +233,27 @@ export const S1914: SenaryoTanim = {
         { ad: 'Avusturya-Macaristan\'a savaş ilan et', etki: 'İtilaf safında savaş.', yz: 75, e: [['katil', 'ROM', 'RUS', 'AUH']] },
         { ad: 'Tarafsız kal', etki: 'Huzur +3.', yz: 25, e: [['huzur', 'ROM', 3]] },
       ] },
-    { kod: 'devrim', tarih: '1917-03-08', ulke: 'RUS', kosul: { savasta: ['RUS', 'GER'] }, baslik: 'Şubat Devrimi', metin: 'Petrograd\'da ekmek kuyrukları isyana döndü; askerler halka katıldı. Çar II. Nikolay tahttan çekilmek zorunda. Geçici Hükümet savaşa devam etmek istiyor, Sovyetler barış.',
+    { kod: 'lusitania', tarih: '1915-05-07', ulke: 'GER', kosul: { savasta: ['GER', 'GBR'] }, baslik: 'Lusitania', metin: 'U-20 denizaltısı İngiliz yolcu gemisi Lusitania\'yı batırdı; aralarında 128 Amerikalının da bulunduğu 1.198 kişi öldü. Washington sert bir nota verdi.',
       sec: [
-        { ad: 'Savaşa devam et (Kerenski)', etki: 'Huzur −20, meşruiyet −15; cephe sürer.', yz: 55, e: [['huzur', 'RUS', -20], ['mesru', 'RUS', -15]] },
+        { ad: 'Denizaltı savaşını kısıtla', etki: 'ABD ile ilişkiler düzelir; Britanya ablukası etkisini artırır (tarım −%5, 1 yıl).', yz: 60, e: [['gorus', 'USA', 'GER', 5], ['etki', 'GER', 'tarim', -5, 365]] },
+        { ad: 'Özür dileme, savaşı sürdür', etki: 'ABD\'de Almanya karşıtlığı (görüş −15); Britanya ticareti zarar görür (üretim −%3, 6 ay).', yz: 40, e: [['gorus', 'USA', 'GER', -15], ['etki', 'GBR', 'uretim', -3, 180], ['bayrak', 'lusitania']] },
+      ] },
+    { kod: 'denizalti', tarih: '1917-01-31', ulke: 'GER', kosul: { savasta: ['GER', 'GBR'], barista: ['USA', 'GER'] }, pencere: 365, baslik: 'Sınırsız Denizaltı Savaşı', metin: 'Amirallik, sınırsız denizaltı savaşının Britanya\'yı altı ayda açlığa teslim edeceğini söylüyor. Şansölye Bethmann-Hollweg ABD\'nin savaşa gireceği uyarısında.',
+      sec: [
+        { ad: 'Sınırsız denizaltı savaşını başlat', etki: 'Britanya\'da üretim ve tarım −%10 (1 yıl). ABD\'nin savaşa girmesi neredeyse kesinleşir.', yz: 70, e: [['bayrak', 'sinirsiz_denizalti'], ['etki', 'GBR', 'uretim', -10, 365], ['etki', 'GBR', 'tarim', -10, 365], ['gorus', 'USA', 'GER', -25]] },
+        { ad: 'Kısıtlı denizaltı savaşını sürdür', etki: 'ABD tarafsız kalır; abluka sürer (tarım −%5, 1 yıl).', yz: 30, e: [['etki', 'GER', 'tarim', -5, 365]] },
+      ] },
+    { kod: 'devrim', tarih: '1917-03-08', ulke: 'RUS', kosul: { savasta: ['RUS', 'GER'], yorgunlukUst: ['RUS', 35] }, pencere: 650, baslik: 'Şubat Devrimi', metin: 'Petrograd\'da ekmek kuyrukları isyana döndü; askerler halka katıldı. Çar II. Nikolay tahttan çekilmek zorunda. Geçici Hükümet savaşa devam etmek istiyor, Sovyetler barış.',
+      sec: [
+        { ad: 'Savaşa devam et (Kerenski)', etki: 'Huzur −20, meşruiyet −15; cephe sürer. Bolşevikler güçleniyor.', yz: 55, e: [['huzur', 'RUS', -20], ['mesru', 'RUS', -15], ['olay', 'ekim', 240]] },
         { ad: 'Ayrı barış ara', etki: 'Almanya ve Avusturya-Macaristan ile beyaz barış; müttefikler küser.', yz: 45, e: [['baris', 'RUS', 'GER'], ['baris', 'RUS', 'AUH'], ['baris', 'RUS', 'OSM'], ['gorus', 'FRA', 'RUS', -30], ['gorus', 'GBR', 'RUS', -30]] },
       ] },
-    { kod: 'abd', tarih: '1917-04-06', ulke: 'USA', kosul: { savasta: ['GBR', 'GER'] }, baslik: 'Zimmermann Telgrafı', metin: 'Almanya sınırsız denizaltı savaşına döndü ve Meksika\'ya ABD\'ye karşı ittifak önerdi. Başkan Wilson Kongre\'den savaş ilanı istiyor: "Dünya demokrasi için güvenli kılınmalı."',
+    { kod: 'ekim', tarih: null, ulke: 'RUS', kosul: { savasta: ['RUS', 'GER'] }, baslik: 'Ekim Devrimi', metin: 'Bolşevikler Kışlık Saray\'ı bastı; Lenin "barış, toprak, ekmek" vaat ediyor. Cephedeki askerler kitleler hâlinde firar ediyor.',
+      sec: [
+        { ad: 'Brest-Litovsk: barış imzala', etki: 'İttifak Devletleri ile barış; huzur +10, meşruiyet −10.', yz: 70, e: [['baris', 'RUS', 'GER'], ['baris', 'RUS', 'AUH'], ['baris', 'RUS', 'OSM'], ['baris', 'RUS', 'BUL'], ['huzur', 'RUS', 10], ['mesru', 'RUS', -10]] },
+        { ad: 'Beyaz generaller savaşı sürdürsün', etki: 'Huzur −15, meşruiyet −20, savaş yorgunluğu +10.', yz: 30, e: [['huzur', 'RUS', -15], ['mesru', 'RUS', -20], ['yorgunluk', 'RUS', 10]] },
+      ] },
+    { kod: 'abd', tarih: '1917-04-06', ulke: 'USA', kosul: { savasta: ['GBR', 'GER'], bayrak: ['sinirsiz_denizalti'] }, pencere: 540, baslik: 'Zimmermann Telgrafı', metin: 'Almanya sınırsız denizaltı savaşına döndü ve Meksika\'ya ABD\'ye karşı ittifak önerdi. Başkan Wilson Kongre\'den savaş ilanı istiyor: "Dünya demokrasi için güvenli kılınmalı."',
       sec: [
         { ad: 'Almanya\'ya savaş ilan et', etki: 'İtilaf safında savaşa girersiniz; savaşa destek +20.', yz: 88, e: [['katil', 'USA', 'GBR', 'GER'], ['destek', 'USA', 20]] },
         { ad: 'Silahlı tarafsızlık', etki: 'Britanya ile ilişkiler soğur.', yz: 12, e: [['gorus', 'GBR', 'USA', -15]] },
