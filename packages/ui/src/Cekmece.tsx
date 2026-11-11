@@ -80,7 +80,7 @@ function BolgeCekmece({ r, kapat }: { r: number; kapat: () => void }) {
         {v.projeler.length > 0 && <p class="soluk">İnşaat: {v.projeler.map((p: any) => `${p.ad} %${p.yuzde}`).join(', ')}</p>}
       </section>
 
-      {tamBenim && <InsaBolumu r={r} kiyi={!!v.kiyi} />}
+      {tamBenim && <InsaBolumu r={r} kiyi={!!v.kiyi} v={v} />}
       {benim && <KurBolumu r={r} />}
 
       {!benim && (
@@ -204,13 +204,14 @@ export function OrgBar({ v }: { v: number }) {
 }
 
 const PROJE_SIMGE: Record<string, string> = { sivil: 'factory', askeri: 'anvil', sulama: 'wheat', demiryolu: 'railway', altyapi: 'road', valilik: 'castle', kent: 'modern-city', maden: 'mining' };
-function InsaBolumu({ r, kiyi }: { r: number; kiyi: boolean }) {
+function InsaBolumu({ r, kiyi, v }: { r: number; kiyi: boolean; v: any }) {
   const d = ozet.value.donem;
   const [gemi, setGemi] = useState<any[] | null>(null);
   useEffect(() => { if (kiyi) void istemci.istek('query', { gorunum: 'kuvvet' }).then((x) => setGemi(x.veri.gemiler)); }, [kiyi, r]);
   return (
     <section class="bolum">
       <h3>İnşa et</h3>
+      {v.insaYuva && <p class="soluk kucuk" title={v.insaYuva.bilesen.map((b: any) => `${b.ad} +${b.deger}`).join(' · ')}>İnşaat yuvası {v.insaYuva.dolu}/{v.insaYuva.yuva} · altyapı, şehir düzeyi, valilik, sanayi ve inşaat tekniğiyle artar</p>}
       <div class="izgara-dugme">
         {d.projeler.map((p: any, i: number) => p.ozel ? null : (
           <button key={i} onClick={() => onizle({ tur: 'insa', proje: i, bolge: r })}><Simge ad={PROJE_SIMGE[p.kod] ?? 'anvil'} boy={20} /><span>{p.ad}</span></button>

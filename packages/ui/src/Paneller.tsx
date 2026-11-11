@@ -184,7 +184,8 @@ function Ordu() {
   return (
     <div class="bolumler">
       <section>
-        <h3>Birlik kur</h3>
+        <h3>Birlik kur · {o.birlikSayi}/{o.birlikSinir}</h3>
+        <p class="soluk kucuk">Birlik sınırı; toprak, şehir düzeyi, sanayi, valilik ve idare/kurmay teknolojisiyle büyür.</p>
         <SablonSecici sab={sab} setSab={setSab} />
         <div class="satir-ayar"><span>Adet</span><Adim deger={adet} azalt={() => setAdet(Math.max(1, adet - 1))} artir={() => setAdet(Math.min(10, adet + 1))} /></div>
         <KonuslanmaSecici />
@@ -266,6 +267,18 @@ function Siyaset() {
         <p><strong>{s.rejimAd}</strong>{s.gecis > 0 && <span class="durum-cip orta"> Geçiş dönemi: {s.gecis} gün</span>}</p>
         <p class="soluk kucuk">Rejim değişikliği 150 siyasi güç ister (şimdi {puan(s.pg)}); meşruiyet 30'un altındaysa iç savaşa döner. Seçimli rejimlerde iktidar sandıkla, ötekilerde darbe ve devrimle değişir.</p>
         <div class="cipler sar">{s.rejimler.map((r: any) => <button key={r.i} class={`cip ${r.i === s.rejim ? 'acik' : ''}`} disabled={r.i === s.rejim} onClick={() => onizle({ tur: 'rejim', rejim: r.i })} title={`İdari verim %${Math.floor(r.idari / 10_000)}${r.secimli ? ' · seçimli' : ''}`}>{r.ad}</button>)}</div>
+      </section>
+      <section>
+        <h3>Siyasi kişilikler</h3>
+        <p class="soluk kucuk">Başta: <strong>{s.kisiler.bas ?? s.kisiler.lider}</strong>. Gerçek tarihî kişilerdir; yalnızca görev yılları içinde etkindir. İktidar partisi değişirse başa o partinin kişisi geçer. İdare yönetim kapasitesini, askerlik kara muharebesini etkiler.</p>
+        {s.kisiler.liste.length === 0 && <p class="soluk kucuk">Bu devlet için kayıtlı kişilik yok; başta {s.kisiler.lider} var.</p>}
+        <ul class="parti-liste">{s.kisiler.liste.filter((k: any) => k.aktif).map((k: any) => (
+          <li key={k.ad} class={k.basta ? 'iktidar' : ''}>
+            <span class="parti-ad"><strong>{k.ad}</strong>{k.basta && <span class="durum-cip iyi">Başta</span>}<br /><span class="soluk kucuk">{k.gorev} · {s.partiler[k.parti]?.ad} · {k.bas}–{k.bit}</span></span>
+            <span class="kucuk" title="İdare / Askerlik / Ekonomi / Diplomasi">İ{k.idare} A{k.askerlik} E{k.ekonomi} D{k.diplomasi}</span>
+          </li>
+        ))}</ul>
+        {s.kisiler.liste.some((k: any) => !k.aktif) && <p class="soluk kucuk">Henüz görevde olmayanlar/görevi bitenler: {s.kisiler.liste.filter((k: any) => !k.aktif).map((k: any) => `${k.ad} (${k.bas}–${k.bit})`).join(', ')}</p>}
       </section>
       <section>
         <div class="bolum-bas"><h3>Partiler ve güç odakları</h3>{s.secimli && <button class="kucuk-dugme" onClick={() => onizle({ tur: 'secimErken' })}>Erken seçim</button>}</div>
@@ -600,6 +613,11 @@ function Arastirma() {
   const yuva = a.yuvalar.map((t: number) => (t >= 0 ? a.teknolojiler[t] : null));
   return (
     <div class="bolumler">
+      <section>
+        <h3>Askerî teknolojinin muharebe etkisi</h3>
+        <p class="kucuk">Saldırı +%{a.askTek.saldiri} · Savunma +%{a.askTek.savunma} · Dayanım (alınan hasar) −%{a.askTek.dayanim} · Kayıp −%{a.askTek.kayip}</p>
+        <p class="soluk kucuk">Kara kuvvetleri ({a.askTek.kara}), doktrin ({a.askTek.doktrin}) ve lojistik ({a.askTek.lojistik}) kademeleriyle büyür; birlikleriniz düşmanı daha az kayıpla, daha çabuk yener.</p>
+      </section>
       <section>
         <h3>Araştırma yuvaları · {yuva.filter(Boolean).length}/{yuva.length}</h3>
         <p class="soluk kucuk">Günlük hız {(a.hiz / 1000).toFixed(2)} puan; her yuva bu hızla ayrı ayrı ilerler. Bilim yatırımı oranı ×{(a.bilimOrani / 1e6).toFixed(1)} (tavan ×4): bilim bütçesi ve harcama oranı arttıkça hız ve yuva sayısı artar.</p>

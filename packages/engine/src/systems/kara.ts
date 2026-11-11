@@ -1,6 +1,7 @@
 // Bölüm 15: kara hareketi, çekirdek muharebe modu, kayıp, geri çekilme, kontrol devri.
 import type { World } from '../state/world.ts';
 import { ck, hc } from '../state/world.ts';
+import { tekCarpan, kayipUygula } from './gelisim.ts';
 import { ARAZI, K, EKIPMAN, NEKIP, ST, YB, NTEK, tekIdx, tekVar, AKTIF } from '../catalog.ts';
 import { MT } from '../state/world.ts';
 import type { DonemKod } from '../donem.ts';
@@ -216,6 +217,7 @@ export function muharebeGunu(w: World, list: Muharebe[]): void {
       const c = U.ulke![u]!;
       let v = mulRatio(s.YS, deneyimCarpan(U.deneyim![u]!)).q;
       v = mulRatio(v, ikmal(u)).q;
+      v = mulRatio(v, tekCarpan(w, c).saldiri).q;
       const atli = U.sablon![u] === 1 ? arazi.atli : S;
       v = mulRatio(v, atli).q; v = mulRatio(v, camur).q;
       v = mulRatio(v, S - sGen.ceza).q;
@@ -230,7 +232,7 @@ export function muharebeGunu(w: World, list: Muharebe[]): void {
       const hu = havaUstunluk(w, c, b);
       const hd = mulDiv(yakinDestek(w, c, b), S + hu, 2 * S).q;
       if (hu || hd) v = mulRatio(v, Math.max(600_000, S + mulDiv(200_000, hu, S).q + hd)).q;
-      return { u, v, k: s.YR, gen: Math.max(1, s.genislik), orgMax: s.orgMax, okC: tekVar(w, c, 'taktik2') ? 900_000 : S };
+      return { u, v, k: s.YR, gen: Math.max(1, s.genislik), orgMax: s.orgMax, okC: mulRatio(tekVar(w, c, 'taktik2') ? 900_000 : S, tekCarpan(w, c).dayanim).q };
     });
     const sav: Taraf[] = dGen.aktif.map((u) => {
       const s = ist.get(u)!;
@@ -238,17 +240,19 @@ export function muharebeGunu(w: World, list: Muharebe[]): void {
       let v = mulRatio(s.YS, deneyimCarpan(U.deneyim![u]!)).q;
       v = mulRatio(v, ikmal(u)).q;
       v = mulRatio(v, S - dGen.ceza).q;
+      v = mulRatio(v, tekCarpan(w, c).saldiri).q;
       v = mulRatio(v, r(u, 1)).q;
       // tahkimat yalnız bölgeyi tutan ülkenin birliklerine yarar
       let k = mulRatio(s.SV, w.R.c.kontrolEden[b] === c ? savCarpan : arazi.savunma).q;
       k = mulRatio(k, ikmal(u)).q;
+      k = mulRatio(k, tekCarpan(w, c).savunma).q;
       if (U.durus![u] === 1) k = mulRatio(k, 1_100_000).q;
       const md = modDeger(w, c, MT.savunma);
       if (md) k = mulRatio(k, Math.max(200_000, S + md)).q;
       const hu = havaUstunluk(w, c, b);
       const hd = mulDiv(yakinDestek(w, c, b), S + hu, 2 * S).q;
       if (hu || hd) k = mulRatio(k, Math.max(700_000, S + mulDiv(120_000, hu, S).q + Math.floor(hd / 2))).q;
-      return { u, v, k, gen: Math.max(1, s.genislik), orgMax: s.orgMax, okC: S };
+      return { u, v, k, gen: Math.max(1, s.genislik), orgMax: s.orgMax, okC: tekCarpan(w, c).dayanim };
     });
     // muharebe tahkimatı aşındırır (topçu ile daha hızlı)
     if (sv && w.R.c.tahkimat[b]! > 0) w.R.c.tahkimat[b] = w.R.c.tahkimat[b]! - mulDiv(w.R.c.tahkimat[b]!, 5_000 + mulDiv(baski, 20_000, S).q, S).q;
@@ -262,7 +266,7 @@ export function muharebeGunu(w: World, list: Muharebe[]): void {
         const tavan = mulDiv(h.orgMax, K.orgTavan, S).q;
         const ok = mulRatio(Math.min(tavan, mulDiv(etkin, K.lambda, S).q), h.okC).q;
         orgKayip.set(h.u, (orgKayip.get(h.u) ?? 0) + ok);
-        const oran = Math.min(30_000, mulDiv(ok, 300_000, Math.max(1, h.orgMax)).q);
+        const oran = kayipUygula(Math.min(30_000, mulDiv(ok, 300_000, Math.max(1, h.orgMax)).q), tekCarpan(w, U.ulke![h.u]!).kayip);
         const tutan = U.ulke![atan[0]!.u]!;
         kayipOran.set(h.u, { oran: Math.min(30_000, (kayipOran.get(h.u)?.oran ?? 0) + oran), tutan });
       }

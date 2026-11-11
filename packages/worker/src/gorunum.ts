@@ -3,7 +3,7 @@ import {
   type World, tarihMetni, ortak, ekonomi, siyaset, nufus, diplomasi, olaylar, bolgeGozlem, istihbaratDuzeyi, aralik, hazineKademe,
   ARAZI, ASKERLIK, EKONOMI, ISGAL, YONETIM, KISILIK, TUTUM, TEKNOLOJI, NTEK, EKIPMAN, AILE_EKIP, TABUR, SABLON, MAL, PROJE, URUN_MUH, A, ANLASMA_TUR, K,
   hc, ST, YB, kara, arastirmaYuvalari, AKTIF, DONEMLER, sablonIhtiyac, TEK_DAL, BAKAN, BAKAN_AD, MOD_TUR, REJIM_AD,
-  deniz, toplum, kademe, KADEME_MAX, GEMI, HAVA, DENIZ_GOREV, HAVA_GOREV, PARTI, SECIMLI, EKO_MODEL, TARIM_ODAK, DONEM_FIYAT, NKIMLIK, MALI, mulDiv,
+  gelisim, deniz, toplum, kademe, KADEME_MAX, GEMI, HAVA, DENIZ_GOREV, HAVA_GOREV, PARTI, SECIMLI, EKO_MODEL, TARIM_ODAK, DONEM_FIYAT, NKIMLIK, MALI, mulDiv,
 } from '@ts/engine';
 import { KOL_E, KOL_T } from '@ts/engine';
 
@@ -28,6 +28,7 @@ export function ozet(w: World) {
     hazineGun: g.toplam > 0 ? Math.floor(C.hazine[P]! / Math.max(1, C.giderDun[P]! || g.toplam)) : 999,
     pg: C.pg[P]!, huzur: C.huzur[P]!, mesru: C.mesru[P]!, destek: C.destek[P]!, yorgunluk: C.yorgunluk[P]!,
     gidaGun: gunluk > 0 ? Math.floor(stok / gunluk) : 999, gidaGuvence: ekonomi.ulkeGidaGuvence(w, P, true), gidaStok: stok,
+    birlikSayi: ortak.ulkeBirlikleri(w, P).length, birlikSinir: gelisim.birlikSiniri(w, P).sinir,
     insanY: ig.erisimY, insan: ig, savasta: ortak.dusmanlar(w, P),
     vergi: C.vergi[P]!, butce: [C.b0[P]!, C.b1[P]!, C.b2[P]!, C.b3[P]!], askerlik: C.askerlik[P]!, ekonomiYasa: C.ekonomi[P]!, karne: C.karne[P]!, isgalPol: C.isgalPol[P]!,
     otoCephe: C.otoCephe[P]!, otoTakviye: C.otoTakviye[P]!, kaliciGida: C.kaliciGida[P]!, harcamaOran: C.harcamaOran[P]!,
@@ -166,6 +167,7 @@ export function bolge(w: World, r: number) {
     kis: ortak.kisDuzey(w, r), camur: ortak.camurDuzey(w, r),
     kent: R.kent[r]!, maden: R.maden[r]!, kiyi: !!b.kiyi, petrol: b.petrol ? { miktar: b.petrol[0], yil: b.petrol[1] } : null, demPol: R.demPol[r]!,
     komsu: b.komsu,
+    insaYuva: (() => { const y = gelisim.insaYuvasi(w, b.eyalet); return { yuva: y.yuva, dolu: gelisim.insaSurenSayi(w, b.eyalet, (t) => !!PROJE[t]?.ozel), bilesen: y.bilesen.filter((x) => x.deger > 0) }; })(),
     // tahkimat: kendi bölgesi kesin, yabancı bölge keşif/istihbarat varsa görünür
     tahkimat: gorunur ? R.tahkimat[r]! : null, tahkimatTavan: k >= 0 ? kara.tahkimatTavan(w, k) : 0, savunma: gorunur ? kara.savunmaCarpan(w, r, 0) : null,
   };
@@ -288,6 +290,7 @@ export function arastirmaG(w: World) {
   const yv = arastirmaYuvalari(w, P);
   return {
     hiz, yuvalar: yv.yuva, sirada: yv.sirada,
+    askTek: (() => { const t = gelisim.askeriTek(w, P), c = gelisim.tekCarpan(w, P); const yz = (x: number) => Math.round((x - 1_000_000) / 10_000); return { ...t, saldiri: yz(c.saldiri), savunma: yz(c.savunma), dayanim: -yz(c.dayanim), kayip: -yz(c.kayip) }; })(),
     teknolojiler: TEKNOLOJI.map((t, i) => {
       const bitti = w.tekBitti[P * NTEK + i]! >= 1;
       const maliyet = w.tekMaliyet[P * NTEK + i]! || ekonomi.tekMaliyetHesapla(w, P, i);
@@ -366,6 +369,7 @@ export function siyasetG(w: World) {
   return {
     rejim: C.rejim[P]!, rejimAd: rejimAd(w, P), rejimler: REJIM_AD[d].map((ad, i) => ({ i, ad, idari: YONETIM[i]?.idari ?? 0, secimli: SECIMLI.has(i) })),
     partiler: PARTI[d].map((p, i) => ({ i, ad: p.ad, renk: p.renk, aciklama: p.aciklama, pay: toplum.partiPay(w, P, i), etki: p.etki })),
+    kisiler: (() => { const k = gelisim.siyasiKisilik(w, P); return { bas: k.bas ? k.bas.ad : null, liste: k.kisiler.map((x) => ({ ad: x.ad, gorev: x.gorev, rol: x.rol, parti: x.parti, aktif: x.aktif, iktidarda: x.iktidarda, basta: x.basta, bas: x.bas, bit: x.bit, idare: x.idare, askerlik: x.askerlik, ekonomi: x.ekonomi, diplomasi: x.diplomasi })), lider: w.pkg.ulkeler[P]!.lider }; })(),
     iktidar: C.iktidar[P]!, secim: C.secim[P]! > 0 ? tarihMetni(C.secim[P]!) : null, secimGun: C.secim[P]! > 0 ? C.secim[P]! - w.gun : null, secimli: SECIMLI.has(C.rejim[P]!),
     gecis: C.gecis[P]! > w.gun ? C.gecis[P]! - w.gun : 0, nufusPol: C.nufusPol[P]!, zulum: C.zulum[P]!, pg: C.pg[P]!, mesru: C.mesru[P]!, huzur: C.huzur[P]!,
     bolgeler: bolgeler.slice(0, 40),

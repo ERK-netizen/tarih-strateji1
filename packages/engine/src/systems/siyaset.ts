@@ -7,6 +7,7 @@ import { yonetimMesafeleri, savastaMi, uc, anlat, bildir, birlikIstat, modDeger 
 import { MT } from '../state/world.ts';
 import { ulkeGidaGuvence, butceEtki } from './ekonomi.ts';
 import { trEk } from '../tr.ts';
+import { liderKapasite } from './gelisim.ts';
 
 export interface Bilesen { ad: string; deger: number }
 
@@ -36,7 +37,7 @@ export function kontrolErisim(w: World, r: number): number {
 export function yonetimKapasitesi(w: World, c: number): { kapasite: number; kullanim: number } {
   const y = YONETIM[w.C.c.rejim[c]!]!;
   const tekIdare = w.tekBitti[c * NTEK + tekIdx('idare')] ? 10_000 : 0;
-  const kapasite = 30_000 + mulDiv(y.idari, 50_000, S).q + tekIdare; // puan ×1000
+  const kapasite = 30_000 + mulDiv(y.idari, 50_000, S).q + tekIdare + liderKapasite(w, c); // puan ×1000
   let kullanim = 0;
   for (let r = 0; r < w.nR; r++) {
     const s = w.R.c.sahip[r]!, k = w.R.c.kontrolEden[r]!;
@@ -59,7 +60,7 @@ export function kapasiteAsimiHepsi(w: World): number[] {
   return kul.map((kullanim, c) => {
     const y = YONETIM[w.C.c.rejim[c]!]!;
     const tekIdare = w.tekBitti[c * NTEK + tekIdx('idare')] ? 10_000 : 0;
-    const kapasite = 30_000 + mulDiv(y.idari, 50_000, S).q + tekIdare;
+    const kapasite = 30_000 + mulDiv(y.idari, 50_000, S).q + tekIdare + liderKapasite(w, c);
     return Math.max(0, mulDiv(kullanim, S, Math.max(1, kapasite)).q - S);
   });
 }

@@ -6,6 +6,7 @@ import { ASKERLIK, EKONOMI, ISGAL, YONETIM, SABLON, TEKNOLOJI, NTEK, PROJE, MAL,
 import { S, mulDiv, clamp } from './num/index.ts';
 import { uc, savasta, savastaMi, gorus, anlasmaVar, birlikAdi, rotaTip, bildir, anlat, ulkeBirlikleri, iddiaVar, efendi } from './systems/ortak.ts';
 import { askerlikAktar, insanGucu, terhis } from './systems/nufus.ts';
+import { insaYuvasi, insaSurenSayi, birlikSiniri } from './systems/gelisim.ts';
 import { tekMaliyetHesapla, krediLimiti, ulkeGidaStok, malStok, arastirmaHizi, acikYuva } from './systems/ekonomi.ts';
 import { KADEME_MAX } from './katalogEk.ts';
 import { tarih } from './calendar/index.ts';
@@ -149,7 +150,7 @@ export function onizle(w: World, e: Emir): Kart {
       if (ig.erisimY < kisi) return red(`${adet} × ${SABLON[sab]!.ad}`, `Çağrılabilir insan gücü yetersiz: ${fmt(ig.erisimY)} erişilebilir, ${fmt(kisi)} gerekli. Askerlik yasasını genişletin.`);
       const para = kisi * 25;
       if (C.hazine[c]! < para) return red(`${adet} × ${SABLON[sab]!.ad}`, `Eğitim bedeli ${fmt(para)} altın; hazine ${fmt(C.hazine[c]!)}.`);
-      if (ulkeBirlikleri(w, c).length + adet > 60) return red('Birlik', 'Ülke başına birlik sınırı 60.');
+      { const bs = birlikSiniri(w, c).sinir; if (ulkeBirlikleri(w, c).length + adet > bs) return red('Birlik', `Birlik sınırı ${bs}: şehirleri, sanayiyi ve idareyi geliştirdikçe artar (şimdi ${ulkeBirlikleri(w, c).length}).`); }
       const eksik: string[] = [];
       for (const [aile, gerek] of Object.entries(ih.aile)) {
         let sahip = 0;
@@ -235,11 +236,8 @@ export function onizle(w: World, e: Emir): Kart {
       if (!P) return red('İnşa', 'Proje türü bulunamadı.');
       if (r < 0 || w.R.c.sahip[r] !== c || w.R.c.kontrolEden[r] !== c) return red('İnşa', `${bAd(w, r)} sahip olup kontrol ettiğiniz bir bölge değil.`);
       const e2 = w.pkg.bolgeler[r]!.eyalet;
-      const eyBolge = w.pkg.eyaletler[e2]!.bolgeler;
-      const ort = Math.floor(eyBolge.reduce((s, x) => s + w.R.c.altyapi[x]!, 0) / eyBolge.length);
-      const yuva = 1 + Math.floor(ort / 2);
-      let mevcut = 0;
-      for (const s of w.PR.rows()) if (eyBolge.includes(w.PR.c.bolge[s]!) && !PROJE[w.PR.c.tur[s]!]?.ozel) mevcut++;
+      const { yuva } = insaYuvasi(w, e2);
+      const mevcut = insaSurenSayi(w, e2, (t) => !!PROJE[t]?.ozel);
       if (mevcut >= yuva) return red('İnşa', `${w.pkg.eyaletler[e2]!.ad} eyaletinde inşa yuvası dolu (${mevcut}/${yuva}).`);
       if (P.ozel) return red('İnşa', 'Gemi ve uçak siparişleri tersane ve uçak emirleriyle verilir.');
       if (P.kod === 'valilik' && w.R.c.valilik[r]) return red('İnşa', 'Bölgede valilik zaten var.');
