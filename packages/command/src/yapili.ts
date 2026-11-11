@@ -133,6 +133,14 @@ export function yapiliAyristir(c: YBaglam): Yorum | string | null {
   if (has(/ ambargo/) && ulke) return yorum({ tur: 'ambargo', ulke: P, kime: ulke.id, acik: has(/ (kaldir|bitir)/) ? 0 : 1 }, 'ambargo', k);
   if (has(/ sinir/) && has(/ olay/) && ulke) return yorum({ tur: 'sinirOlayi', ulke: P, hedef: ulke.id }, 'sınır olayı', k, 0.85);
   if (has(/ yardim/) && ulke && sayilar.length) return yorum({ tur: 'yardim', ulke: P, kime: ulke.id, miktar: Math.floor(sayilar[0]!) }, 'yardım', k);
+  if (has(/ (casus|ajan)/) && ulke) return yorum({ tur: 'casusluk', ulke: P, hedef: ulke.id }, 'casusluk', k, 0.85);
+  if (has(/ suikast/) && ulke) return yorum({ tur: 'suikast', ulke: P, hedef: ulke.id }, 'suikast', k, 0.85);
+  if (has(/ sabotaj/) && bolge !== undefined) return yorum({ tur: 'sabotaj', ulke: P, hedef: k.bolgeler[bolge]!.sahip, bolge }, 'gizli saldırı', k, 0.85);
+  if (has(/ isyan/) && has(/ (cikar|kiskirt)/) && ulke) return yorum({ tur: 'isyan', ulke: P, hedef: ulke.id }, 'isyan kışkırtma', k, 0.85);
+  if (has(/ iliski/) && has(/ boz/)) {
+    const ids = [...new Set(v.filter((x) => x.tur === 'ulke' && x.id !== P).map((x) => x.id))];
+    if (ids.length >= 2) return yorum({ tur: 'iliskiBozma', ulke: P, hedef: ids[0]!, hedef2: ids[1]! }, 'ilişki bozma', k, 0.85);
+  }
   if (has(/ darbe/) && ulke) return yorum({ tur: 'darbe', ulke: P, hedef: ulke.id }, 'darbe desteği', k, 0.85);
   if (has(/ ayrilikci/) && bolge !== undefined) return yorum({ tur: 'ayrilikci', ulke: P, hedef: k.bolgeler[bolge]!.sahip, bolge }, 'ayrılıkçı desteği', k, 0.85);
   if (has(/ bagimsizlik ilan/) && !has(/ garanti/)) return yorum({ tur: 'bagimsizlik', ulke: P }, 'bağımsızlık', k);
@@ -183,6 +191,11 @@ export function yapiliMetin(e: Emir, k: Katalog): string | null {
     case 'ambargo': return Number(e.acik ?? 1) ? `${ekle(u(e.kime), 'yonelme')} ambargo uygula` : `${u(e.kime)} ambargosunu kaldır`;
     case 'sinirOlayi': return `${ekle(u(e.hedef), 'ilgi')} sınırında olay çıkar`;
     case 'yardim': return `${ekle(u(e.kime), 'yonelme')} ${sayiYaz(Number(e.miktar))} altın yardım gönder`;
+    case 'casusluk': return `${ekle(u(e.hedef), 'yonelme')} casus gönder`;
+    case 'suikast': return `${ekle(u(e.hedef), 'ilgi')} lideri için suikast düzenle`;
+    case 'sabotaj': return `${b(e.bolge)} bölgesinde sabotaj düzenle`;
+    case 'isyan': return `${ekle(u(e.hedef), 'bulunma')} isyan çıkar`;
+    case 'iliskiBozma': return `${u(e.hedef)} ile ${u(e.hedef2)} ilişkisini boz`;
     case 'darbe': return `${ekle(u(e.hedef), 'bulunma')} darbeyi destekle`;
     case 'ayrilikci': return `${b(e.bolge)} ayrılıkçılarını destekle`;
     case 'bagimsizlik': return 'Bağımsızlık ilan et';

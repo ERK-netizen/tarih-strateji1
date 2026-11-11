@@ -109,7 +109,7 @@ describe('T123b şema 7 emirlerinin eşdeğer komutu aynı emre geri çözülür
     { tur: 'ekoModel', model: 0 }, { tur: 'ekoModel', model: 3 }, { tur: 'tarife', oran: 250_000 }, { tur: 'sub', alan: 0, oran: 50_000 }, { tur: 'sub', alan: 1, oran: 100_000 },
     { tur: 'tarimOdak', odak: 1 }, { tur: 'tarimOdak', odak: 2 },
     { tur: 'ambargo', kime: 3, acik: 1 }, { tur: 'ambargo', kime: 3, acik: 0 }, { tur: 'sinirOlayi', hedef: 3 }, { tur: 'yardim', kime: 1, miktar: 50_000 },
-    { tur: 'darbe', hedef: 3 }, { tur: 'ayrilikci', hedef: 2, bolge: 12 }, { tur: 'bagimsizlik' },
+    { tur: 'darbe', hedef: 3 }, { tur: 'casusluk', hedef: 3 }, { tur: 'suikast', hedef: 3 }, { tur: 'sabotaj', hedef: ws.R.c.sahip[12]!, bolge: 12 }, { tur: 'isyan', hedef: 3 }, { tur: 'iliskiBozma', hedef: 1, hedef2: 3 }, { tur: 'ayrilikci', hedef: 2, bolge: 12 }, { tur: 'bagimsizlik' },
     { tur: 'baris', kime: 2, barisTur: 3, bolgeler: [] }, { tur: 'baris', kime: 2, barisTur: 4, bolgeler: [12] }, { tur: 'baris', kime: 2, barisTur: 5, bolgeler: [2] },
     { tur: 'teklif', kime: 3, tip: 15, bolgeler: kizil, bedel: 100_000 }, { tur: 'teklif', kime: 3, tip: 16, bolgeler: kizil }, { tur: 'teklif', kime: 1, tip: 17 },
   ];

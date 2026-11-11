@@ -371,6 +371,93 @@ export const EK_EMIRLER: Record<string, EkEmir> = {
       if (uniformInt(rng(w.tohum, w.gun, 43, c, r, AMAC.sabotage, 0, 0), 100) < 30) { gorusDegis(w, d, c, -25_000); anlat(w, `${uAd(w, d)}, ${trEkK(w.pkg.ulkeler[c]!.kisa, 'i')} ${bAd(w, r)} ayrılıkçılarını silahlandırmakla suçladı.`, 'diplomasi', d, 2); }
     },
   },
+  // ---------- İstihbarat ----------
+  casusluk: {
+    onizle(w, e) {
+      const d = n(e.hedef, -1);
+      if (d < 0 || d === e.ulke || d >= w.nC || pasif(w, d)) return red('Casusluk', 'Hedef ülke bulunamadı.');
+      if (w.C.c.pg[e.ulke]! < 20_000) return red('Casusluk', '20 siyasi güç ister.');
+      return tamam(`Bilgi toplama: ${uAd(w, d)}`, 'Ajan ağı hazine, ordu, rejim ve huzur bilgisi getirir', ['Siyasi güç −20, 10.000 altın'], ['%20 olasılıkla ajan yakalanır (görüş −10)'], 'Geri alınamaz');
+    },
+    uygula(w, e) {
+      const c = e.ulke, d = n(e.hedef);
+      w.C.c.pg[c] = w.C.c.pg[c]! - 20_000; w.C.c.hazine[c] = w.C.c.hazine[c]! - 10_000;
+      if (uniformInt(rng(w.tohum, w.gun, 44, c, d, AMAC.sabotage, 0, 0), 100) < 20) { gorusDegis(w, d, c, -10_000); anlat(w, `${uAd(w, d)}, ${trEkK(w.pkg.ulkeler[c]!.kisa, 'in')} ajanını yakaladı.`, 'diplomasi', c, 1); return; }
+      let birlik = 0; for (const u of w.U.rows()) if (w.U.c.ulke[u] === d) birlik++;
+      anlat(w, `İstihbarat raporu — ${uAd(w, d)}: hazine ${fmt(w.C.c.hazine[d]!)}, ${birlik} birlik, rejim ${REJIM_AD[AKTIF.donem][w.C.c.rejim[d]!] ?? '?'}, meşruiyet %${Math.floor(w.C.c.mesru[d]! / 1000)}, huzur %${Math.floor(w.C.c.huzur[d]! / 1000)}.`, 'diplomasi', c, 3);
+    },
+  },
+  suikast: {
+    onizle(w, e) {
+      const d = n(e.hedef, -1);
+      if (d < 0 || d === e.ulke || d >= w.nC || pasif(w, d)) return red('Suikast', 'Hedef ülke bulunamadı.');
+      if (w.C.c.pg[e.ulke]! < 80_000) return red('Suikast', '80 siyasi güç ister.');
+      return tamam(`Suikast: ${uAd(w, d)} lideri`, 'Tetikçi tutulur; başarılıysa hedefte meşruiyet ve huzur çöker', ['Siyasi güç −80, 60.000 altın'], ['Başarı ≈ %35', 'Başarısızlıkta ifşa: görüş −50, hedef savaş gerekçesi kazanır'], 'Geri alınamaz');
+    },
+    uygula(w, e) {
+      const c = e.ulke, d = n(e.hedef);
+      w.C.c.pg[c] = w.C.c.pg[c]! - 80_000; w.C.c.hazine[c] = w.C.c.hazine[c]! - 60_000;
+      if (uniformInt(rng(w.tohum, w.gun, 45, c, d, AMAC.sabotage, 0, 0), 100) < 35) {
+        w.C.c.mesru[d] = Math.max(0, w.C.c.mesru[d]! - 15_000); w.C.c.huzur[d] = Math.max(0, w.C.c.huzur[d]! - 10_000);
+        anlat(w, `${uAd(w, d)} lideri suikasta uğradı; iç karışıklık başladı.`, 'siyaset', d, 3);
+        if (d === w.oyuncu) bildir(w, 'siyaset', 'Liderimize suikast!', d, true);
+      } else {
+        gorusDegis(w, d, c, -50_000);
+        const s = w.GR.alloc(); w.GR.c.ulke[s] = d; w.GR.c.hedef[s] = c; w.GR.c.bitis[s] = w.gun; w.GR.c.hazir[s] = 1;
+        anlat(w, `${uAd(w, d)}, ${trEkK(w.pkg.ulkeler[c]!.kisa, 'in')} suikast girişimini ortaya çıkardı.`, 'diplomasi', d, 3);
+      }
+    },
+  },
+  sabotaj: {
+    onizle(w, e) {
+      const d = n(e.hedef, -1), r = n(e.bolge, -1);
+      if (d < 0 || d === e.ulke || r < 0 || w.R.c.sahip[r] !== d) return red('Gizli saldırı', 'Hedef ülkenin bir bölgesini seçin.');
+      if (w.C.c.pg[e.ulke]! < 40_000) return red('Gizli saldırı', '40 siyasi güç ister.');
+      return tamam(`Gizli saldırı: ${bAd(w, r)}`, 'Kimliği bilinmeyen sabotaj: tahkimat çöker, direniş artar, fabrikalar aksar', ['Siyasi güç −40, 40.000 altın'], ['Başarı ≈ %55; %25 ifşa (görüş −25)']);
+    },
+    uygula(w, e) {
+      const c = e.ulke, d = n(e.hedef), r = n(e.bolge);
+      w.C.c.pg[c] = w.C.c.pg[c]! - 40_000; w.C.c.hazine[c] = w.C.c.hazine[c]! - 40_000;
+      if (uniformInt(rng(w.tohum, w.gun, 46, c, r, AMAC.sabotage, 0, 0), 100) < 55) {
+        w.R.c.tahkimat[r] = 0; w.R.c.direnis[r] = Math.min(100_000, w.R.c.direnis[r]! + 20_000);
+        anlat(w, `${bAd(w, r)}'da bilinmeyen kişilerce sabotaj: tahkimat ve tesisler zarar gördü.`, 'siyaset', d, 2);
+      }
+      if (uniformInt(rng(w.tohum, w.gun, 47, c, r, AMAC.sabotage, 1, 0), 100) < 25) { gorusDegis(w, d, c, -25_000); anlat(w, `${uAd(w, d)}, ${bAd(w, r)} sabotajının arkasında ${trEkK(w.pkg.ulkeler[c]!.kisa, 'in')} olduğunu açıkladı.`, 'diplomasi', d, 2); }
+    },
+  },
+  iliskiBozma: {
+    onizle(w, e) {
+      const a = n(e.hedef, -1), b = n(e.hedef2, -1);
+      if (a < 0 || b < 0 || a === b || a >= w.nC || b >= w.nC || a === e.ulke || b === e.ulke || pasif(w, a) || pasif(w, b)) return red('İlişki bozma', 'İki farklı yabancı ülke seçin.');
+      if (w.C.c.pg[e.ulke]! < 40_000) return red('İlişki bozma', '40 siyasi güç ister.');
+      return tamam(`İlişki bozma: ${uAd(w, a)} – ${uAd(w, b)}`, 'Sahte belge ve provokasyonla iki ülkenin görüşü kötüleşir', ['Siyasi güç −40, 30.000 altın'], ['İki ülkenin karşılıklı görüşü −30; %25 ifşa (ikisi de bizden uzaklaşır)']);
+    },
+    uygula(w, e) {
+      const c = e.ulke, a = n(e.hedef), b = n(e.hedef2);
+      w.C.c.pg[c] = w.C.c.pg[c]! - 40_000; w.C.c.hazine[c] = w.C.c.hazine[c]! - 30_000;
+      gorusDegis(w, a, b, -30_000); gorusDegis(w, b, a, -30_000);
+      anlat(w, `${uAd(w, a)} ile ${uAd(w, b)} arasında gerginlik: karşılıklı suçlamalar.`, 'diplomasi', a, 2);
+      if (uniformInt(rng(w.tohum, w.gun, 48, c, a * 64 + b, AMAC.sabotage, 0, 0), 100) < 25) { gorusDegis(w, a, c, -20_000); gorusDegis(w, b, c, -20_000); }
+    },
+  },
+  isyan: {
+    onizle(w, e) {
+      const d = n(e.hedef, -1);
+      if (d < 0 || d === e.ulke || d >= w.nC || pasif(w, d)) return red('İsyan', 'Hedef ülke bulunamadı.');
+      if (w.C.c.pg[e.ulke]! < 70_000) return red('İsyan', '70 siyasi güç ister.');
+      return tamam(`İsyan kışkırtma: ${uAd(w, d)}`, 'Hedefin bölgelerinde silah ve para dağıtılır', ['Siyasi güç −70, 70.000 altın'], ['Direniş +15 (en huzursuz üç bölge), huzur −5; %30 ifşa (görüş −35)'], 'Geri alınamaz');
+    },
+    uygula(w, e) {
+      const c = e.ulke, d = n(e.hedef);
+      w.C.c.pg[c] = w.C.c.pg[c]! - 70_000; w.C.c.hazine[c] = w.C.c.hazine[c]! - 70_000;
+      const bol: number[] = []; for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === d) bol.push(r);
+      bol.sort((x, y) => w.R.c.direnis[y]! - w.R.c.direnis[x]! || x - y);
+      for (const r of bol.slice(0, 3)) w.R.c.direnis[r] = Math.min(100_000, w.R.c.direnis[r]! + 15_000);
+      w.C.c.huzur[d] = Math.max(0, w.C.c.huzur[d]! - 5_000);
+      anlat(w, `${uAd(w, d)}'da isyan ateşi yükseldi.`, 'siyaset', d, 3);
+      if (uniformInt(rng(w.tohum, w.gun, 49, c, d, AMAC.sabotage, 0, 0), 100) < 30) { gorusDegis(w, d, c, -35_000); }
+    },
+  },
   bagimsizlik: {
     onizle(w, e) {
       const f = efendi(w, e.ulke);

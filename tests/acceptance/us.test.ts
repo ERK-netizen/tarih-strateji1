@@ -22,3 +22,17 @@ test('hava üssü: kapasite, inşa ve cephe menzili', () => {
   const x = cp.find((q) => us.usMesafesi(w, 0, q) <= us.havaMenzili());
   if (x !== undefined) expect(emir(w, { tur: 'havaGorev', ulke: 0, gorev: 1, bolge: x }).ok).toBe(true);
 });
+
+test('istihbarat emirleri çalışır ve bedelini keser', () => {
+  const w = dunya(0, 0);
+  w.C.c.pg[0] = 500_000; w.C.c.hazine[0] = 10_000_000;
+  const d = [1, 2, 3].find((x) => x < w.nC)!;
+  for (const e of [{ tur: 'casusluk', ulke: 0, hedef: d }, { tur: 'suikast', ulke: 0, hedef: d }, { tur: 'isyan', ulke: 0, hedef: d }, { tur: 'iliskiBozma', ulke: 0, hedef: 1, hedef2: 2 }]) {
+    const pg = w.C.c.pg[0]!;
+    expect(onizle(w, e as any).gecerli, e.tur).toBe(true);
+    emir(w, e as any);
+    expect(w.C.c.pg[0]!, e.tur).toBeLessThan(pg);
+  }
+  w.C.c.pg[0] = 0;
+  expect(onizle(w, { tur: 'suikast', ulke: 0, hedef: d } as any).gecerli).toBe(false);
+});
