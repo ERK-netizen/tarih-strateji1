@@ -59,14 +59,14 @@ function teknolojiler(ad: Record<string, [string, number, string[]?]>): Teknoloj
 
 // sivil, askeri, sulama, demiryolu, altyapı, valilik, kent (şehir imarı), maden (maden ocağı), gemi (tersane siparişi), uçak
 const PROJE_SAYI = [[1_800_000, 900_000, 180], [1_800_000, 1_000_000, 180], [600_000, 500_000, 120], [900_000, 800_000, 120], [700_000, 500_000, 90], [500_000, 700_000, 150],
-  [2_400_000, 1_500_000, 240], [1_200_000, 900_000, 150], [0, 0, 0], [0, 0, 0]] as const;
+  [2_400_000, 1_500_000, 240], [1_200_000, 900_000, 150], [0, 0, 0], [0, 0, 0], [1_400_000, 1_100_000, 150], [1_600_000, 1_300_000, 180]] as const;
 /** Ek projeler (şema 7): şehir imarı, maden ocağı; gemi ve uçak siparişleri ayrı emirle verilir (özel). */
 const EK_PROJE: Record<DonemKod, [string, string, string[]][]> = {
-  orta: [['kent', 'Şehir imarı', ['şehir', 'imar', 'kent']], ['maden', 'Maden ocağı', ['maden', 'ocak']], ['gemi', 'Tersane siparişi', ['gemi', 'tersane']], ['ucak', 'Uçak siparişi', ['uçak']]],
-  barut: [['kent', 'Şehir imarı', ['şehir', 'imar', 'kent']], ['maden', 'Maden ocağı', ['maden', 'ocak']], ['gemi', 'Tersane siparişi', ['gemi', 'tersane']], ['ucak', 'Uçak siparişi', ['uçak']]],
-  buyuk: [['kent', 'Şehir imarı', ['şehir', 'imar', 'kent', 'şehir geliştir']], ['maden', 'Maden ocağı', ['maden', 'ocak', 'petrol kuyusu']], ['gemi', 'Tersane siparişi', ['gemi', 'tersane']], ['ucak', 'Uçak siparişi', ['uçak']]],
-  ikinci: [['kent', 'Şehir imarı', ['şehir', 'imar', 'kent', 'şehir geliştir']], ['maden', 'Maden ve petrol işletmesi', ['maden', 'ocak', 'petrol kuyusu']], ['gemi', 'Tersane siparişi', ['gemi', 'tersane']], ['ucak', 'Uçak siparişi', ['uçak']]],
-  modern: [['kent', 'Kentsel dönüşüm', ['şehir', 'imar', 'kent', 'kentsel dönüşüm']], ['maden', 'Maden ve enerji sahası', ['maden', 'petrol', 'doğalgaz']], ['gemi', 'Tersane siparişi', ['gemi', 'tersane']], ['ucak', 'Uçak siparişi', ['uçak']]],
+  orta: [['kent', 'Şehir imarı', ['şehir', 'imar', 'kent']], ['maden', 'Maden ocağı', ['maden', 'ocak']], ['gemi', 'Gemi siparişi', ['gemi']], ['ucak', 'Uçak siparişi', ['uçak']], ['havaus', 'Hava üssü', ['hava üssü', 'havaalanı', 'üs']], ['tersane', 'Tersane', ['tersane', 'gemi yapım yeri']]],
+  barut: [['kent', 'Şehir imarı', ['şehir', 'imar', 'kent']], ['maden', 'Maden ocağı', ['maden', 'ocak']], ['gemi', 'Gemi siparişi', ['gemi']], ['ucak', 'Uçak siparişi', ['uçak']], ['havaus', 'Hava üssü', ['hava üssü', 'havaalanı', 'üs']], ['tersane', 'Tersane', ['tersane', 'gemi yapım yeri']]],
+  buyuk: [['kent', 'Şehir imarı', ['şehir', 'imar', 'kent', 'şehir geliştir']], ['maden', 'Maden ocağı', ['maden', 'ocak', 'petrol kuyusu']], ['gemi', 'Gemi siparişi', ['gemi']], ['ucak', 'Uçak siparişi', ['uçak']], ['havaus', 'Hava üssü', ['hava üssü', 'havaalanı', 'üs']], ['tersane', 'Tersane', ['tersane', 'gemi yapım yeri']]],
+  ikinci: [['kent', 'Şehir imarı', ['şehir', 'imar', 'kent', 'şehir geliştir']], ['maden', 'Maden ve petrol işletmesi', ['maden', 'ocak', 'petrol kuyusu']], ['gemi', 'Gemi siparişi', ['gemi']], ['ucak', 'Uçak siparişi', ['uçak']], ['havaus', 'Hava üssü', ['hava üssü', 'havaalanı', 'üs']], ['tersane', 'Tersane', ['tersane', 'gemi yapım yeri']]],
+  modern: [['kent', 'Kentsel dönüşüm', ['şehir', 'imar', 'kent', 'kentsel dönüşüm']], ['maden', 'Maden ve enerji sahası', ['maden', 'petrol', 'doğalgaz']], ['gemi', 'Gemi siparişi', ['gemi']], ['ucak', 'Uçak siparişi', ['uçak']], ['havaus', 'Hava üssü', ['hava üssü', 'havaalanı', 'üs']], ['tersane', 'Tersane', ['tersane', 'gemi yapım yeri']]],
 };
 function projeler(adlar: [string, string, string[]][], d: DonemKod = 'buyuk'): Donem['proje'] {
   return [...adlar, ...EK_PROJE[d]].map(([kod, ad, es], i) => ({ kod, ad, sp: PROJE_SAYI[i]![0], nakit: PROJE_SAYI[i]![1], gun: PROJE_SAYI[i]![2], esanlam: [ad.toLocaleLowerCase('tr'), ...es], ozel: kod === 'gemi' || kod === 'ucak' || undefined }));

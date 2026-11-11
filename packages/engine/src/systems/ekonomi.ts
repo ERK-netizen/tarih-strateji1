@@ -1,3 +1,4 @@
+import { US_MAX } from './us.ts';
 // Bölüm 11–13: tarım, gıda, sanayi, üretim hatları, projeler, araştırma, vergi, harcama, borç, pazar.
 import type { World } from '../state/world.ts';
 import { hc, ck, URUN_MUH, T_GIDA, T_MAL, T_PARA, H_EYALET, H_ULKE } from '../state/world.ts';
@@ -375,6 +376,8 @@ function projeTamamla(w: World, s: number): void {
   else if (kod === 'demiryolu') { R.demiryolu[r] = Math.min(3, R.demiryolu[r]! + 1); w.rotaEpoch++; }
   else if (kod === 'altyapi') { R.altyapi[r] = Math.min(6, R.altyapi[r]! + 1); w.rotaEpoch++; }
   else if (kod === 'valilik') R.valilik[r] = 1;
+  else if (kod === 'havaus') R.havaUs[r] = Math.min(US_MAX, R.havaUs[r]! + 1);
+  else if (kod === 'tersane') R.tersane[r] = Math.min(3, R.tersane[r]! + 1);
   else if (kod === 'kent') {
     // şehir büyüdükçe fabrikalar da çoğalır: her düzey bir sivil, çift düzeyler bir askerî fabrika
     R.kent[r] = Math.min(10, R.kent[r]! + 1); R.sivilF[r] = R.sivilF[r]! + 1;

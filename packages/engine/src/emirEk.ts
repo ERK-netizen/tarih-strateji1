@@ -1,3 +1,5 @@
+import { denizGucu } from './systems/deniz.ts';
+import { cepheler, usMesafesi, havaMenzili, ucakKapasitesi, ucakToplam } from './systems/us.ts';
 // Ek emirler (şema 7): donanma ve hava kuvvetleri, tabur düzeni, siyaset, demografi, ekonomi ayarları, örtülü diplomasi.
 // Her emir için önizleme (dünyayı değiştirmez) ve uygulama; oyuncu ve karar modülü aynı kuralları kullanır.
 import type { World } from './state/world.ts';
@@ -37,6 +39,7 @@ export const EK_EMIRLER: Record<string, EkEmir> = {
       if (!G) return red('Tersane', 'Gemi sınıfı bulunamadı.');
       if (r < 0 || w.R.c.sahip[r] !== c || w.R.c.kontrolEden[r] !== c) return red('Tersane', 'Tersane kendi kıyı bölgenizde olmalı.');
       if (!kiyiMi(w, r)) return red('Tersane', `${bAd(w, r)} kıyıda değil.`);
+      if (w.R.c.tersane[r]! < 1) return red('Tersane', `${bAd(w, r)} bölgesinde tersane yok: önce “Tersane” inşa edin.`);
       const { say } = gemiPR(w, c, 'gemi');
       if (say >= 4) return red('Tersane', 'En çok dört tersane siparişi aynı anda yürür.');
       const bedel = mulDiv(G.bedel * adet, DONEM_FIYAT[AKTIF.donem], 1000).q;
@@ -58,6 +61,9 @@ export const EK_EMIRLER: Record<string, EkEmir> = {
       if (!H) return red('Uçak', HAVA[AKTIF.donem].length ? 'Uçak türü bulunamadı.' : 'Bu çağda hava kuvveti yok.');
       const { say } = gemiPR(w, c, 'ucak');
       if (say >= 4) return red('Uçak', 'En çok dört uçak siparişi aynı anda yürür.');
+      let bekleyen = 0; { const { p } = gemiPR(w, c, 'ucak'); for (const s of w.PR.rows()) if (w.PR.c.ulke[s] === c && w.PR.c.tur[s] === p) bekleyen += w.PR.c.adet[s]!; }
+      const kap = ucakKapasitesi(w, c), simdi = ucakToplam(w, c) + bekleyen;
+      if (simdi + filo * 10 > kap) return red('Uçak', `Hava üssü kapasitesi dolu (${fmt(simdi)}/${fmt(kap)} uçak): yeni hava üssü inşa edin.`);
       const bas = w.pkg.ulkeler[c]!.baskent;
       if (w.R.c.kontrolEden[bas] !== c) return red('Uçak', 'Başkent elinizde değil.');
       const bedel = mulDiv(H.bedel * filo, DONEM_FIYAT[AKTIF.donem], 1000).q;
@@ -87,11 +93,29 @@ export const EK_EMIRLER: Record<string, EkEmir> = {
       if (HAVA[AKTIF.donem].length === 0) return red('Hava kuvvetleri', 'Bu çağda hava kuvveti yok.');
       if (!HAVA_GOREV[g]) return red('Hava kuvvetleri', 'Görev bulunamadı.');
       if (g > 0 && (r < 0 || r >= w.nR)) return red('Hava kuvvetleri', 'Hedef bölge seçin.');
+      if (g > 0) {
+        const cp = cepheler(w, e.ulke);
+        const dusmanBolge = savasta(w, e.ulke, w.R.c.kontrolEden[r]!);
+        if (!cp.includes(r) && !(g === 3 && dusmanBolge)) return red('Hava kuvvetleri', `${bAd(w, r)} aktif cephe değil: hava gücü yalnızca savaşılan cephelere gönderilir.`);
+        const m = usMesafesi(w, e.ulke, r);
+        if (m > havaMenzili()) return red('Hava kuvvetleri', m >= 999 ? 'Hava üssünüz yok: önce hava üssü inşa edin.' : `${bAd(w, r)} hava üslerinizin menzili dışında (${m} bölge; menzil ${havaMenzili()}). Cepheye yakın hava üssü kurun.`);
+      }
       if (g === 3 && !savasta(w, e.ulke, w.R.c.kontrolEden[r]!)) return red('Bombardıman', 'Stratejik bombardıman yalnız savaştığınız devletin bölgesine yapılır.');
       const t = ['Uçaklar üste kalır, onarılır', 'Bölge ve komşularında hava üstünlüğü: kara muharebesine ±%20', 'Yakın destek: bölgedeki taarruz ve savunmaya bombardıman katkısı', 'Sanayi hasarı, huzursuzluk ve savaş yorgunluğu', 'Bölgedeki düşman ordu tahminleri daralır'][g]!;
       return tamam(`Hava görevi: ${HAVA_GOREV[g]}${g > 0 ? ` · ${bAd(w, r)}` : ''}`, t);
     },
     uygula(w, e) { w.C.c.havaGorev[e.ulke] = n(e.gorev); w.C.c.havaBolge[e.ulke] = n(e.gorev) > 0 ? n(e.bolge) : -1; },
+  },
+  donanmaGonder: {
+    onizle(w, e) {
+      const r = n(e.bolge, -1);
+      if (r < 0 || r >= w.nR) return red('Donanma', 'Hedef cephe bölgesi seçin.');
+      if (!kiyiMi(w, r)) return red('Donanma', `${bAd(w, r)} kıyıda değil.`);
+      if (!cepheler(w, e.ulke).includes(r)) return red('Donanma', `${bAd(w, r)} aktif cephe değil: donanma yalnızca savaşılan kıyı cephelerine gönderilir.`);
+      if (denizGucu(w, e.ulke) <= 0) return red('Donanma', 'Savaşabilir gemi yok.');
+      return tamam(`Donanma cepheye: ${bAd(w, r)}`, 'Kıyı bombardımanıyla bölge ve komşularındaki muharebelere destek verir', ['Görev yoksa “Deniz üstünlüğü” görevine geçer'], ['Düşman donanması varsa önce o aranır'], 'Geri alınabilir');
+    },
+    uygula(w, e) { w.C.c.donBolge[e.ulke] = n(e.bolge) + 1; if (w.C.c.donGorev[e.ulke] === 0) w.C.c.donGorev[e.ulke] = 1; },
   },
   // ---------- Tabur düzeni ----------
   taburEkle: {

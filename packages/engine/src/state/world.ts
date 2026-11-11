@@ -19,6 +19,8 @@ export const BOLGE_KOL = [
   ['isgalGun', f], ['anaYurtGun', f], ['mesafe', f], ['valilik', f], ['isyan', f], ['tahkimat', f], ['sonMuharebe', f], ['vaDun', f],
   // şema 7: şehir düzeyi (0–10), maden işletmesi düzeyi (0–5), etkin demografi politikası ve hedef kimlik hücresi
   ['kent', f], ['maden', f], ['demPol', i32], ['demKim', i32],
+  // şema 8: hava üssü düzeyi (0–5) ve tersane düzeyi (0–3)
+  ['havaUs', f], ['tersane', f],
 ] as const;
 export type BolgeK = (typeof BOLGE_KOL)[number][0];
 
@@ -38,7 +40,7 @@ export const ULKE_KOL = [
   // şema 6: bakanlar (alan bit maskesi), başlangıç tabanları (hedefler), savaşta geçen gün, seçilen doktrin
   ['bakan', i32], ['bazBolge', f], ['bazYasam', f], ['bazTek', f], ['bazNufus', f], ['savasGunu', f], ['tekSay', f], ['maas', f],
   // şema 7: donanma (sınıf başına gemi), hasar, görev; hava filoları (tür başına uçak), görev ve hedef bölge; abluka ve akın kaybı
-  ['gs0', f], ['gs1', f], ['gs2', f], ['gs3', f], ['gs4', f], ['gHasar', f], ['donGorev', i32],
+  ['gs0', f], ['gs1', f], ['gs2', f], ['gs3', f], ['gs4', f], ['gHasar', f], ['donGorev', i32], ['donBolge', i32],
   ['h0', f], ['h1', f], ['h2', f], ['hHasar', f], ['havaGorev', i32], ['havaBolge', i32], ['abluka', f], ['akinKayip', f], ['denizK', i32],
   // siyaset: rejim, parti destekleri (S), iktidar partisi, sonraki seçim günü, rejim geçişinin bitişi
   ['rejim', i32], ['parti0', f], ['parti1', f], ['parti2', f], ['parti3', f], ['parti4', f], ['iktidar', i32], ['secim', f], ['gecis', f],

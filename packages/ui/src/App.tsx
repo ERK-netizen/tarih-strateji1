@@ -3,7 +3,7 @@ import { signal } from '@preact/signals';
 import { HaritaCizici, type HaritaModu } from '@ts/map';
 import {
   pkg, geo, SIMGE, istemci, ekran, ozet, harita, cekmece, panel, panelAc, bolgeAc, haritaModu, seciliBolge, seciliBirlik, bolgeSecimi, ilerliyor, ilerleme, rapor,
-  komutSonuc, nedenAcik, tostlar, komutMetni, tazele, kisalt, puan, yuzde, sonKomutlar, tost, paketKimlik, type Panel,
+  komutSonuc, nedenAcik, tostlar, komutMetni, tazele, kisalt, puan, yuzde, sonKomutlar, tost, paketKimlik, type Panel, menuAcik,
 } from './durum.ts';
 import { komutCalistir, onizle, gonder, ilerlet, durdur } from './eylem.ts';
 import { Cekmece } from './Cekmece.tsx';
@@ -200,6 +200,7 @@ function UstBar() {
   const net = o.gelirDun - o.giderDun;
   return (
     <header class="ustbar">
+      <button class="hamburger" onClick={() => { menuAcik.value = !menuAcik.value; }} aria-label="Menü" aria-expanded={menuAcik.value}><span>☰</span></button>
       <button class="kimlik" onClick={() => panelAc('devlet')} title="Devlet paneli">
         <span class="muhur" style={{ background: o.ulke.renk }} />
         <span class="kimlik-metin">
@@ -226,7 +227,9 @@ function Zaman() {
     <div class="zaman" role="group" aria-label="Zamanı ilerlet">
       <button onClick={() => ilerlet('gun', 1)} title="1 gün"><Simge ad="play-button" boy={16} /><span>1 gün</span></button>
       <button onClick={() => ilerlet('hafta', 1)} title="1 hafta"><Simge ad="fast-forward-button" boy={16} /><span>1 hafta</span></button>
-      <button onClick={() => ilerlet('ay', 1)} title="1 ay"><Simge ad="fast-forward-button" boy={16} /><span>1 ay</span></button>
+      <button onClick={() => ilerlet('ay', 1)} title="1 takvim ayı"><Simge ad="fast-forward-button" boy={16} /><span>1 ay</span></button>
+      <button onClick={() => ilerlet('ay', 3)} title="3 takvim ayı"><Simge ad="fast-forward-button" boy={16} /><span>3 ay</span></button>
+      <button onClick={() => ilerlet('ay', 6)} title="6 takvim ayı"><Simge ad="fast-forward-button" boy={16} /><span>6 ay</span></button>
       <button class="ana" onClick={() => ilerlet('olay', 1)} title="Sonraki önemli olaya kadar (en çok üç ay)"><Simge ad="next-button" boy={16} /><span>Olay</span></button>
     </div>
   );
@@ -234,21 +237,24 @@ function Zaman() {
 
 export const PANELLER: [Panel, string, string][] = [
   ['devlet', 'Devlet', 'crown'], ['siyaset', 'Siyaset', 'vote'], ['ordu', 'Ordu', 'crossed-swords'], ['kuvvet', 'Deniz/Hava', 'anchor'], ['ekonomi', 'Ekonomi', 'anvil'], ['diplomasi', 'Diplomasi', 'dove'],
-  ['arastirma', 'Araştırma', 'telescope'], ['istatistik', 'İstatistik', 'histogram'], ['kronik', 'Kronik', 'scroll-unfurled'], ['kayit', 'Kayıt', 'save'],
+  ['arastirma', 'Araştırma', 'telescope'], ['istatistik', 'İstatistik', 'histogram'], ['kronik', 'Kronik', 'scroll-unfurled'], ['kayit', 'Kayıt', 'save'], ['komut', 'Komut', 'quill-ink'], ['danisman', 'Danışman', 'scales'],
 ];
 
 function SolRay() {
   const o = ozet.value;
   return (
-    <nav class="solray" aria-label="Paneller">
+    <>
+    {menuAcik.value && <div class="menu-perde" onClick={() => { menuAcik.value = false; }} />}
+    <nav class={`solray ${menuAcik.value ? 'menu-acik' : ''}`} aria-label="Paneller">
       {PANELLER.map(([k, ad, s]) => (
-        <button key={k} class={panel.value === k ? 'acik' : ''} onClick={() => panelAc(k)} aria-pressed={panel.value === k}>
+        <button key={k} class={panel.value === k ? 'acik' : ''} onClick={() => { menuAcik.value = false; panelAc(k); }} aria-pressed={panel.value === k}>
           <Simge ad={s} boy={22} />
           <span>{ad}</span>
           {k === 'diplomasi' && o?.teklifler?.length ? <b class="rozet">{o.teklifler.length}</b> : null}
         </button>
       ))}
     </nav>
+    </>
   );
 }
 
@@ -291,7 +297,6 @@ function OrtaAlan() {
     <div class={`orta ${s ? 'kartli' : ''}`}>
       {seciliBirlik.value.size > 0 && !s && <BirlikSecim />}
       {s && <Sonuc s={s} />}
-      <KomutAlani />
     </div>
   );
 }
@@ -314,7 +319,7 @@ function BirlikSecim() {
   );
 }
 
-function KomutAlani() {
+export function KomutAlani() {
   const ref = useRef<HTMLInputElement>(null);
   const [odak, setOdak] = useState(false);
   const s = komutSonuc.value;
@@ -412,6 +417,7 @@ function Ilerleme() {
   return <div class="ilerleme" role="status"><div class="cubuk" style={{ width: `${p.yuzde}%` }} /><span>{p.tarih}</span></div>;
 }
 
+const raporSekme = signal<'dunya' | 'devlet'>('devlet');
 export function Rapor() {
   const r = rapor.value;
   if (!r) return <p class="soluk">Henüz tur raporu yok. Zamanı ilerletin.</p>;
@@ -426,7 +432,11 @@ export function Rapor() {
           <span class="dugmeler"><button onClick={() => onizle({ tur: 'teklifYanit', teklif: t.id, kabul: 0 })}>Reddet</button><button class="ana" onClick={() => onizle({ tur: 'teklifYanit', teklif: t.id, kabul: 1 })}>Kabul et</button></span>
         </div>
       ))}
-      <ul class="telgraf">{r.olaylar.length ? r.olaylar.map((o) => <li class={o.onem >= 3 ? 'onemli' : ''}><span class="t-tarih">{o.tarih}</span> {o.metin}</li>) : <li class="soluk">Kayda değer gelişme yok.</li>}</ul>
+      <div class="sekmeler" role="tablist">
+        <button role="tab" class={raporSekme.value === 'devlet' ? 'acik' : ''} onClick={() => { raporSekme.value = 'devlet'; }}>Devletim</button>
+        <button role="tab" class={raporSekme.value === 'dunya' ? 'acik' : ''} onClick={() => { raporSekme.value = 'dunya'; }}>Dünya Olayları</button>
+      </div>
+      {(() => { const l = r.olaylar.filter((o: any) => (raporSekme.value === 'devlet') === !!o.benim); return <ul class="telgraf">{l.length ? l.map((o: any) => <li class={o.onem >= 3 ? 'onemli' : ''}><span class="t-tarih">{o.tarih}</span> {o.metin}</li>) : <li class="soluk">Kayda değer gelişme yok.</li>}</ul>; })()}
     </div>
   );
 }

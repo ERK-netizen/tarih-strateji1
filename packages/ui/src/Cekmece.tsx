@@ -203,7 +203,7 @@ export function OrgBar({ v }: { v: number }) {
   return <span class={`mini-bar ${c}`} title={`%${Math.round(v * 100)}`}><span style={{ width: `${Math.max(0, Math.min(100, v * 100))}%` }} /></span>;
 }
 
-const PROJE_SIMGE: Record<string, string> = { sivil: 'factory', askeri: 'anvil', sulama: 'wheat', demiryolu: 'railway', altyapi: 'road', valilik: 'castle', kent: 'modern-city', maden: 'mining' };
+const PROJE_SIMGE: Record<string, string> = { sivil: 'factory', askeri: 'anvil', sulama: 'wheat', demiryolu: 'railway', altyapi: 'road', valilik: 'castle', kent: 'modern-city', maden: 'mining', havaus: 'anvil', tersane: 'anvil' };
 function InsaBolumu({ r, kiyi, v }: { r: number; kiyi: boolean; v: any }) {
   const d = ozet.value.donem;
   const [gemi, setGemi] = useState<any[] | null>(null);

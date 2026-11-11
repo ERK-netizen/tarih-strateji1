@@ -99,7 +99,7 @@ describe('T123b şema 7 emirlerinin eşdeğer komutu aynı emre geri çözülür
   const kizil = ws.pkg.bolgeler.map((_, i) => i).filter((i) => ws.R.c.sahip[i] === 3 && i !== ws.pkg.ulkeler[3]!.baskent).slice(0, 2);
   const emirler: Record<string, unknown>[] = [
     { tur: 'gemiInsa', sinif: 2, adet: 3, bolge: kiyi < 0 ? 0 : kiyi }, { tur: 'ucakUret', tip: 1, adet: 2 },
-    { tur: 'donanmaGorev', gorev: 0 }, { tur: 'donanmaGorev', gorev: 1 }, { tur: 'donanmaGorev', gorev: 2 }, { tur: 'donanmaGorev', gorev: 3 }, { tur: 'donanmaGorev', gorev: 4 },
+    { tur: 'donanmaGonder', bolge: kiyi < 0 ? 0 : kiyi }, { tur: 'donanmaGorev', gorev: 0 }, { tur: 'donanmaGorev', gorev: 1 }, { tur: 'donanmaGorev', gorev: 2 }, { tur: 'donanmaGorev', gorev: 3 }, { tur: 'donanmaGorev', gorev: 4 },
     { tur: 'havaGorev', gorev: 0, bolge: -1 }, { tur: 'havaGorev', gorev: 1, bolge: 12 }, { tur: 'havaGorev', gorev: 2, bolge: 13 }, { tur: 'havaGorev', gorev: 3, bolge: 14 }, { tur: 'havaGorev', gorev: 4, bolge: 12 },
     { tur: 'taburEkle', birlikler: [u], tabur: 1, adet: 2 }, { tur: 'taburCikar', birlikler: [u], tabur: 0 },
     { tur: 'rejim', rejim: 2 }, { tur: 'rejim', rejim: 4 }, { tur: 'partiDestek', parti: 3 }, { tur: 'partiDestek', parti: 0 }, { tur: 'secimErken' },

@@ -416,3 +416,21 @@ details summary { cursor: pointer; min-height: var(--dokun); display: flex; alig
 .sekme-satir { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 8px; scrollbar-width: thin; }
 .sekme-satir button { flex: 0 0 auto; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--cizgi, #4444); background: transparent; color: inherit; font-size: 13px; white-space: nowrap; }
 .sekme-satir button.secili { background: var(--vurgu, #b08a3a); color: #fff; border-color: transparent; }
+
+/* v1.6: sol menü (dikey ekranda açılır çekmece), sekmeler */
+.hamburger { display: none; min-width: 44px; min-height: 44px; font-size: 22px; flex: none; }
+.menu-perde { display: none; }
+.sekmeler { display: flex; gap: 6px; margin: 6px 0; }
+.sekmeler button { flex: 1; min-height: 40px; }
+.sekmeler button.acik { border-color: var(--pirinc); color: var(--pirinc); }
+@media (orientation: portrait) {
+  :root { --tab: 0px; }
+  .hamburger { display: inline-flex; align-items: center; justify-content: center; order: 0; }
+  .solray { top: 0; bottom: 0; left: 0; right: auto; width: min(280px, 78vw); height: auto; flex-direction: column; overflow-y: auto; overflow-x: hidden; padding: calc(var(--guvenli-ust) + 8px) 10px 12px; transform: translateX(-105%); transition: transform .2s ease; z-index: 20; background: var(--murekkep-2); border-top: 0; border-right: 1px solid var(--cizgi); box-shadow: 14px 0 44px #000a; }
+  .solray.menu-acik { transform: translateX(0); }
+  .solray button { flex-direction: row; justify-content: flex-start; gap: 12px; min-height: 48px; font-size: 15px; padding: 6px 12px; width: 100%; }
+  .menu-perde { display: block; position: fixed; inset: 0; background: #0008; z-index: 19; }
+  .cekmece { bottom: 0; height: min(66vh, calc(100% - var(--ust) - 40px)); }
+  .cekmeceli .orta { bottom: min(66vh, calc(100% - var(--ust) - 40px)); }
+  .orta { bottom: 8px; }
+}

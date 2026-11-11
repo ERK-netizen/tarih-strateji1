@@ -3,7 +3,7 @@ import {
   type World, tarihMetni, ortak, ekonomi, siyaset, nufus, diplomasi, olaylar, bolgeGozlem, istihbaratDuzeyi, aralik, hazineKademe,
   ARAZI, ASKERLIK, EKONOMI, ISGAL, YONETIM, KISILIK, TUTUM, TEKNOLOJI, NTEK, EKIPMAN, AILE_EKIP, TABUR, SABLON, MAL, PROJE, URUN_MUH, A, ANLASMA_TUR, K,
   hc, ST, YB, kara, arastirmaYuvalari, AKTIF, DONEMLER, sablonIhtiyac, TEK_DAL, BAKAN, BAKAN_AD, MOD_TUR, REJIM_AD,
-  gelisim, deniz, toplum, kademe, KADEME_MAX, GEMI, HAVA, DENIZ_GOREV, HAVA_GOREV, PARTI, SECIMLI, EKO_MODEL, TARIM_ODAK, DONEM_FIYAT, NKIMLIK, MALI, mulDiv,
+  gelisim, us, deniz, toplum, kademe, KADEME_MAX, GEMI, HAVA, DENIZ_GOREV, HAVA_GOREV, PARTI, SECIMLI, EKO_MODEL, TARIM_ODAK, DONEM_FIYAT, NKIMLIK, MALI, mulDiv,
 } from '@ts/engine';
 import { KOL_E, KOL_T } from '@ts/engine';
 
@@ -334,7 +334,7 @@ export function kuvvetG(w: World) {
   const yaklas = (v: number) => (v <= 0 ? 0 : Math.round(v / 100) * 100);
   // tersaneler: ana yurt ve sanayisi büyük kıyılar önce
   const kiyilar = w.pkg.bolgeler.map((b, r) => ({ r, ad: b.ad, k: !!b.kiyi, ana: b.anaYurt.includes(P) ? 1 : 0, f: w.R.c.sivilF[r]! + w.R.c.askeriF[r]! }))
-    .filter((x) => x.k && w.R.c.sahip[x.r] === P && w.R.c.kontrolEden[x.r] === P).sort((a, b) => b.ana - a.ana || b.f - a.f || a.r - b.r).map((x) => ({ r: x.r, ad: x.ad }));
+    .filter((x) => x.k && w.R.c.sahip[x.r] === P && w.R.c.kontrolEden[x.r] === P && w.R.c.tersane[x.r]! > 0).sort((a, b) => b.ana - a.ana || b.f - a.f || a.r - b.r).map((x) => ({ r: x.r, ad: x.ad }));
   const yakit = deniz.yakitIhtiyaci(w, P);
   return {
     gemiler: GEMI[d].map((g, k) => ({ k, ad: g.ad, sayi: deniz.gemiSay(w, P, k), guc: g.guc, akin: g.akin, koruma: g.koruma, bedel: mulDiv(g.bedel, fiyat, 1000).q, gun: g.gun, bakim: mulDiv(g.bakim, fiyat, 1000).q })),
@@ -345,7 +345,10 @@ export function kuvvetG(w: World) {
     abluka: C.abluka[P]!, akinKayip: C.akinKayip[P]!, denizKapali: C.denizK[P]!, dusmanDeniz: yaklas(dusman.reduce((t, c) => t + deniz.denizGucu(w, c), 0)),
     bakim: deniz.kuvvetBakimi(w, P), siparis, kiyilar, havaVar: HAVA[d].length > 0,
     petrol: { stok: C.petrol[P]!, uretim: C.petrolDun[P]!, ihtiyac: C.petrolIht[P]!, yakit: deniz.yakitCarpan(w, P), filo: yakit.filo, hava: yakit.hava, ordu: yakit.ordu, sanayi: yakit.sanayi, fiyat: w.fiyat[MALI.petrol] ?? 0 },
-    cepheler: (() => { const s = new Set<number>(); for (let r = 0; r < w.nR; r++) if (w.gun - w.R.c.sonMuharebe[r]! <= 14 && (w.R.c.kontrolEden[r] === P || dusman.includes(w.R.c.kontrolEden[r]!))) s.add(r); return [...s].map((r) => ({ r, ad: w.pkg.bolgeler[r]!.ad, bizim: w.R.c.kontrolEden[r] === P })); })(),
+    cepheler: us.cepheler(w, P).map((r) => ({ r, ad: w.pkg.bolgeler[r]!.ad, bizim: w.R.c.kontrolEden[r] === P, menzilde: us.usMesafesi(w, P, r) <= us.havaMenzili(), kiyi: us.kiyidaMi(w, r) })),
+    ucakSayisi: us.ucakToplam(w, P), ucakKapasite: us.ucakKapasitesi(w, P), havaMenzil: us.havaMenzili(),
+    donBolge: C.donBolge[P]! - 1, donBolgeAd: C.donBolge[P]! > 0 ? w.pkg.bolgeler[C.donBolge[P]! - 1]!.ad : null,
+    uslerim: w.pkg.bolgeler.map((b, r) => ({ r, ad: b.ad, us: w.R.c.havaUs[r]!, ters: w.R.c.tersane[r]!, sahip: w.R.c.sahip[r] === P })).filter((x) => x.sahip && (x.us > 0 || x.ters > 0)).map(({ sahip: _s, ...x }) => x),
   };
 }
 

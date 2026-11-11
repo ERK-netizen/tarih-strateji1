@@ -1,3 +1,4 @@
+import { HAVA } from './katalogEk.ts';
 // Emir doğrulama, önizleme (plan kartı) ve uygulama. Oyuncu ve karar modülü aynı kuralları kullanır.
 import type { World } from './state/world.ts';
 import { BAKAN, BAKAN_AD, BK } from './state/world.ts';
@@ -6,6 +7,7 @@ import { ASKERLIK, EKONOMI, ISGAL, YONETIM, SABLON, TEKNOLOJI, NTEK, PROJE, MAL,
 import { S, mulDiv, clamp } from './num/index.ts';
 import { uc, savasta, savastaMi, gorus, anlasmaVar, birlikAdi, rotaTip, bildir, anlat, ulkeBirlikleri, iddiaVar, efendi } from './systems/ortak.ts';
 import { askerlikAktar, insanGucu, terhis } from './systems/nufus.ts';
+import { US_MAX, kiyidaMi } from './systems/us.ts';
 import { insaYuvasi, insaSurenSayi, birlikSiniri } from './systems/gelisim.ts';
 import { tekMaliyetHesapla, krediLimiti, ulkeGidaStok, malStok, arastirmaHizi, acikYuva } from './systems/ekonomi.ts';
 import { KADEME_MAX } from './katalogEk.ts';
@@ -240,6 +242,14 @@ export function onizle(w: World, e: Emir): Kart {
       const mevcut = insaSurenSayi(w, e2, (t) => !!PROJE[t]?.ozel);
       if (mevcut >= yuva) return red('İnşa', `${w.pkg.eyaletler[e2]!.ad} eyaletinde inşa yuvası dolu (${mevcut}/${yuva}).`);
       if (P.ozel) return red('İnşa', 'Gemi ve uçak siparişleri tersane ve uçak emirleriyle verilir.');
+      if (P.kod === 'havaus') {
+        if (HAVA[AKTIF.donem].length === 0) return red('Hava üssü', 'Bu çağda hava kuvveti yok.');
+        if (w.R.c.havaUs[r]! >= US_MAX) return red('Hava üssü', `Hava üssü en üst düzeyde (${US_MAX}).`);
+      }
+      if (P.kod === 'tersane') {
+        if (!kiyidaMi(w, r)) return red('Tersane', `${bAd(w, r)} kıyıda değil.`);
+        if (w.R.c.tersane[r]! >= 3) return red('Tersane', 'Tersane en üst düzeyde (3).');
+      }
       if (P.kod === 'valilik' && w.R.c.valilik[r]) return red('İnşa', 'Bölgede valilik zaten var.');
       if (P.kod === 'kent' && w.R.c.kent[r]! >= 10) return red('İnşa', 'Şehir en üst düzeyde (10).');
       if (P.kod === 'maden' && w.R.c.maden[r]! >= 5) return red('İnşa', 'Maden işletmesi en üst düzeyde (5).');

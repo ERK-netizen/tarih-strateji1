@@ -211,9 +211,17 @@ function esTaraf(w: World, a: number, b: number): boolean {
 }
 /** Yakın destek: c'nin destek görevindeki bombardıman gücünün r'deki muharebeye katkısı (S, en çok %25). */
 export function yakinDestek(w: World, c: number, r: number): number {
-  if (w.C.c.havaGorev[c] !== 2 || !havaKapsar(w, c, r)) return 0;
-  const p = havaGucu(w, c, 'destek');
-  return Math.min(250_000, mulDiv(p, 1000, 1).q);
+  let t = 0;
+  if (w.C.c.havaGorev[c] === 2 && havaKapsar(w, c, r)) t += Math.min(250_000, mulDiv(havaGucu(w, c, 'destek'), 1000, 1).q);
+  t += kiyiDestek(w, c, r);
+  return Math.min(300_000, t);
+}
+/** Cepheye gönderilen donanmanın kıyı bombardımanı: hedef bölge ve komşularındaki muharebelere destek. */
+export function kiyiDestek(w: World, c: number, r: number): number {
+  const b = w.C.c.donBolge[c]! - 1;
+  if (b < 0 || w.C.c.donGorev[c] === 0 || !(b === r || w.komsuluk[b]!.includes(r))) return 0;
+  const g = denizGucu(w, c);
+  return g <= 0 ? 0 : Math.min(150_000, g * 300);
 }
 
 /** Haftalık hava harekâtı: hava muharebesi yıpranması ve stratejik bombardıman. */

@@ -52,7 +52,7 @@ export async function paketSec(kimlik: string): Promise<Paket> {
 
 export const istemci = new Istemci();
 
-export type Panel = 'devlet' | 'siyaset' | 'ordu' | 'kuvvet' | 'ekonomi' | 'diplomasi' | 'arastirma' | 'istatistik' | 'kronik' | 'kayit';
+export type Panel = 'devlet' | 'siyaset' | 'ordu' | 'kuvvet' | 'ekonomi' | 'diplomasi' | 'arastirma' | 'istatistik' | 'kronik' | 'kayit' | 'komut' | 'danisman';
 /** Sağ çekmece: aynı anda tek pencere (panel, bölge ya da tur raporu). */
 export type Cekmece = null | { tur: 'panel'; panel: Panel } | { tur: 'bolge'; r: number } | { tur: 'rapor' };
 
@@ -61,6 +61,7 @@ export const ozet = signal<any>(null);
 export const harita = signal<HaritaVeri | null>(null);
 export const cekmece = signal<Cekmece>(null);
 export const panel = computed(() => (cekmece.value?.tur === 'panel' ? cekmece.value.panel : null));
+export const menuAcik = signal(false);
 export const haritaModu = signal<HaritaModu>('siyasi');
 export const seciliBolge = signal<number>(-1);
 export const seciliBirlik = signal<Set<number>>(new Set());
@@ -70,7 +71,7 @@ export const bolgeSecimi = signal<null | { baslik: string; uygun: (r: number) =>
 export const konuslanma = signal<number>(-1);
 export const ilerliyor = signal(false);
 export const ilerleme = signal<{ yuzde: number; tarih: string } | null>(null);
-export const rapor = signal<{ neden: string; gecen: number; olaylar: { tarih: string; metin: string; onem: number }[]; durmalar: any[] } | null>(null);
+export const rapor = signal<{ neden: string; gecen: number; olaylar: { tarih: string; metin: string; onem: number; benim?: boolean }[]; durmalar: any[] } | null>(null);
 export const komutSonuc = signal<any>(null);
 export const nedenAcik = signal<any>(null);
 export const tostlar = signal<{ id: number; metin: string; tur: string }[]>([]);

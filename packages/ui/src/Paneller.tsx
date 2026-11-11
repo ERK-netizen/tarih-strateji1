@@ -4,11 +4,12 @@ import {
   oyunAc, SENARYOLAR, buyukHarf, type Panel,
 } from './durum.ts';
 import { onizle, komutCalistir } from './eylem.ts';
-import { bolgeyeGit } from './App.tsx';
+import { bolgeyeGit, KomutAlani } from './App.tsx';
+import { hazirKomutlar } from './hazirKomutlar.ts';
 import { SablonSecici, KonuslanmaSecici, konuslanmaBolgesi, OrgBar, diploOdak } from './Cekmece.tsx';
 import { BirlikPulu, Simge } from './Simge.tsx';
 
-export const BASLIK: Record<Panel, string> = { devlet: 'Devlet', siyaset: 'Siyaset ve toplum', ordu: 'Ordu', kuvvet: 'Donanma ve hava kuvvetleri', ekonomi: 'Ekonomi', diplomasi: 'Diplomasi', arastirma: 'Araştırma', istatistik: 'Devlet istatistikleri', kronik: 'Kronik', kayit: 'Kayıt ve ayarlar' };
+export const BASLIK: Record<Panel, string> = { devlet: 'Devlet', siyaset: 'Siyaset ve toplum', ordu: 'Ordu', kuvvet: 'Donanma ve hava kuvvetleri', ekonomi: 'Ekonomi', diplomasi: 'Diplomasi', arastirma: 'Araştırma', istatistik: 'Devlet istatistikleri', kronik: 'Kronik', kayit: 'Kayıt ve ayarlar', komut: 'Komut', danisman: 'Danışman' };
 
 function useGorunum(gorunum: string, kapsam?: number, ek?: Record<string, unknown>) {
   const [v, setV] = useState<any>(null);
@@ -31,6 +32,8 @@ export function Paneller({ p }: { p: Panel }) {
       {p === 'istatistik' && <Istatistik />}
       {p === 'kronik' && <Kronik />}
       {p === 'kayit' && <Kayit />}
+      {p === 'komut' && <KomutPaneli />}
+      {p === 'danisman' && <DanismanPaneli />}
     </>
   );
 }
@@ -347,24 +350,27 @@ function Kuvvet() {
           <tbody>{k.gemiler.map((g: any) => <tr key={g.k}><td>{g.ad}</td><td class="sayi"><b>{fmt(g.sayi)}</b></td><td class="sayi soluk">{g.guc}{g.akin ? ` · akın ${g.akin}` : ''}</td><td class="sayi soluk">{kisalt(g.bedel)} · {g.gun} gün</td>
             <td><button class="kucuk-dugme" disabled={tersane < 0} onClick={() => onizle({ tur: 'gemiInsa', sinif: g.k, adet: 1, bolge: tersane })}>İnşa</button></td></tr>)}</tbody></table>
         {k.kiyilar.length > 1 && <div class="satir-ayar"><label for="tersane">Tersane</label><select id="tersane" value={tersane} onChange={(e) => setKiyi(Number((e.target as HTMLSelectElement).value))}>{k.kiyilar.map((x: any) => <option key={x.r} value={x.r}>{x.ad}</option>)}</select></div>}
-        {k.kiyilar.length === 0 && <p class="soluk kucuk">Elinizde kıyı bölgesi yok: tersane kurulamaz.</p>}
+        {k.kiyilar.length === 0 && <p class="soluk kucuk">Tersaneniz yok: kıyı bölgesinde “Tersane” inşa edin (bölge çekmecesi → İnşa).</p>}
+        <p class="soluk kucuk">Cepheye gönderim: {k.donBolgeAd ? `donanma ${k.donBolgeAd} cephesinde (kıyı bombardımanı)` : 'donanma cephede değil'}</p>
+        <div class="cipler sar">{k.cepheler.filter((x: any) => x.kiyi).map((x: any) => <button key={x.r} class={`cip ${k.donBolge === x.r ? 'acik' : ''}`} onClick={() => onizle({ tur: 'donanmaGonder', bolge: x.r })}>⚓ {x.ad}</button>)}</div>
         <SecimSatiri ad="Görev" secenek={k.denizGorevler} deger={k.donGorev} sec={(i) => onizle({ tur: 'donanmaGorev', gorev: i })} />
       </section>
       {k.havaVar ? (
         <section>
           <h3>Hava kuvvetleri</h3>
           <p class="soluk kucuk">Avcı gücü {fmt(k.havaGuc)} · destek {fmt(k.destekGuc)} · bombardıman {fmt(k.bombaGuc)}{k.hHasar > 0 ? ` · hasar %${Math.floor(k.hHasar / 10_000)}` : ''}{k.havaBolgeAd ? ` · görev bölgesi ${k.havaBolgeAd}` : ''}</p>
+          <p class="soluk kucuk">Hava üsleri: {k.ucakSayisi}/{k.ucakKapasite} uçak · menzil {k.havaMenzil} bölge{k.uslerim.filter((x: any) => x.us > 0).length ? ' · ' + k.uslerim.filter((x: any) => x.us > 0).map((x: any) => `${x.ad} ${x.us}`).join(', ') : ''}</p>
           <table class="tablo"><thead><tr><th>Tür</th><th class="sayi">Uçak</th><th class="sayi">Bedel (filo)</th><th /></tr></thead>
             <tbody>{k.ucaklar.map((h: any) => <tr key={h.k}><td>{h.ad}</td><td class="sayi"><b>{fmt(h.sayi)}</b></td><td class="sayi soluk">{kisalt(h.bedel)} · {h.gun} gün</td>
               <td><button class="kucuk-dugme" onClick={() => onizle({ tur: 'ucakUret', tip: h.k, adet: 1 })}>Sipariş</button></td></tr>)}</tbody></table>
           <div class="satir-ayar"><label for="hava-hedef">Hedef bölge</label>
             <select id="hava-hedef" value={hedef} onChange={(e) => setHb(Number((e.target as HTMLSelectElement).value))}>
               <option value={-1}>—</option>
-              {k.cepheler.map((x: any) => <option key={x.r} value={x.r}>{x.ad}{x.bizim ? '' : ' (düşman)'}</option>)}
+              {k.cepheler.map((x: any) => <option key={x.r} value={x.r}>{x.ad}{x.bizim ? '' : ' (düşman)'}{x.menzilde ? '' : ' — menzil dışı'}</option>)}
               {k.havaBolge >= 0 && !k.cepheler.some((x: any) => x.r === k.havaBolge) && <option value={k.havaBolge}>{k.havaBolgeAd}</option>}
             </select></div>
           <div class="cipler sar">{k.havaGorevler.map((g: string, i: number) => <button key={g} class={`cip ${k.havaGorev === i ? 'acik' : ''}`} disabled={i > 0 && hedef < 0} onClick={() => onizle({ tur: 'havaGorev', gorev: i, bolge: i === 0 ? -1 : hedef })}>{g}</button>)}</div>
-          {k.cepheler.length === 0 && <p class="soluk kucuk">Etkin cephe yok; hedef bölgeyi haritadan seçip komutla da verebilirsiniz ("Hava kuvvetleri X üzerinde hava üstünlüğü görevine geçsin").</p>}
+          {k.cepheler.length === 0 && <p class="soluk kucuk">Etkin cephe yok: hava gücü yalnız savaşılan cephelere, hava üssü menzili içinde gönderilebilir.</p>}
         </section>
       ) : <section><h3>Hava kuvvetleri</h3><p class="soluk">Bu çağda hava kuvveti yok.</p></section>}
       {k.siparis.length > 0 && <section><h3>Siparişler</h3><ul class="liste">{k.siparis.map((x: any, i: number) => <li key={i}><span>{x.adet} {x.ad}{x.gemi ? ` · ${x.bolge}` : ''}</span><OrgBar v={x.yuzde / 100} /></li>)}</ul></section>}
@@ -784,6 +790,43 @@ function Kayit() {
         <p class="soluk kucuk">Çevrimdışı, kural tabanlı simülasyon. Harita: Natural Earth (kamu malı) ve GeoNames (CC BY 4.0). Birlik ve arayüz simgeleri: game-icons.net (Lorc, Delapouite ve diğerleri), CC BY 3.0.</p>
         <div class="dugmeler"><button class="tehlike" onClick={() => { ekran.value = 'baslangic'; cekmece.value = null; }}>Ana menüye dön</button></div>
       </section>
+    </div>
+  );
+}
+
+function KomutPaneli() {
+  return (
+    <div class="bolumler">
+      <section>
+        <h3>Komut yaz</h3>
+        <p class="soluk kucuk">Türkçe emir yazın; önizleme kartı çıkar, onaylarsanız uygulanır. Örnek: “Akyurt'a askerî fabrika inşa et”.</p>
+        <KomutAlani />
+      </section>
+    </div>
+  );
+}
+
+function DanismanPaneli() {
+  const o = ozet.value;
+  const P = o?.oyuncu ?? 0;
+  const dus = o?.savasta?.[0];
+  const komsu = pkg.ulkeler.find((u: any, i: number) => i !== P && i !== dus && u.kisa)?.kisa ?? pkg.ulkeler[(P + 1) % pkg.ulkeler.length]!.kisa;
+  const ctx = { komsu, dusman: dus != null ? pkg.ulkeler[dus]!.kisa : komsu, bolge: pkg.bolgeler[pkg.ulkeler[P]!.baskent]!.ad, sablon: (o?.donem?.sablonlar?.[0]?.ad ?? 'piyade tümeni').toLocaleLowerCase('tr') };
+  const grup = hazirKomutlar(ctx);
+  const cal = (m: string) => { cekmece.value = null; void komutCalistir(m); };
+  return (
+    <div class="bolumler">
+      <section>
+        <h3>Danışman</h3>
+        <p class="soluk kucuk">Durumu açıklar, riskleri gösterir. Soruların yanıtı yalnızca bildiğiniz verilere dayanır; tahminler kesin bilgi değildir.</p>
+        <div class="cipler sar">{['Ne yapmalıyım?', 'Huzur neden düşüyor?', 'Rakipler ne planlıyor?'].map((m) => <button class="cip ana" key={m} onClick={() => cal(m)}>{m}</button>)}</div>
+      </section>
+      {grup.map((g) => (
+        <section key={g.ad}>
+          <h3>{g.ad}</h3>
+          <div class="cipler sar">{g.komutlar.map((m) => <button class="cip" key={m} onClick={() => cal(m)}>{m}</button>)}</div>
+        </section>
+      ))}
     </div>
   );
 }

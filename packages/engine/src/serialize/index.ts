@@ -4,9 +4,10 @@ import { yeniDunya, BAKAN_VARSAYILAN, partiBaslat, kuvvetBaslat } from '../state
 import { MAL } from '../catalog.ts';
 import type { Table } from '../state/table.ts';
 import type { Paket } from '../paket.ts';
+import { usTersaneKur } from '../systems/us.ts';
 import { hashV1, hashText } from '../hash/index.ts';
 
-export const SEMA_SURUM = 7;
+export const SEMA_SURUM = 8;
 /** Şema 6'da eklenen kolonlar: 5 sürümlü kayıt okunurken atlanır, varsayılanla doldurulur. */
 const YENI6: Record<string, string[]> = {
   ulke: ['bakan', 'bazBolge', 'bazYasam', 'bazTek', 'bazNufus', 'savasGunu', 'tekSay', 'maas'],
@@ -14,6 +15,7 @@ const YENI6: Record<string, string[]> = {
 };
 /** Şema 5'te teknoloji yuvası sayısı (dönem başına 12). */
 /** Şema 7'de eklenen kolonlar: eski kayıtta yoktur, varsayılanla doldurulur. */
+const YENI8: Record<string, string[]> = { bolge: ['havaUs', 'tersane'], ulke: ['donBolge'] };
 const YENI7: Record<string, string[]> = {
   bolge: ['kent', 'maden', 'demPol', 'demKim'],
   ulke: ['gs0', 'gs1', 'gs2', 'gs3', 'gs4', 'gHasar', 'donGorev', 'h0', 'h1', 'h2', 'hHasar', 'havaGorev', 'havaBolge', 'abluka', 'akinKayip', 'denizK',
@@ -126,7 +128,7 @@ function tabloYaz(y: Yazici, t: Table): void {
   for (const [k] of t.defs) { y.etiket(k); y.arrS((t.ci[k] as Float64Array).subarray(0, t.hw)); }
 }
 function tabloOku(o: Okuyucu, t: Table, sv = SEMA_SURUM): void {
-  const atla = new Set<string>([...(sv < 6 ? YENI6[t.name] ?? [] : []), ...(sv < 7 ? YENI7[t.name] ?? [] : [])]);
+  const atla = new Set<string>([...(sv < 6 ? YENI6[t.name] ?? [] : []), ...(sv < 7 ? YENI7[t.name] ?? [] : []), ...(sv < 8 ? YENI8[t.name] ?? [] : [])]);
   const ad = o.str();
   if (ad !== t.name) throw new Error(`tablo sırası bozuk: ${ad} ≠ ${t.name}`);
   const hw = o.u32();
@@ -180,7 +182,7 @@ export function coz(bytes: Uint8Array, pkg: Paket): World {
   const o = new Okuyucu(bytes);
   if (o.u32() !== MAGIC) throw new Error('kayıt dosyası değil');
   const sv = o.u32();
-  if (sv !== SEMA_SURUM && sv !== 5 && sv !== 6) throw new Error(`şema sürümü uyumsuz: ${sv}`);
+  if (sv !== SEMA_SURUM && sv !== 5 && sv !== 6 && sv !== 7) throw new Error(`şema sürümü uyumsuz: ${sv}`);
   const pid = o.str(), psur = o.str();
   if (pid !== pkg.kimlik || psur !== pkg.surum) throw new Error(`paket uyumsuz: ${pid}@${psur}`);
   const gun = o.f64(), surum = o.f64(), tohum = o.f64(), oyuncu = o.f64(), mod = o.f64(), emirSira = o.f64(), rotaEpoch = o.f64();
@@ -219,6 +221,7 @@ export function coz(bytes: Uint8Array, pkg: Paket): World {
   if (sv >= 6) w.olayBayrak = JSON.parse(o.str()) as string[];
   else gocDoldur5(w);
   if (sv < 7) gocDoldur6(w);
+  if (sv < 8) usTersaneKur(w);
   return w;
 }
 

@@ -173,7 +173,7 @@ export class Sunucu {
 
   private rapor(bas: number) {
     const w = this.dunya();
-    const olaylar = w.anlati.filter((a) => a.gun > bas && (a.onem >= 2 || a.ulke === w.oyuncu)).slice(-12).reverse().map((a) => ({ tarih: tarihMetni(a.gun), metin: a.metin, onem: a.onem }));
+    const olaylar = w.anlati.filter((a) => a.gun > bas && (a.onem >= 2 || a.ulke === w.oyuncu)).slice(-60).reverse().map((a) => ({ tarih: tarihMetni(a.gun), metin: a.metin, onem: a.onem, benim: a.ulke === w.oyuncu }));
     return { olaylar };
   }
 

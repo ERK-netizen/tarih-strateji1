@@ -1,3 +1,5 @@
+import { PROJE } from '../catalog.ts';
+import { ucakToplam, ucakKapasitesi } from '../systems/us.ts';
 // Bölüm 19: karar modülü. Yalnız gözlem görünümü, kamu bilgisi ve kendi verisini kullanır;
 // emirlerini oyuncuyla aynı doğrulama yolundan (orders.uygula) geçirir.
 import type { World } from '../state/world.ts';
@@ -515,8 +517,14 @@ function kuvvetPlan(w: World, c: number): void {
   for (let r = 0; r < w.nR; r++) {
     const b = w.pkg.bolgeler[r]!;
     if (!b.kiyi || w.R.c.sahip[r] !== c || w.R.c.kontrolEden[r] !== c) continue;
-    const p = (b.anaYurt.includes(c) ? 1000 : 0) + w.R.c.sivilF[r]! + w.R.c.askeriF[r]!;
+    const p = (b.anaYurt.includes(c) ? 1000 : 0) + w.R.c.sivilF[r]! + w.R.c.askeriF[r]! + w.R.c.tersane[r]! * 5000;
     if (p > kp) { kp = p; kiyi = r; }
+  }
+  if (kiyi >= 0 && w.R.c.tersane[kiyi]! < 1) emir(w, c, 'insa', { proje: PROJE.findIndex((x) => x.kod === 'tersane'), bolge: kiyi });
+  if (HAVA[AKTIF.donem].length && ucakToplam(w, c) + 20 > ucakKapasitesi(w, c)) {
+    let ub = -1, up = -1;
+    for (let r = 0; r < w.nR; r++) if (w.R.c.sahip[r] === c && w.R.c.kontrolEden[r] === c && w.R.c.havaUs[r]! < 5) { const p = w.R.c.sivilF[r]! + w.R.c.askeriF[r]! + w.R.c.havaUs[r]! * 3; if (p > up) { up = p; ub = r; } }
+    if (ub >= 0) emir(w, c, 'insa', { proje: PROJE.findIndex((x) => x.kod === 'havaus'), bolge: ub });
   }
   if (kiyi >= 0 && d0 >= 2 && (dus.length || ben < d0 * 120)) emir(w, c, 'gemiInsa', { sinif: dus.length ? 2 : 1, adet: Math.max(1, Math.floor(d0 / 2)), bolge: kiyi });
   if (HAVA[AKTIF.donem].length && (dus.length || havaGucu(w, c, 'hava') < (w.pkg.ulkeler[c]!.guc ?? 4) * 60)) emir(w, c, 'ucakUret', { tip: dus.length ? 1 : 0, adet: Math.max(1, Math.floor((w.pkg.ulkeler[c]!.guc ?? 4) / 3)) });

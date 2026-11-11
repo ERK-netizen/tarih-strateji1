@@ -26,3 +26,4 @@ export * from './tr.ts';
 export { DONEMLER, TEK_DAL, TEK_KOD, type DonemKod, type Donem } from './donem.ts';
 export * from './katalogEk.ts';
 export * as gelisim from './systems/gelisim.ts';
+export * as us from './systems/us.ts';

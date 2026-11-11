@@ -49,8 +49,9 @@ describe('T300–T302 donanma ve hava kuvvetleri (1914)', () => {
     if (ic >= 0) expect(onizle(w, { tur: 'gemiInsa', ulke: GER, sinif: 0, adet: 1, bolge: ic }).gecerli).toBe(false);
     expect(emir(w, { tur: 'donanmaGorev', ulke: GER, gorev: 3 }).ok).toBe(true);
     expect(w.C.c.donGorev[GER]).toBe(3);
-    expect(emir(w, { tur: 'havaGorev', ulke: GER, gorev: 1, bolge: kiyi }).ok).toBe(true);
-    expect(w.C.c.havaBolge[GER]).toBe(kiyi);
+    // aktif cephe olmayan bölgeye hava gücü gönderilemez (v1.7)
+    expect(onizle(w, { tur: 'havaGorev', ulke: GER, gorev: 1, bolge: kiyi }).gecerli).toBe(false);
+    expect(emir(w, { tur: 'havaGorev', ulke: GER, gorev: 0, bolge: -1 }).ok).toBe(true);
   });
 });
 

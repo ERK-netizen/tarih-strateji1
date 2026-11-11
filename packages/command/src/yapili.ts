@@ -59,6 +59,7 @@ export function yapiliAyristir(c: YBaglam): Yorum | string | null {
       return yorum({ tur: 'gemiInsa', ulke: P, sinif: s, adet: Math.max(1, Math.floor(sayilar[0] ?? 1)), bolge }, `tersane: ${k.gemiler![s]!.ad}`, k);
     }
   }
+  if (has(/ donanma/) && bolge !== undefined && has(/ (cephe|gonder|sevk)/)) return yorum({ tur: 'donanmaGonder', ulke: P, bolge }, 'donanma cepheye', k);
   if (has(/ donanma/)) {
     if (has(/ liman/)) return yorum({ tur: 'donanmaGorev', ulke: P, gorev: 0 }, 'donanma limanda', k);
     const g = k.denizGorev ? adBul(toks, k.denizGorev) : -1;
@@ -158,6 +159,7 @@ export function yapiliMetin(e: Emir, k: Katalog): string | null {
   switch (e.tur) {
     case 'gemiInsa': return `${b(e.bolge)} tersanesinde ${Number(e.adet)} ${kucukIlk(k.gemiler?.[Number(e.sinif)]?.ad ?? '?')} inşa et`;
     case 'ucakUret': return `${Number(e.adet)} filo ${kucukIlk(k.ucaklar?.[Number(e.tip)]?.ad ?? '?')} sipariş et`;
+    case 'donanmaGonder': return `Donanma ${b(e.bolge)} cephesine gitsin`;
     case 'donanmaGorev': return Number(e.gorev) === 0 ? 'Donanma limana dönsün' : `Donanma ${kucukIlk(k.denizGorev?.[Number(e.gorev)] ?? '?')} görevine geçsin`;
     case 'havaGorev': return Number(e.gorev) === 0 ? 'Hava kuvvetleri üsse dönsün' : `Hava kuvvetleri ${b(e.bolge)} üzerinde ${kucukIlk(k.havaGorev?.[Number(e.gorev)] ?? '?')} görevine geçsin`;
     case 'taburEkle': return `${birl(e.birlikler)}: ${Number(e.adet ?? 1)} ${kucukIlk(k.taburlar?.[Number(e.tabur)] ?? '?')} ekle`;

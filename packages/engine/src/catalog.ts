@@ -188,8 +188,10 @@ export const PROJE: Proje[] = [
   { kod: 'valilik', ad: 'Valilik', sp: 500_000, nakit: 700_000, gun: 150, esanlam: ['valilik', 'idare binası'] },
   { kod: 'kent', ad: 'Şehir imarı', sp: 2_400_000, nakit: 1_500_000, gun: 240, esanlam: ['şehir imarı', 'şehir', 'imar', 'kent'] },
   { kod: 'maden', ad: 'Maden ocağı', sp: 1_200_000, nakit: 900_000, gun: 150, esanlam: ['maden ocağı', 'maden', 'ocak'] },
-  { kod: 'gemi', ad: 'Tersane siparişi', sp: 0, nakit: 0, gun: 0, esanlam: ['gemi', 'tersane'], ozel: true },
+  { kod: 'gemi', ad: 'Gemi siparişi', sp: 0, nakit: 0, gun: 0, esanlam: ['gemi'], ozel: true },
   { kod: 'ucak', ad: 'Uçak siparişi', sp: 0, nakit: 0, gun: 0, esanlam: ['uçak'], ozel: true },
+  { kod: 'havaus', ad: 'Hava üssü', sp: 1_400_000, nakit: 1_100_000, gun: 150, esanlam: ['hava üssü', 'havaalanı', 'üs'] },
+  { kod: 'tersane', ad: 'Tersane', sp: 1_600_000, nakit: 1_300_000, gun: 180, esanlam: ['tersane', 'gemi yapım yeri'] },
 ];
 export const projeIdx = (kod: string): number => PROJE.findIndex((p) => p.kod === kod);
 
