@@ -11,8 +11,8 @@ import { ulkeNufus, DAGILIM_US, type Donem } from './veri/nufus.ts';
 import { MODERN, INANC_AD, kulturGrup, kulturTablosu } from './veri/kultur.ts';
 
 const kok = join(dirname(fileURLToPath(import.meta.url)), '../../..');
-interface HBolge { ad: string; iso: string; lon: number; lat: number; x: number; y: number; alanKm2: number; nufus: number; kent: number; arazi: number; kiyi: boolean; komsu: number[] }
-interface Harita { gen: number; yuk: number; bolgeler: HBolge[]; kenarlar: { a: number; b: number; km: number; sinir: number; tur: number }[]; denizler: { ad: string; x: number; y: number }[] }
+interface HBolge { ad: string; iso: string; lon: number; lat: number; x: number; y: number; alanKm2: number; nufus: number; kent: number; arazi: number; kiyi: boolean; komsu: number[]; ata: number; eski?: boolean }
+interface Harita { v1: number; gen: number; yuk: number; bolgeler: HBolge[]; kenarlar: { a: number; b: number; km: number; sinir: number; tur: number }[]; denizler: { ad: string; x: number; y: number }[] }
 const H: Harita = JSON.parse(readFileSync(join(kok, 'data/derlenmis/harita.json'), 'utf8'));
 const NR = H.bolgeler.length;
 
@@ -112,6 +112,8 @@ export interface SenaryoTanim {
   devletler: Devlet[];
   /** Pasif topluluklar: boşta kalan bölgeleri doldurur */
   dolgu: Devlet[];
+  /** Harita v2 sınır inceltmesi: devlet kodu → açıkça verilen (çoğu yeni) bölgeler; atadan devralmanın önüne geçer */
+  ek?: Record<string, string[]>;
   adlar?: Record<string, string>;
   /** ISO → "Kültür/inanç" (dönemin halk dağılımı) */
   halk?: string;
@@ -145,6 +147,16 @@ function bolgeAd(ad: string, ctx: string): number {
   if (i === undefined) throw new Error(`${ctx}: bölge bulunamadı: "${ad}"`);
   return i;
 }
+// Harita v2: her bölge bir v1 bölgesinin (ata) alt bölümüdür. Senaryo tanımları v1 adlarıyla yazıldığından
+// açıkça anılmayan yeni bölgeler atalarının sahibini, halkını, iddia ve işgal durumunu devralır.
+const tohumIdx: number[] = [];
+H.bolgeler.forEach((b, i) => { if (b.eski) tohumIdx[b.ata] = i; });
+for (let i = 0; i < H.v1; i++) if (tohumIdx[i] === undefined) throw new Error(`harita: v1 bölgesi #${i} v2'de yok`);
+const tohumu = (r: number): number => tohumIdx[H.bolgeler[r]!.ata]!;
+const aileler = new Map<number, number[]>();
+H.bolgeler.forEach((b, r) => (aileler.get(b.ata) ?? aileler.set(b.ata, []).get(b.ata)!).push(r));
+/** Bölgenin ailesi: v1 bölgesi anıldıysa bütün alt bölümleri, yeni bölge anıldıysa yalnız kendisi. */
+const aile = (r: number): number[] => (H.bolgeler[r]!.eski ? aileler.get(H.bolgeler[r]!.ata)! : [r]);
 function secici(t: string | undefined): (b: HBolge) => boolean {
   if (!t) return () => false;
   const parca = t.trim().split(/\s+/).filter(Boolean).map((tok) => {
@@ -169,6 +181,8 @@ function hasatNormal(): number[] {
   return h;
 }
 
+/** Başlangıç ordusu katsayısı (güç^1,6 ile çarpılır). */
+const ORDU_KAT = 1.2;
 const ARAZI_TARIM = [1.15, 0.95, 1.0, 0.8, 0.85, 0.55, 0.6];
 const ARAZI_NUFUS = [1.0, 0.8, 0.9, 0.6, 0.6, 0.35, 1.0];
 
@@ -190,11 +204,18 @@ export function derle(t: SenaryoTanim): { paket: Paket; ozet: string } {
       sahip[r] = c;
     }
   });
+  for (const [k, l] of Object.entries(t.ek ?? {})) for (const ad of l) {
+    const r = bolgeAd(ad, `${t.kimlik}/${k} ek`);
+    if (sahip[r]! >= 0) throw new Error(`${t.kimlik}: ${ad} iki kez açık atanmış (${devletler[sahip[r]!]!.k}, ${k})`);
+    sahip[r] = K(k, 'ek');
+  }
   devletler.forEach((d, c) => {
     const f = secici(d.t);
     const har = new Set((d.haric ?? []).map((a) => bolgeAd(a, `${t.kimlik}/${d.k} haric`)));
-    H.bolgeler.forEach((b, r) => { if (sahip[r]! < 0 && !har.has(r) && f(b)) sahip[r] = c; });
+    H.bolgeler.forEach((b, r) => { if (b.eski && sahip[r]! < 0 && !har.has(r) && f(b)) sahip[r] = c; });
   });
+  // yeni bölgeler: açıkça atanmadıysa atasının sahibine
+  H.bolgeler.forEach((b, r) => { if (!b.eski && sahip[r]! < 0) sahip[r] = sahip[tohumu(r)]!; });
   const bos = H.bolgeler.map((b, r) => ({ b, r })).filter(({ r }) => sahip[r]! < 0);
   if (bos.length) throw new Error(`${t.kimlik}: sahipsiz bölgeler: ${bos.map(({ b }) => `${b.iso}:${b.ad}`).join(', ')}`);
   // başkentler
@@ -210,17 +231,18 @@ export function derle(t: SenaryoTanim): { paket: Paket; ozet: string } {
   // 2) adlar
   const ad = H.bolgeler.map((b) => t.adlar?.[b.ad] ?? b.ad);
   if (t.adlar) for (const k of Object.keys(t.adlar)) bolgeAd(k, `${t.kimlik} adlar`);
+  { const gor = new Map<string, number>(); ad.forEach((a, r) => { const o = gor.get(a); if (o !== undefined) throw new Error(`${t.kimlik}: bölge adı iki kez: "${a}" (${H.bolgeler[o]!.iso}:${H.bolgeler[o]!.ad}, ${H.bolgeler[r]!.iso}:${H.bolgeler[r]!.ad})`); gor.set(a, r); }); }
 
   // 3) halk ve inanç
   const halk = { ...MODERN, ...(t.halk ? kulturTablosu(t.halk) : {}) };
   const bolgeHalk: [string, string][] = H.bolgeler.map((b): [string, string] => {
-    const o = t.halkBolge?.[b.ad];
+    const o = t.halkBolge?.[b.ad] ?? t.halkBolge?.[H.bolgeler[tohumIdx[b.ata]!]!.ad];
     if (o) { const [k, i] = o.split('/'); return [k!, i!]; }
     return halk[b.iso] ?? ['Yerli', 'yerel'];
   });
   const devletHalk: [string, string][] = devletler.map((d, c): [string, string] => [d.kultur ?? bolgeHalk[baskent[c]!]![0], d.inanc ?? bolgeHalk[baskent[c]!]![1]]);
   // pasif toplulukların (yerli halklar) bölgeleri kendi halkındandır
-  devletler.forEach((d, c) => { if (d.pasif && d.kultur) H.bolgeler.forEach((_, r) => { if (sahip[r] === c && !t.halkBolge?.[H.bolgeler[r]!.ad]) bolgeHalk[r] = [d.kultur!, d.inanc ?? 'yerel']; }); });
+  devletler.forEach((d, c) => { if (d.pasif && d.kultur) H.bolgeler.forEach((_, r) => { if (sahip[r] === c && !t.halkBolge?.[H.bolgeler[r]!.ad] && !t.halkBolge?.[H.bolgeler[tohumu(r)]!.ad]) bolgeHalk[r] = [d.kultur!, d.inanc ?? 'yerel']; }); });
   const kulturler: string[] = [], inanclar: string[] = [];
   const kI = (k: string) => { let i = kulturler.indexOf(k); if (i < 0) { i = kulturler.length; kulturler.push(k); } return i; };
   const iI = (k: string) => { if (!INANC_AD[k]) throw new Error(`${t.kimlik}: bilinmeyen inanç ${k}`); let i = inanclar.indexOf(k); if (i < 0) { i = inanclar.length; inanclar.push(k); } return i; };
@@ -244,7 +266,7 @@ export function derle(t: SenaryoTanim): { paket: Paket; ozet: string } {
   // 5) devlet büyüklükleri
   const dBolge = devletler.map((_, c) => H.bolgeler.map((_, r) => r).filter((r) => sahip[r] === c));
   const dNufus = dBolge.map((rs) => rs.reduce((s, r) => s + nufus[r]!, 0));
-  const hedefOrdu = devletler.map((d, c) => d.pasif ? Math.max(1, Math.round(dBolge[c]!.length / 3)) : Math.max(1, Math.round(1.2 * Math.pow(d.guc, 1.6))));
+  const hedefOrdu = devletler.map((d, c) => d.pasif ? Math.max(1, Math.round(dBolge[c]!.length / 3)) : Math.max(1, Math.round(ORDU_KAT * Math.pow(d.guc, 1.6))));
 
   // 6) bölgeler
   const yerlesim = H.bolgeler.map((b, r) => (baskent.includes(r) ? 2 : (b.kent * (t.nufusDonem === '2026' ? 1 : 0.4)) > 1_500_000 ? 2 : b.kent > 400_000 ? 1 : 0));
@@ -340,12 +362,11 @@ export function derle(t: SenaryoTanim): { paket: Paket; ozet: string } {
     if (sahipler.length === 1 && sahipler[0] !== c) { b.anaYurt.push(sahipler[0]!); b.iddia.push(sahipler[0]!); }
   });
   for (const [bAd, l] of Object.entries(t.iddia ?? {})) {
-    const r = bolgeAd(bAd, `${t.kimlik} iddia`);
-    for (const k of l) { const c = K(k, 'iddia'); if (!bolgeler[r]!.iddia.includes(c)) bolgeler[r]!.iddia.push(c); if (!bolgeler[r]!.anaYurt.includes(c)) bolgeler[r]!.anaYurt.push(c); }
+    for (const r of aile(bolgeAd(bAd, `${t.kimlik} iddia`)))
+      for (const k of l) { const c = K(k, 'iddia'); if (!bolgeler[r]!.iddia.includes(c)) bolgeler[r]!.iddia.push(c); if (!bolgeler[r]!.anaYurt.includes(c)) bolgeler[r]!.anaYurt.push(c); }
   }
   for (const [bAd, k] of Object.entries(t.isgal ?? {})) {
-    const r = bolgeAd(bAd, `${t.kimlik} isgal`);
-    bolgeler[r]!.kontrol = K(k, 'isgal');
+    for (const r of aile(bolgeAd(bAd, `${t.kimlik} isgal`))) bolgeler[r]!.kontrol = K(k, 'isgal');
   }
 
   // 7) ilişkiler
@@ -473,7 +494,7 @@ export function derle(t: SenaryoTanim): { paket: Paket; ozet: string } {
       kayipUst: o.kosul.kayipUst ? [K(o.kosul.kayipUst[0], o.kod), o.kosul.kayipUst[1] * 10] : undefined,
     } : undefined,
     pencere: o.pencere, olasilik: o.olasilik,
-    secenekler: o.sec.map((s) => ({ ad: s.ad, etki: s.etki, yz: s.yz, e: s.e.map((x) => eylem(x, K, o.kod)) })),
+    secenekler: o.sec.map((s) => ({ ad: s.ad, etki: s.etki, yz: s.yz, e: s.e.flatMap((x) => { const e = eylem(x, K, o.kod); return e.t === 'bolge' ? aile(e.a!).map((r) => ({ ...e, a: r })) : [e]; }) })),
   }));
   for (const o of olaylar) for (const s of o.secenekler) for (const e of s.e) if ((e.t === 'olay' || e.t === 'iptal') && !olaylar.some((x) => x.kod === e.olay)) throw new Error(`${t.kimlik}: zincir olayı yok: ${e.olay}`);
   // bayrak denetimi: koşulda aranan her bayrak bir kararla konabilmeli (yazım hatası yakalanır)
@@ -483,7 +504,7 @@ export function derle(t: SenaryoTanim): { paket: Paket; ozet: string } {
   for (const o of olaylar) if (o.gun < 0 && !olaylar.some((x) => x.secenekler.some((s) => s.e.some((e) => e.t === 'olay' && e.olay === o.kod)))) throw new Error(`${t.kimlik}: ${o.kod} tarihsiz ve hiçbir zincirden çağrılmıyor`);
 
   const paket: Paket = {
-    kimlik: t.kimlik, surum: '2.0.0', donem: t.donem, alt: t.alt, aciklama: t.aciklama,
+    kimlik: t.kimlik, surum: '3.0.0', donem: t.donem, alt: t.alt, aciklama: t.aciklama,
     senaryo: { ad: t.ad, baslangic: { y: t.baslangic[0], m: t.baslangic[1], d: t.baslangic[2] }, bitis: { y: t.bitis[0], m: t.bitis[1], d: t.bitis[2] } },
     tohum: t.tohum,
     bayraklar: Object.fromEntries(BAYRAK.map((b) => [b, b === 'istihbarat'])) as Paket['bayraklar'],
@@ -498,6 +519,8 @@ export function derle(t: SenaryoTanim): { paket: Paket; ozet: string } {
     anlasmalar, savaslar, birlikler,
     olaylar, oneCikan: t.oneCikan.map((k) => K(k, 'öne çıkan')),
     harita: { gen: H.gen, yuk: H.yuk, deniz: [], cizgiler: [], denizAdlari: H.denizler, gercek: true },
+    // harita v1 (463 bölge, paket 2.0.0) kayıtlarının göçü: her bölgenin v1 atası
+    goc: { surum: '2.0.0', ata: H.bolgeler.map((b) => b.ata), tohum: H.bolgeler.map((b) => (b.eski ? 1 : 0)) },
     uyarilar,
   };
   const etkin = devletler.filter((d) => !d.pasif).length;

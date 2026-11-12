@@ -19,6 +19,8 @@ import { HAVA } from '../katalogEk.ts';
 import { savunmaCarpan, topcuBaski } from '../systems/kara.ts';
 import { TK, ESIK, gerekceVar, gerekceSurecte, barisKabul, savasSkoru, istekliligi, tavizButcesi, bolgeDegeri, teslimKosulu, teklifBolgeleri } from '../systems/diplomasi.ts';
 
+/** Kesin sonuç cephesi (K-47): gereken genel üstünlük ve o cephenin tehdit ağırlığı katı (×0,1). */
+const AGIRLIK_USTUNLUK = 2_000_000, AGIRLIK_KAT = 50;
 const ESIK_SALDIRI = [1_300_000, 1_800_000, 1_400_000, 1_600_000, 1_500_000]; // kişiliğe göre (Atılgan/Temkinli/...)
 
 /** Karar modülünün emirleri bakan emri olarak işaretlenir (oyuncu adına verilen emir bakanı görevden almaz). */
@@ -696,6 +698,8 @@ function cepheYonet(w: World, c: number): void {
     // barış ve tehdit yok: birlikler başkent ve eyalet merkezlerinde beklesin
     return;
   }
+  // kaynak bölgede kalması gereken güç: karşıdaki düşman gücünün %70'i, bölgenin savunma çarpanıyla bölünür
+  const tutGerek = (r: number) => mulDiv(mulDiv(karsiGuc.get(r) ?? 0, 700_000, S).q, S, Math.max(S, savunmaCarpan(w, r, 0))).q;
   // taarruz adayları (yalnız savaşta)
   const atanmis = new Set<number>();
   if (savas) {
@@ -723,17 +727,19 @@ function cepheYonet(w: World, c: number): void {
       adaylar.push({ hedef: r, deger, kaynak, oran });
     }
     adaylar.sort((a, b) => b.oran - a.oran || b.deger - a.deger || a.hedef - b.hedef);
-    // kaynak bölgede kalması gereken güç: karşıdaki düşman gücünün %70'i, bölgenin savunma çarpanıyla bölünür
     const bolgeGuc = new Map<number, number>();
     for (const u of birimler) { const s = birlikIstat(w, u); bolgeGuc.set(U.bolge![u]!, (bolgeGuc.get(U.bolge![u]!) ?? 0) + s.YS + s.SV); }
-    const tutGerek = (r: number) => mulDiv(mulDiv(karsiGuc.get(r) ?? 0, 700_000, S).q, S, Math.max(S, savunmaCarpan(w, r, 0))).q;
     let say = 0;
+    // ezici üstünlük kurulan düşmana karşı eşzamanlı taarruz sayısı orduyla büyür (harita v2: cephe bölgeleri çoğaldı)
+    const azamiEzici = Math.max(3, Math.floor(birimler.length / 6));
     for (const a of adaylar) {
-      if (say >= 3) break;
+      if (say >= azamiEzici) break;
       // ezici üstünlük: düşman ordusunun (gözlenen) 2,5 katı güçteysek eşik düşer, başkent hedefi daha da cazip
       const hk = R.kontrolEden[a.hedef]!;
       let e = esik;
-      if (ustunluk(w, c, hk, birimler) >= 2_500_000) e = Math.max(1_100_000, mulDiv(esik, w.pkg.ulkeler[hk]?.baskent === a.hedef ? 700_000 : 800_000, S).q);
+      const ezici = ustunluk(w, c, hk, birimler) >= 2_500_000;
+      if (say >= 3 && !ezici) continue;
+      if (ezici) e = Math.max(1_100_000, mulDiv(esik, w.pkg.ulkeler[hk]?.baskent === a.hedef ? 700_000 : 800_000, S).q);
       if (a.oran < e) continue;
       // savunmayı boşaltmamak için kaynak bölgede tehdide yetecek güç kalır; boş bölgeye en çok iki birlik yeter
       const kullan = a.kaynak.filter((u) => !atanmis.has(u)).sort((x, y) => birlikIstat(w, y).YS - birlikIstat(w, x).YS || x - y);
@@ -754,6 +760,20 @@ function cepheYonet(w: World, c: number): void {
   }
   // savunma dağılımı: tehdit oranında
   const serbest = birimler.filter((u) => !atanmis.has(u) && U.muharebe![u]! === 0 && (w.gun - U.atamaGun![u]! >= 7 || U.hedef![u]! < 0));
+  // Kesin sonuç cephesi (harita v2, K-47): genel üstünlüğümüzün ezici olduğu (≥ AGIRLIK_USTUNLUK) düşmana bakan
+  // bölgelerin tehdit ağırlığı artırılır; oransal dağıtım birlikleri o düşmanın ana kuvvetinin karşısında toplar ve
+  // başka cephelerin büyük tehdidi seferi bitmeden kuvveti dağıtmaz.
+  if (savas && dusman.length > 1) {
+    let zayif = -1, zu = AGIRLIK_USTUNLUK;
+    for (const k of dusman) {
+      let komsu = false;
+      for (const [r] of tehdit) if (w.komsuluk[r]!.some((v) => R.kontrolEden[v] === k)) { komsu = true; break; }
+      if (!komsu) continue;
+      const u = ustunluk(w, c, k, birimler);
+      if (u > zu) { zu = u; zayif = k; }
+    }
+    if (zayif >= 0) for (const [r, tt] of tehdit) if (w.komsuluk[r]!.some((v) => R.kontrolEden[v] === zayif)) tehdit.set(r, mulDiv(tt, AGIRLIK_KAT, 10).q);
+  }
   const sinirlar = [...tehdit.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0]);
   const yedek = Math.floor(serbest.length * 15 / 100);
   const ihtiyac = new Map<number, number>();

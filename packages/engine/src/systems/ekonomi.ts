@@ -494,8 +494,8 @@ export function idariVerim(w: World, c: number, r: number): number {
   return clamp(taban + mulDiv(w.C.c.egitim[c]!, S, 400_000).q + mulDiv(w.R.c.altyapi[r]!, S, 40).q, 100_000, S);
 }
 
-/** Bölge katma değeri (altın/gün). */
-export function katmaDeger(w: World, r: number): number {
+/** Bölge katma değeri (altın/gün). `ambargolu`: çağıran önceden saydıysa (günlük maliye) anlaşma tablosu yeniden taranmaz. */
+export function katmaDeger(w: World, r: number, ambargolu?: boolean): number {
   const R = w.R.c;
   // tarım katma değeri oynak dünya fiyatını değil yerel değeri izler: taban fiyat ağırlıklı (çeyrek pay piyasadan)
   const p0 = MAL[MALI.gida]!.p0;
@@ -509,15 +509,15 @@ export function katmaDeger(w: World, r: number): number {
     const C = w.C.c;
     hv += Math.min(2 * S, tekKat(w, kc, 'ticaret1', 100_000)) + EKO_MODEL[C.model[kc]!]!.hizmet + TARIM_ODAK[C.tarimOdak[kc]!]!.ticaret - mulDiv(C.tarife[kc]!, 6, 10).q;
     hv -= Math.floor((C.abluka[kc]! + C.akinKayip[kc]!) / 3);
-    if (anlasmaSayisi(w, kc, 8) > 0) hv -= 50_000; // ambargo altında
+    if (ambargolu ?? anlasmaSayisi(w, kc, 8) > 0) hv -= 50_000; // ambargo altında
   }
   const hizmet = mulRatio(mulDiv(R.isHizmet[r]!, K.hizmetVerim, 1000).q, Math.max(300_000, hv)).q;
   return Math.max(0, agri + sanayi + hizmet);
 }
 
 export interface VergiDetay { taban: number; oran: number; idari: number; huzur: number; erisim: number; kapasite: number; vergi: number }
-export function bolgeVergi(w: World, c: number, r: number, asim?: number): VergiDetay {
-  const taban = katmaDeger(w, r);
+export function bolgeVergi(w: World, c: number, r: number, asim?: number, tabanHazir?: number): VergiDetay {
+  const taban = tabanHazir ?? katmaDeger(w, r);
   const oran = w.C.c.vergi[c]!;
   const idari = idariVerim(w, c, r);
   const huzur = 500_000 + mulDiv(w.C.c.huzur[c]!, S, 200_000).q;
@@ -588,7 +588,10 @@ function anlasmaSayisi(w: World, c: number, tur: number): number {
 
 export function maliyeGunu(w: World): void {
   const C = w.C.c, R = w.R.c;
-  for (let r = 0; r < w.nR; r++) { R.vergiDun[r] = 0; R.vaDun[r] = katmaDeger(w, r); }
+  // ambargo altındaki ülkeler bir kez sayılır (bölge başına anlaşma taraması 813 bölgede günün en pahalı işiydi)
+  const amb = new Uint8Array(w.nC);
+  for (const s of w.AN.list()) if (w.AN.c.tur[s] === 8) amb[w.AN.c.b[s]!] = 1;
+  for (let r = 0; r < w.nR; r++) { R.vergiDun[r] = 0; const kc = R.kontrolEden[r]!; R.vaDun[r] = katmaDeger(w, r, kc >= 0 && amb[kc] === 1); }
   const grup: number[][] = Array.from({ length: w.nC }, () => []);
   for (let r = 0; r < w.nR; r++) grup[R.kontrolEden[r]!]!.push(r);
   const asim = kapasiteAsimiHepsi(w);
@@ -598,7 +601,7 @@ export function maliyeGunu(w: World): void {
   for (let c = 0; c < w.nC; c++) {
     let gelir = 0;
     for (const r of grup[c]!) {
-      const v = bolgeVergi(w, c, r, asim[c]).vergi;
+      const v = bolgeVergi(w, c, r, asim[c], R.vaDun[r]!).vergi;
       R.vergiDun[r] = v; gelir += v;
     }
     // tazminat gelir/gider anlaşmaları

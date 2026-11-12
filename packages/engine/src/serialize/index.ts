@@ -1,7 +1,10 @@
 // Bölüm 6.6: kanonik serileştirme (küçük-endian, şema sırası) ve hash. Görsel durum ve önbellek dışarıda kalır.
 import type { World } from '../state/world.ts';
-import { yeniDunya, BAKAN_VARSAYILAN, partiBaslat, kuvvetBaslat } from '../state/world.ts';
-import { MAL } from '../catalog.ts';
+import { yeniDunya, BAKAN_VARSAYILAN, partiBaslat, kuvvetBaslat, IDDIA_MAX, H_EYALET, T_KISI } from '../state/world.ts';
+import { MAL, NHUCRE, NKIMLIK, ST } from '../catalog.ts';
+import { largestRemainder } from '../num/index.ts';
+import { kentYuvaUyumla } from '../systems/gelisim.ts';
+import { kimlikEsitle } from '../systems/nufus.ts';
 import type { Table } from '../state/table.ts';
 import type { Paket } from '../paket.ts';
 import { usTersaneKur } from '../systems/us.ts';
@@ -179,12 +182,19 @@ export function kayitPaketi(bytes: Uint8Array): { kimlik: string; surum: string 
 }
 
 export function coz(bytes: Uint8Array, pkg: Paket): World {
+  // harita göçü: paket aynı senaryonun eski haritasıyla (pkg.goc.surum) kaydedilmişse bölgeler yeni haritaya taşınır
+  const k = kayitPaketi(bytes);
+  if (k && k.kimlik === pkg.kimlik && k.surum !== pkg.surum && pkg.goc && k.surum === pkg.goc.surum) return haritaGoc(bytes, pkg);
+  return cozIc(bytes, pkg, false);
+}
+
+function cozIc(bytes: Uint8Array, pkg: Paket, paketSerbest: boolean): World {
   const o = new Okuyucu(bytes);
   if (o.u32() !== MAGIC) throw new Error('kayıt dosyası değil');
   const sv = o.u32();
   if (sv !== SEMA_SURUM && sv !== 5 && sv !== 6 && sv !== 7) throw new Error(`şema sürümü uyumsuz: ${sv}`);
   const pid = o.str(), psur = o.str();
-  if (pid !== pkg.kimlik || psur !== pkg.surum) throw new Error(`paket uyumsuz: ${pid}@${psur}`);
+  if (pid !== pkg.kimlik || (!paketSerbest && psur !== pkg.surum)) throw new Error(`paket uyumsuz: ${pid}@${psur}`);
   const gun = o.f64(), surum = o.f64(), tohum = o.f64(), oyuncu = o.f64(), mod = o.f64(), emirSira = o.f64(), rotaEpoch = o.f64();
   const w = yeniDunyaBos(pkg, oyuncu);
   w.gun = gun; w.surum = surum; w.tohum = tohum; w.mod = mod; w.emirSira = emirSira; w.rotaEpoch = rotaEpoch;
@@ -259,5 +269,121 @@ function yeniDunyaBos(pkg: Paket, oyuncu: number): World {
   // hatları temizle (çözümleme tablodan yükler)
   for (const t of [w.HT, w.U, w.AN, w.MOD]) { t.hw = 0; t.free = []; t.alive.fill(0); t.gen.fill(0); }
   w.birlikAd = [];
+  return w;
+}
+
+// ---------- Harita göçü (v1.6, PR-05 / V16-T61) ----------
+// Yeni haritada her bölge eski bir bölgenin (ata) alt bölümüdür; eski bölgenin adını taşıyan alt bölüm "tohum"dur.
+// Kayıt, yeni paketten türetilen eski biçimli bir iskeletle okunur, sonra yeni dünyaya aktarılır:
+//  - nüfus, iş gücü, fabrika, stok gibi toplanabilir büyüklükler alt bölümlere başlangıç nüfusu oranında,
+//    en büyük artık yöntemiyle bölünür (toplam tam korunur);
+//  - sahiplik, kontrol, altyapı gibi durum değerleri bütün alt bölümlere kopyalanır;
+//  - birlikler, projeler, üsler, asker kökenleri ve askerî statüdeki nüfus tohum bölgeye taşınır.
+/** Alt bölümlere bölünen bölge sütunları. */
+const GOC_BOL = new Set(['sivilF', 'askeriF', 'isTarim', 'isSanayi', 'isHizmet', 'isGucu', 'issiz', 'yerelGida', 'gidaArtik', 'uretimDun', 'vergiDun', 'vaDun']);
+/** Yalnız tohum bölgeye geçen bölge sütunları (tekil tesisler; şehir düzeyi alt bölümlerde paket başlangıcından gelir). */
+const GOC_TOHUM = new Set(['valilik', 'havaUs', 'tersane', 'maden', 'kent']);
+const GOC_BOL_E = new Set(['gida', 'ihtiyacAy', 'karsilananAy', 'ihtiyacDun', 'karsilananDun', 'artik']);
+
+function eskiPaket(pkg: Paket): { p: Paket; tohum: number[]; aile: number[][] } {
+  const g = pkg.goc!;
+  let n1 = 0;
+  for (const a of g.ata) n1 = Math.max(n1, a + 1);
+  const tohum = new Array<number>(n1).fill(-1);
+  const aile: number[][] = Array.from({ length: n1 }, () => []);
+  g.ata.forEach((a, r) => { aile[a]!.push(r); if (g.tohum[r]) tohum[a] = r; });
+  for (let i = 0; i < n1; i++) if (tohum[i]! < 0) throw new Error(`harita göçü: eski bölge #${i} yeni haritada yok`);
+  const bolgeler = tohum.map((r, i) => ({ ...pkg.bolgeler[r]!, eyalet: i, komsu: [] as number[] }));
+  const p: Paket = {
+    ...pkg, surum: g.surum, goc: undefined, bolgeler, kenarlar: [], birlikler: [], anlasmalar: [],
+    eyaletler: bolgeler.map((b, i) => ({ kod: `E${i + 1}`, ad: b.ad, ulke: b.sahip, merkez: i, bolgeler: [i] })),
+    ulkeler: pkg.ulkeler.map((u) => ({ ...u, baskent: g.ata[u.baskent]! })),
+  };
+  return { p, tohum, aile };
+}
+
+function haritaGoc(bytes: Uint8Array, pkg: Paket): World {
+  if (pkg.eyaletler.length !== pkg.bolgeler.length) throw new Error('harita göçü yalnız eyalet = bölge paketlerinde tanımlıdır');
+  const { p, tohum, aile } = eskiPaket(pkg);
+  const e = cozIc(bytes, p, true);
+  const w = yeniDunyaBos(pkg, e.oyuncu);
+  const n1 = tohum.length, ata = pkg.goc!.ata;
+  w.gun = e.gun; w.surum = e.surum; w.tohum = e.tohum; w.mod = e.mod; w.emirSira = e.emirSira; w.rotaEpoch = e.rotaEpoch + 1;
+  w.artik = e.artik; w.sayac = e.sayac; w.bayrak.set(e.bayrak); w.hasatKademe.set(e.hasatKademe);
+  // boyutu değişmeyen tablolar ve diziler olduğu gibi devralınır
+  w.C = e.C; w.U = e.U; w.T = e.T; w.AN = e.AN; w.SV = e.SV; w.GR = e.GR; w.HT = e.HT; w.PR = e.PR; w.YR = e.YR; w.KE = e.KE; w.TK = e.TK; w.SP = e.SP; w.OL = e.OL; w.MOD = e.MOD;
+  w.ekip = e.ekip; w.tekIlerleme = e.tekIlerleme; w.tekBitti = e.tekBitti; w.tekMaliyet = e.tekMaliyet; w.arastirma = e.arastirma;
+  w.gorus = e.gorus; w.tutum = e.tutum; w.tutumKilit = e.tutumKilit; w.esir = e.esir; w.fiyat = e.fiyat; w.pazarHacim = e.pazarHacim; w.savasTaraf = e.savasTaraf;
+  w.birlikAd = e.birlikAd; w.olayBayrak = e.olayBayrak;
+  // bekleyen kuyruk emirleri eski bölge numaraları taşır: düşürülür (oyuncu yeniden verir)
+  w.kuyruk = [];
+  // bölge numarası taşıyan alanlar tohum bölgeye çevrilir
+  const yeni = (i: number): number => (i >= 0 && i < n1 ? tohum[i]! : i);
+  const sutun = (t: Table, k: string) => (t.ci as Record<string, Float64Array | Int32Array>)[k]!;
+  for (const u of w.U.rows()) {
+    for (const k of ['bolge', 'hedef', 'sonraki']) { const c = sutun(w.U as unknown as Table, k); c[u] = yeni(c[u]!); }
+    for (let k = 0; k < 8; k++) { const c = sutun(w.U as unknown as Table, `ok${k}`); if (c[u]! > 0) c[u] = yeni(c[u]! - 1) + 1; }
+  }
+  for (const s of w.T.rows()) {
+    const T = w.T.c;
+    T.konum[s] = yeni(T.konum[s]!);
+    if (T.hedefTip[s] === H_EYALET) T.hedefId[s] = yeni(T.hedefId[s]!);
+    if (T.tur[s] === T_KISI) T.alt[s] = yeni(T.alt[s]!);
+  }
+  for (const s of w.PR.rows()) w.PR.c.bolge[s] = yeni(w.PR.c.bolge[s]!);
+  for (const s of w.YR.rows()) w.YR.c.eyalet[s] = yeni(w.YR.c.eyalet[s]!);
+  for (let c = 0; c < w.nC; c++) { w.C.c.donBolge[c] = yeni(w.C.c.donBolge[c]!); w.C.c.havaBolge[c] = yeni(w.C.c.havaBolge[c]!); }
+  // bölge ve eyalet sütunları
+  const agirlik = aile.map((ch) => ch.map((r) => { let n = 0; for (const x of pkg.bolgeler[r]!.nufus) n += x; return Math.max(1, n); }));
+  const bol = (toplam: number, i: number): number[] => {
+    const ch = aile[i]!;
+    // negatif ya da tamsayı olmayan değer bölünmez: tohuma yazılır
+    if (toplam <= 0 || !Number.isSafeInteger(toplam)) return ch.map((r) => (r === tohum[i] ? toplam : 0));
+    return largestRemainder(toplam, agirlik[i]!);
+  };
+  for (const [k] of w.R.defs) {
+    const eski = sutun(e.R as unknown as Table, k), hedef = sutun(w.R as unknown as Table, k);
+    for (let i = 0; i < n1; i++) {
+      const ch = aile[i]!;
+      if (GOC_BOL.has(k)) { const pay = bol(eski[i]!, i); ch.forEach((r, j) => { hedef[r] = pay[j]!; }); }
+      else if (GOC_TOHUM.has(k)) hedef[tohum[i]!] = eski[i]!;
+      else for (const r of ch) hedef[r] = eski[i]!;
+    }
+  }
+  for (const [k] of w.E.defs) {
+    const eski = sutun(e.E as unknown as Table, k), hedef = sutun(w.E as unknown as Table, k);
+    for (let i = 0; i < n1; i++) {
+      const ch = aile[i]!;
+      if (GOC_BOL_E.has(k)) { const pay = bol(eski[i]!, i); ch.forEach((r, j) => { hedef[r] = pay[j]!; }); }
+      else for (const r of ch) hedef[r] = eski[i]!;
+    }
+  }
+  // nüfus: sivil hücreler bölünür; askerî statüler (A, W, P) köken muhasebesiyle birlikte tohumda kalır
+  w.pop.fill(0); w.kim.fill(0);
+  for (let i = 0; i < n1; i++) {
+    const ch = aile[i]!;
+    for (let h = 0; h < NHUCRE; h++) {
+      const v = e.pop[i * NHUCRE + h]!;
+      const st = h % 8;
+      if (st === ST.A || st === ST.W || st === ST.P) w.pop[tohum[i]! * NHUCRE + h] = v;
+      else { const pay = bol(v, i); ch.forEach((r, j) => { w.pop[r * NHUCRE + h] = pay[j]!; }); }
+    }
+    // kimlik: her kimlik hücresi alt bölümlerin yeni nüfusu oranında; sonra bölge toplamına eşitlenir
+    const kap = ch.map((r) => { let n = 0; for (let h = 0; h < NHUCRE; h++) n += w.pop[r * NHUCRE + h]!; return n; });
+    for (let q = 0; q < NKIMLIK; q++) {
+      const pay = largestRemainder(e.kim[i * NKIMLIK + q]!, kap);
+      ch.forEach((r, j) => { w.kim[r * NKIMLIK + q] = pay[j]!; });
+    }
+    for (const r of ch) kimlikEsitle(w, r);
+  }
+  // ulusal köken defteri ve iddialar
+  w.kokenDefter.fill(0);
+  for (let c = 0; c < w.nC; c++) for (let i = 0; i < n1; i++) w.kokenDefter[c * w.nE + tohum[i]!] = e.kokenDefter[c * n1 + i]!;
+  for (let r = 0; r < w.nR; r++) for (let q = 0; q < IDDIA_MAX; q++) w.iddia[r * IDDIA_MAX + q] = e.iddia[ata[r]! * IDDIA_MAX + q]!;
+  // barış tekliflerindeki bölge listeleri: eski bölge → bütün alt bölümleri
+  w.teklifBolge = {};
+  for (const [kimlik, l] of Object.entries(e.teklifBolge)) w.teklifBolge[kimlik] = [...new Set(l.flatMap((i) => aile[i] ?? []))].sort((a, b) => a - b);
+  kentYuvaUyumla(w);
+  w.diploSurum++; w.savasSurum++; w.anSurum++;
   return w;
 }

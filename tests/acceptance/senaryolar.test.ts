@@ -67,6 +67,6 @@ describe('Worker: senaryo paketi arayüzden gelir', () => {
     expect(giden.at(-1)!.p).toMatchObject({ kod: 'paket', paket: 's1914' });
     await s2.isle({ v: PROTOKOL_SURUM, id: 4, t: 'load', p: { yuva: 'deneme', paket: oku('s1914') } });
     expect(giden.at(-1)!.t).toBe('ready');
-    expect(giden.at(-1)!.p.paket).toBe('s1914@2.0.0');
+    expect(giden.at(-1)!.p.paket).toBe('s1914@3.0.0');
   }, 30_000);
 });
