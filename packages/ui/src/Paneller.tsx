@@ -563,6 +563,7 @@ function DipEylem({ u, P }: { u: any; P: number }) {
   const [baris, setBaris] = useState<number[] | null>(null);
   const [mod, setMod] = useState(1); // 1 tavizli barış, 15 toprak satın alma, 16 ültimatom
   const [bedel, setBedel] = useState(100_000);
+  const [ant, setAnt] = useState({ tazminat: 0, taksitYil: 5, ateskesYil: 5, garanti: 0 });
   const izin = (esik: number) => u.gorusBize >= esik;
   const d = ozet.value.donem;
   return (
@@ -570,6 +571,7 @@ function DipEylem({ u, P }: { u: any; P: number }) {
       <div class="dugmeler sar">
         {u.savasta ? <>
           <button onClick={() => onizle({ tur: 'baris', kime: u.id, barisTur: 0, bolgeler: [] })}>Beyaz barış</button>
+          <button onClick={() => { setMod(18); setBaris([]); }}>Antlaşma (çok maddeli)…</button>
           <button onClick={() => { setMod(1); setBaris((h?.bolgeler ?? []).map((b, i) => ({ b, i })).filter(({ b }) => b.s === u.id && b.k === P).map(({ i }) => i)); }}>Toprak iste…</button>
           <button onClick={() => onizle({ tur: 'baris', kime: u.id, barisTur: 2, bolgeler: (h?.bolgeler ?? []).map((b, i) => ({ b, i })).filter(({ b }) => b.s === u.id && b.k === P).map(({ i }) => i) })}>Teslim iste</button>
           <button onClick={() => onizle({ tur: 'baris', kime: u.id, barisTur: 3, bolgeler: [] })}>Tam ilhak</button>
@@ -597,12 +599,18 @@ function DipEylem({ u, P }: { u: any; P: number }) {
       </div>
       {baris && (
         <div class="baris-sec">
-          <p class="kucuk">{mod === 1 ? `İstenecek bölgeler (taviz bütçesi ${u.tavizButcesi} puan):` : mod === 15 ? 'Satın alınacak bölgeler:' : 'Ültimatomla istenecek bölgeler (ret = savaş gerekçesi):'}</p>
+          <p class="kucuk">{mod === 1 ? `İstenecek bölgeler (taviz bütçesi ${u.tavizButcesi} puan):` : mod === 18 ? `Antlaşma maddeleri — toprak (taviz bütçesi ${u.tavizButcesi} puan; tazminat bütçenin en çok yarısını tüketir):` : mod === 15 ? 'Satın alınacak bölgeler:' : 'Ültimatomla istenecek bölgeler (ret = savaş gerekçesi):'}</p>
           <div class="cipler sar">{(h?.bolgeler ?? []).map((b, i) => ({ b, i })).filter(({ b }) => b.s === u.id).map(({ b, i }) => (
             <button class={`cip ${baris.includes(i) ? 'acik' : ''} ${b.k === P ? '' : 'soluk'}`} aria-pressed={baris.includes(i)} onClick={() => setBaris(baris.includes(i) ? baris.filter((x) => x !== i) : [...baris, i])}>{pkg.bolgeler[i]!.ad}</button>
           ))}</div>
           {mod === 15 && <div class="satir-ayar"><span>Bedel <strong>{kisalt(bedel)}</strong> altın</span><span class="dugmeler"><button onClick={() => setBedel(Math.max(10_000, Math.round(bedel / 2)))}>÷2</button><button onClick={() => setBedel(bedel * 2)}>×2</button></span></div>}
-          <div class="dugmeler"><button onClick={() => setBaris(null)}>Vazgeç</button><button class="ana" disabled={!baris.length && mod !== 1} onClick={() => { void onizle(mod === 1 ? { tur: 'baris', kime: u.id, barisTur: 1, bolgeler: baris } : mod === 15 ? { tur: 'teklif', kime: u.id, tip: 15, bolgeler: baris, bedel } : { tur: 'teklif', kime: u.id, tip: 16, bolgeler: baris }); setBaris(null); }}>Önizle</button></div>
+          {mod === 18 && <>
+            <div class="satir-ayar"><span>Tazminat <strong>{ant.tazminat ? kisalt(ant.tazminat) : 'yok'}</strong>{ant.tazminat ? ' altın' : ''}</span><span class="dugmeler"><button onClick={() => setAnt({ ...ant, tazminat: 0 })}>Yok</button><button onClick={() => setAnt({ ...ant, tazminat: Math.max(100_000, Math.round(ant.tazminat / 2)) })}>÷2</button><button onClick={() => setAnt({ ...ant, tazminat: ant.tazminat ? ant.tazminat * 2 : 1_000_000 })}>{ant.tazminat ? '×2' : 'Ekle'}</button></span></div>
+            {ant.tazminat > 0 && <div class="satir-ayar"><span>Vade</span><Adim deger={ant.taksitYil} birim="yıl" azalt={() => setAnt({ ...ant, taksitYil: Math.max(1, ant.taksitYil - 1) })} artir={() => setAnt({ ...ant, taksitYil: Math.min(10, ant.taksitYil + 1) })} /></div>}
+            <div class="satir-ayar"><span>Ateşkes</span><Adim deger={ant.ateskesYil} birim="yıl" azalt={() => setAnt({ ...ant, ateskesYil: Math.max(1, ant.ateskesYil - 1) })} artir={() => setAnt({ ...ant, ateskesYil: Math.min(10, ant.ateskesYil + 1) })} /></div>
+            <label class="satir-ayar"><span>Bağımsızlık garantisi ver <span class="soluk kucuk">(kabulü kolaylaştırır)</span></span><input type="checkbox" checked={!!ant.garanti} onChange={(e) => setAnt({ ...ant, garanti: (e.target as HTMLInputElement).checked ? 1 : 0 })} /></label>
+          </>}
+          <div class="dugmeler"><button onClick={() => setBaris(null)}>Vazgeç</button><button class="ana" disabled={mod === 18 ? !baris.length && !ant.tazminat && !ant.garanti : !baris.length && mod !== 1} onClick={() => { void onizle(mod === 18 ? { tur: 'antlasma', kime: u.id, bolgeler: baris, ...ant } : mod === 1 ? { tur: 'baris', kime: u.id, barisTur: 1, bolgeler: baris } : mod === 15 ? { tur: 'teklif', kime: u.id, tip: 15, bolgeler: baris, bedel } : { tur: 'teklif', kime: u.id, tip: 16, bolgeler: baris }); setBaris(null); }}>Önizle</button></div>
         </div>
       )}
     </>

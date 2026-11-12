@@ -13,6 +13,7 @@ import { tekMaliyetHesapla, krediLimiti, ulkeGidaStok, malStok, arastirmaHizi, a
 import { KADEME_MAX } from './katalogEk.ts';
 import { tarih } from './calendar/index.ts';
 import { TK, TK_AD, ESIK, teklifEkle, anlasmaKur, anlasmaBoz, gerekceBaslat, gerekceSurecte, gerekceVar, savasIlan, savasaKatil, barisKabul, barisUygula, gorusDegis, teklifBolgeleri, ekipmanFiyat, BARIS_TUR, bolgeDegeri, kuklaKur } from './systems/diplomasi.ts';
+import { antlasmaUygula, antlasmaAc } from './systems/diplomasi.ts';
 import { EK_EMIRLER, EK_ALAN } from './emirEk.ts';
 import { olaySecimUygula, olayTanim } from './systems/olaylar.ts';
 import { tahminiGun } from './systems/kara.ts';
@@ -576,6 +577,14 @@ export function teklifSonuc(w: World, s: number, kabul: boolean): void {
   else if (tur === TK.cagri) {
     const sv = T.p1[s]!;
     if (w.SV.alive[sv]) savasaKatil(w, sv, b, T.p2[s]! === 1 ? 1 : 0);
+  } else if (tur === TK.antlasma) {
+    // koşullar teklif beklerken değiştiyse hiçbir madde uygulanmaz (atomik); taraflara bildirilir
+    if (!antlasmaUygula(w, a, b, antlasmaAc(T.p1[s]!, T.p2[s]!, teklifBolgeleri(w, s)))) {
+      anlat(w, `${adA}–${adB} antlaşması geçersiz kaldı: maddelerden biri artık uygulanamıyor.`, 'diplomasi', a, 1);
+      if (a === w.oyuncu) bildir(w, 'teklif', `${adB} ile antlaşma geçersiz kaldı`, a, false);
+      w.TK.release(s);
+      return;
+    }
   } else if (tur === TK.baris) {
     // teslim önerisinde öneren kaybeden taraftır
     if (T.p1[s] === 5) barisUygula(w, b, a, 2, teklifBolgeleri(w, s));

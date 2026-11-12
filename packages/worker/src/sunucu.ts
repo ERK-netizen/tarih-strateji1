@@ -21,7 +21,7 @@ const ANLIK_EMIR = new Set([
   'hareket', 'saldir', 'dur', 'durus', 'otoCephe', 'otoTakviye', 'bakan',
   'havaGorev', 'donanmaGorev', 'donanmaCephe', 'taburEkle', 'taburCikar',
   'rejim', 'partiDestek', 'secimErken', 'sandbox', 'kaliciGida',
-  'komutanAta', 'komutanEmir', 'komutanEgit', 'komutanOto',
+  'komutanAta', 'komutanEmir', 'komutanEgit', 'komutanOto', 'antlasma',
 ]);
 
 export class Sunucu {

@@ -11,7 +11,7 @@ import { S, mulDiv, clamp } from './num/index.ts';
 import { rng, uniformInt, AMAC } from './rng/index.ts';
 import { uc, savasta, savastaMi, anlasmaVar, anlat, bildir, efendi, pasif, birlikAdi } from './systems/ortak.ts';
 import { birlikIhtiyac } from './systems/ortak.ts';
-import { gerekceVar, gorusDegis, kuklaBagimsizlik, anlasmaKur, anlasmaBoz } from './systems/diplomasi.ts';
+import { gerekceVar, gorusDegis, kuklaBagimsizlik, anlasmaKur, anlasmaBoz, teklifEkle, TK, antlasmaHatasi, antlasmaKabul, antlasmaPaket, tazminatTavani, type AntlasmaMadde } from './systems/diplomasi.ts';
 import { rejimDegistir, secimYap, zulumUygula, kimlikAdi, kimlikHucresi, devrim, partiPay } from './systems/toplum.ts';
 import { K } from './catalog.ts';
 import { trEkK } from './tr.ts';
@@ -578,5 +578,25 @@ EK_EMIRLER.komutanOto = {
     return tamam('Komutanları dağıt', `${bos} komutansız birlik`, [], ['En yetenekli komutandan başlanır; kapasite aşılmaz', 'Aynı bölgedeki birlikler aynı komutana verilir']);
   },
   uygula(w, e) { komutanDagit(w, e.ulke); },
+};
+
+// ---------- Çok maddeli barış antlaşması (v1.6 PR-13) ----------
+const maddeOku = (e: Emir): AntlasmaMadde => ({ bolgeler: arr(e.bolgeler), tazminat: n(e.tazminat, 0), taksitYil: n(e.taksitYil, 5), ateskesYil: n(e.ateskesYil, 5), garanti: n(e.garanti, 0) ? 1 : 0 });
+EK_EMIRLER.antlasma = {
+  onizle(w, e) {
+    const d = n(e.kime, -1), m = maddeOku(e);
+    // ham liste doğrulanır: süzülmüş değil (geçersiz bölge sessizce düşürülmez, taslak reddedilir)
+    if (Array.isArray(e.bolgeler) && e.bolgeler.length !== m.bolgeler.length) return red('Antlaşma', 'Toprak maddesi: bölge bulunamadı.');
+    const hata = antlasmaHatasi(w, e.ulke, d, m);
+    if (hata) return red('Antlaşma', hata);
+    const y = antlasmaKabul(w, d, e.ulke, m);
+    const maddeler = [
+      m.bolgeler.length ? `Toprak: ${m.bolgeler.map((r) => bAd(w, r)).join(', ')}` : '',
+      m.tazminat > 0 ? `Tazminat: ${fmt(m.tazminat)} altın, ${m.taksitYil} yılda (günlük ≈ ${fmt(Math.floor(m.tazminat / (m.taksitYil * 365)))}; tavan ${fmt(tazminatTavani(w, d, m.taksitYil))})` : '',
+      `Ateşkes: ${m.ateskesYil} yıl`, m.garanti ? `Garanti: ${uAd(w, d)} bağımsızlığını güvence altına alırsınız` : '',
+    ].filter(Boolean);
+    return tamam(`Antlaşma önerisi: ${uAd(w, d)}`, `${maddeler.length} madde`, maddeler, [`Tahmini yanıt: ${y.kabul ? 'kabul' : 'ret'} — ${y.neden}`, 'Maddeler birlikte uygulanır; biri geçersizleşirse hiçbiri işlemez'], 'Yanıttan önce geri çekilebilir');
+  },
+  uygula(w, e) { const m = maddeOku(e); teklifEkle(w, e.ulke, n(e.kime), TK.antlasma, m.tazminat, antlasmaPaket(m), m.bolgeler); },
 };
 void NYUVA;

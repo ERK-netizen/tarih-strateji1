@@ -17,7 +17,7 @@ import { ulkeGidaStok, zorunluGider, krediLimiti, acikYuva } from '../systems/ek
 import { denizGucu, akinGucu, korumaGucu, havaGucu, havaUstunluk } from '../systems/deniz.ts';
 import { HAVA } from '../katalogEk.ts';
 import { savunmaCarpan, topcuBaski } from '../systems/kara.ts';
-import { TK, ESIK, gerekceVar, gerekceSurecte, barisKabul, savasSkoru, istekliligi, tavizButcesi, bolgeDegeri, teslimKosulu, teklifBolgeleri } from '../systems/diplomasi.ts';
+import { TK, ESIK, gerekceVar, gerekceSurecte, antlasmaKabul, antlasmaAc, barisKabul, savasSkoru, istekliligi, tavizButcesi, bolgeDegeri, teslimKosulu, teklifBolgeleri } from '../systems/diplomasi.ts';
 
 /** Kesin sonuç cephesi (K-47): gereken genel üstünlük ve o cephenin tehdit ağırlığı katı (×0,1). */
 const AGIRLIK_USTUNLUK = 2_000_000, AGIRLIK_KAT = 50;
@@ -140,6 +140,7 @@ function kabulEder(w: World, b: number, a: number, tur: number, p1: number, p2: 
       return benim * 10 >= karsiGuc * 6 || g >= 75_000;
     }
     case TK.baris: return barisKabul(w, b, a, p1, istenen).kabul;
+    case TK.antlasma: return antlasmaKabul(w, b, a, antlasmaAc(p1, p2, istenen)).kabul;
     case TK.devir: {
       // toprak satışı: iyi ilişki, ana yurt dışı bölge ve en az üç yıllık katma değer kadar bedel (kuklalar efendiye itiraz etmez)
       if (savasta(w, a, b)) return false;

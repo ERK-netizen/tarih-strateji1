@@ -51,6 +51,12 @@ export function yapiliAyristir(c: YBaglam): Yorum | string | null {
   const bolgeler = [...new Set(v.filter((x) => x.tur === 'bolge' && !(ulke && x.i0 === ulke.i0 && v.some((y) => y.tur === 'ulke' && y.i0 === x.i0 && y.id === ulke.id))).map((x) => x.id))];
   const bolge = bolgeler[0];
   const yuzde = c.yuzde ?? sayilar[0];
+  // ---------- Çok maddeli barış antlaşması ----------
+  if (has(/ antlasma/) && ulke) {
+    const sayi = (re: RegExp, d: number) => { const m = re.exec(f); return m ? Number(m[1]) : d; };
+    const tazminat = sayi(/ tazminat (\d+)/, 0);
+    return yorum({ tur: 'antlasma', ulke: P, kime: ulke.id, bolgeler, tazminat, taksitYil: tazminat > 0 ? sayi(/ altin (\d+) yil/, 5) : 5, ateskesYil: sayi(/ ateskes (\d+) yil/, 5), garanti: has(/ garanti/) ? 1 : 0 }, 'çok maddeli antlaşma', k, 0.88);
+  }
   // ---------- Komutanlar (şema 9) ----------
   if (k.komutanlar && k.komutanlar.length) {
     const ki = adBul(toks, k.komutanlar.map((x) => x.ad));
@@ -195,6 +201,7 @@ export function yapiliMetin(e: Emir, k: Katalog): string | null {
     case 'komutanEmir': return `Komutan ${kAd(e.komutan)}: emir ${['serbest', 'savun', 'taarruz'][Number(e.emir)] ?? 'serbest'}${Number(e.ikmalEsik) > 0 ? `, ikmal ${yuzdeYaz(Number(e.ikmalEsik))} altında beklesin` : ''}${Number(e.orgEsik) > 0 ? `, organizasyon ${yuzdeYaz(Number(e.orgEsik))} altında beklesin` : ''}`;
     case 'komutanEgit': return `Komutan ${kAd(e.komutan)} kurmay eğitimi alsın`;
     case 'komutanOto': return 'Komutanları birliklere dağıt';
+    case 'antlasma': return `${ekle(u(e.kime), 'yonelme')} antlaşma öner${((e.bolgeler as number[]) ?? []).length ? `: ${bs(e.bolgeler)}` : ''}${Number(e.tazminat) > 0 ? `; tazminat ${Number(e.tazminat)} altın ${Number(e.taksitYil)} yılda` : ''}; ateşkes ${Number(e.ateskesYil)} yıl${Number(e.garanti) ? '; garanti' : ''}`;
     case 'gemiInsa': return `${b(e.bolge)} tersanesinde ${Number(e.adet)} ${kucukIlk(k.gemiler?.[Number(e.sinif)]?.ad ?? '?')} inşa et`;
     case 'ucakUret': return `${Number(e.adet)} filo ${kucukIlk(k.ucaklar?.[Number(e.tip)]?.ad ?? '?')} sipariş et`;
     case 'donanmaGonder': return `Donanma ${b(e.bolge)} cephesine gitsin`;
