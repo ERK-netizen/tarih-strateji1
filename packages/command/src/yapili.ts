@@ -52,7 +52,7 @@ export function yapiliAyristir(c: YBaglam): Yorum | string | null {
   const bolge = bolgeler[0];
   const yuzde = c.yuzde ?? sayilar[0];
   // ---------- Çok maddeli barış antlaşması ----------
-  if (has(/ antlasma/) && ulke) {
+  if (has(/ antlasma/) && ulke && !has(/ (himaye|kukla|ticaret|saldirmazlik)/) && has(/ (ateskes|tazminat|garanti|madde)/)) {
     const sayi = (re: RegExp, d: number) => { const m = re.exec(f); return m ? Number(m[1]) : d; };
     const tazminat = sayi(/ tazminat (\d+)/, 0);
     return yorum({ tur: 'antlasma', ulke: P, kime: ulke.id, bolgeler, tazminat, taksitYil: tazminat > 0 ? sayi(/ altin (\d+) yil/, 5) : 5, ateskesYil: sayi(/ ateskes (\d+) yil/, 5), garanti: has(/ garanti/) ? 1 : 0 }, 'çok maddeli antlaşma', k, 0.88);
