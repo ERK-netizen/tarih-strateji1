@@ -26,7 +26,7 @@ Harita Natural Earth sınırları ve GeoNames şehirleriyle derlenir (463 bölge
 | Nüfus | Bölge başına 4 yaş × 8 statü (O, S, Y, E, A, W, P, R), kimlik dağılımı (≤ 7 hücre), kohort giriş/çıkış, askerlik yasaları, yaralı/esir, köken eyalet muhasebesi |
 | Tarım ve gıda | Alan × verim × işçi × sulama × hasat (normalleştirilmiş beklenti 1,000000) × savaş; eyalet havuzları, kıtlık ek ölümü, karne |
 | Ekonomi | Katma değer, vergi (idari verim × huzur × kontrol erişimi × kapasite), ödeme sırası, borç/temerrüt, bütçe kalemleri, dünya pazarı (haftalık, √ fiyat kuralı) |
-| Sanayi | Sivil/askerî fabrika, tüketim malı, proje inşası, üretim hatları (verim eğrisi, WIP, çelik/kömür girdisi), fiziksel mühimmat |
+| Sanayi | Sivil/askerî fabrika, tüketim malı, proje inşası, üretim hatları (verim eğrisi, WIP, çelik/kömür girdisi), fiziksel mühimmat; şehir düzeyi × 4 yapı yuvası (demiryolu, sulama, altyapı ve imar yuva tüketmez; şehir imarı bedelsiz fabrika vermez) |
 | Lojistik | Ortak kenar kapasitesi, sınıf öncelikli tek rota tahsisi, transit, varışta el koyma, tahsis önbelleği |
 | Kara muharebesi | Çekirdek mod: saldırı/savunma/kırılma/organizasyon, arazi genişliği, anahtarlı r ∈ [0,85; 1,15], eşzamanlı kayıp, geri çekilme, teslim, kış yıpranması |
 | Kontrol ve işgal | Yönetim mesafesinden kontrol; işgal itaati (yumuşak/dengeli/sert), taban erişim, direniş ve sabotaj, kültürel bütünleşme |
@@ -72,12 +72,13 @@ npm ci && npm run android:apk
 # çıktı: apps/android/android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-APK yatay kilitlidir, **INTERNET ve RECORD_AUDIO izni yoktur** (manifestte `tools:node="remove"` ile kütüphane birleştirmelerinden de çıkarılır). Kayıt dosyası dışa aktarımı Android paylaşım sayfasını kullanır; ek depolama izni gerekmez.
+APK dikey (portre) çalışır; Android manifestindeki `sensorPortrait` ayarıyla uyumludur, **INTERNET ve RECORD_AUDIO izni yoktur** (manifestte `tools:node="remove"` ile kütüphane birleştirmelerinden de çıkarılır). Kayıt dosyası dışa aktarımı Android paylaşım sayfasını kullanır; ek depolama izni gerekmez.
 
 ## Nasıl oynanır
 
 - **Senaryo seçin**, sonra devleti seçin (öne çıkan kartlar, arama ya da haritaya dokunarak) ve başlayın.
 - **Zaman**: 1 gün · 1 hafta · 1 ay · *Olay* (önemli olayda veya en çok 3 ayda durur). *Durdur* bir sonraki gün sınırında işler.
+- **Anında emirler (v1.6)**: politika, araştırma, inşa, teklif ve yanıt, olay kararı, savaş/barış, hedef ve görev emirleri onaylandığı anda uygulanır ve otomatik kaydedilir; gün ilerletmek gerekmez. Üretim, yolculuk ve günlük ekonomi zaman ilerledikçe işler. Birlik kurma, alım-satım, borç ve terhis bir sonraki günün emir fazında işler.
 - **Harita**: bölgeye dokunun → sağda bölge çekmecesi açılır. Kendi birliklerimiz türlerine göre gruplanır; **− / +** ile kaç birlik göndereceğinizi seçin (en hazırlıklılar önce), sonra haritada hedef bölgeye dokunun → plan kartı → *Onayla*. Birlik puluna ikinci kez dokunmak o bölgedeki bütün birlikleri seçer.
 - **Birlik kurma**: Ordu panelinde tür ve adet seçin; *Konuşlanma* listesinden şehri seçin ya da *Haritadan seç* ile haritada şehre dokunun. Bölge çekmecesindeki *Burada birlik kur* aynı işi o şehir için yapar.
 - **Komut çubuğu** (birincil giriş). Örnekler:

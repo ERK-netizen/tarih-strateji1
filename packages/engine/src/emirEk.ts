@@ -377,6 +377,7 @@ export const EK_EMIRLER: Record<string, EkEmir> = {
       const d = n(e.hedef, -1);
       if (d < 0 || d === e.ulke || d >= w.nC || pasif(w, d)) return red('Casusluk', 'Hedef ülke bulunamadı.');
       if (w.C.c.pg[e.ulke]! < 20_000) return red('Casusluk', '20 siyasi güç ister.');
+      if (w.C.c.hazine[e.ulke]! < 10_000) return red('İstihbarat', 'Gizli fon için hazine yetersiz.');
       return tamam(`Bilgi toplama: ${uAd(w, d)}`, 'Ajan ağı hazine, ordu, rejim ve huzur bilgisi getirir', ['Siyasi güç −20, 10.000 altın'], ['%20 olasılıkla ajan yakalanır (görüş −10)'], 'Geri alınamaz');
     },
     uygula(w, e) {
@@ -392,6 +393,7 @@ export const EK_EMIRLER: Record<string, EkEmir> = {
       const d = n(e.hedef, -1);
       if (d < 0 || d === e.ulke || d >= w.nC || pasif(w, d)) return red('Suikast', 'Hedef ülke bulunamadı.');
       if (w.C.c.pg[e.ulke]! < 80_000) return red('Suikast', '80 siyasi güç ister.');
+      if (w.C.c.hazine[e.ulke]! < 60_000) return red('İstihbarat', 'Gizli fon için hazine yetersiz.');
       return tamam(`Suikast: ${uAd(w, d)} lideri`, 'Tetikçi tutulur; başarılıysa hedefte meşruiyet ve huzur çöker', ['Siyasi güç −80, 60.000 altın'], ['Başarı ≈ %35', 'Başarısızlıkta ifşa: görüş −50, hedef savaş gerekçesi kazanır'], 'Geri alınamaz');
     },
     uygula(w, e) {
@@ -413,6 +415,7 @@ export const EK_EMIRLER: Record<string, EkEmir> = {
       const d = n(e.hedef, -1), r = n(e.bolge, -1);
       if (d < 0 || d === e.ulke || r < 0 || w.R.c.sahip[r] !== d) return red('Gizli saldırı', 'Hedef ülkenin bir bölgesini seçin.');
       if (w.C.c.pg[e.ulke]! < 40_000) return red('Gizli saldırı', '40 siyasi güç ister.');
+      if (w.C.c.hazine[e.ulke]! < 40_000) return red('İstihbarat', 'Gizli fon için hazine yetersiz.');
       return tamam(`Gizli saldırı: ${bAd(w, r)}`, 'Kimliği bilinmeyen sabotaj: tahkimat çöker, direniş artar, fabrikalar aksar', ['Siyasi güç −40, 40.000 altın'], ['Başarı ≈ %55; %25 ifşa (görüş −25)']);
     },
     uygula(w, e) {
@@ -430,6 +433,7 @@ export const EK_EMIRLER: Record<string, EkEmir> = {
       const a = n(e.hedef, -1), b = n(e.hedef2, -1);
       if (a < 0 || b < 0 || a === b || a >= w.nC || b >= w.nC || a === e.ulke || b === e.ulke || pasif(w, a) || pasif(w, b)) return red('İlişki bozma', 'İki farklı yabancı ülke seçin.');
       if (w.C.c.pg[e.ulke]! < 40_000) return red('İlişki bozma', '40 siyasi güç ister.');
+      if (w.C.c.hazine[e.ulke]! < 30_000) return red('İstihbarat', 'Gizli fon için hazine yetersiz.');
       return tamam(`İlişki bozma: ${uAd(w, a)} – ${uAd(w, b)}`, 'Sahte belge ve provokasyonla iki ülkenin görüşü kötüleşir', ['Siyasi güç −40, 30.000 altın'], ['İki ülkenin karşılıklı görüşü −30; %25 ifşa (ikisi de bizden uzaklaşır)']);
     },
     uygula(w, e) {
@@ -445,6 +449,7 @@ export const EK_EMIRLER: Record<string, EkEmir> = {
       const d = n(e.hedef, -1);
       if (d < 0 || d === e.ulke || d >= w.nC || pasif(w, d)) return red('İsyan', 'Hedef ülke bulunamadı.');
       if (w.C.c.pg[e.ulke]! < 70_000) return red('İsyan', '70 siyasi güç ister.');
+      if (w.C.c.hazine[e.ulke]! < 70_000) return red('İstihbarat', 'Gizli fon için hazine yetersiz.');
       return tamam(`İsyan kışkırtma: ${uAd(w, d)}`, 'Hedefin bölgelerinde silah ve para dağıtılır', ['Siyasi güç −70, 70.000 altın'], ['Direniş +15 (en huzursuz üç bölge), huzur −5; %30 ifşa (görüş −35)'], 'Geri alınamaz');
     },
     uygula(w, e) {

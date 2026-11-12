@@ -441,7 +441,7 @@ function Ekonomi() {
       </section>
       <section>
         <h3>Şehirler ve madenler</h3>
-        <p class="soluk kucuk">Ortalama şehir düzeyi {String(e.kent.ort).replace('.', ',')} · en büyük {e.kent.enBuyuk} · maden ocağı {e.kent.maden}. Şehirler nüfus, altyapı ve huzurla kendiliğinden büyür; "Şehir imarı" büyümeyi hızlandırır. Her düzey fabrika ve hizmet geliri getirir.</p>
+        <p class="soluk kucuk">Ortalama şehir düzeyi {String(e.kent.ort).replace('.', ',')} · en büyük {e.kent.enBuyuk} · maden ocağı {e.kent.maden}. Şehirler nüfus, altyapı ve huzurla kendiliğinden büyür; "Şehir imarı" büyümeyi hızlandırır. Her düzey 4 yapı yuvası açar (fabrika, üs, tersane, maden, valilik); demiryolu, sulama, altyapı ve imar yuva tüketmez. Fabrikalar ayrıca inşa edilir.</p>
         {e.sehirler.length > 0 && <ul class="liste">{e.sehirler.map((x: any) => <li key={x.r}><button class="bag" onClick={() => { bolgeyeGit(x.r); cekmece.value = { tur: 'bolge', r: x.r }; }}>{x.ad}</button><span class="soluk kucuk">düzey {x.kent} · {x.fabrika} fabrika</span></li>)}</ul>}
         {(e.petrolIht > 0 || e.petrolDun > 0) && <p class="kucuk">Petrol: üretim {(e.petrolDun / 1000).toFixed(1)} · ihtiyaç {(e.petrolIht / 1000).toFixed(1)} birim/gün · stok {fmt(Math.floor(e.petrol / 1000))}</p>}
       </section>

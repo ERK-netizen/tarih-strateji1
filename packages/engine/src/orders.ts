@@ -8,7 +8,7 @@ import { S, mulDiv, clamp } from './num/index.ts';
 import { uc, savasta, savastaMi, gorus, anlasmaVar, birlikAdi, rotaTip, bildir, anlat, ulkeBirlikleri, iddiaVar, efendi } from './systems/ortak.ts';
 import { askerlikAktar, insanGucu, terhis } from './systems/nufus.ts';
 import { US_MAX, kiyidaMi } from './systems/us.ts';
-import { insaYuvasi, insaSurenSayi, birlikSiniri } from './systems/gelisim.ts';
+import { insaYuvasi, insaSurenSayi, birlikSiniri, yapiYuvasi, YUVALI_PROJE, YUVA_DUZEY } from './systems/gelisim.ts';
 import { tekMaliyetHesapla, krediLimiti, ulkeGidaStok, malStok, arastirmaHizi, acikYuva } from './systems/ekonomi.ts';
 import { KADEME_MAX } from './katalogEk.ts';
 import { tarih } from './calendar/index.ts';
@@ -255,9 +255,12 @@ export function onizle(w: World, e: Emir): Kart {
       if (P.kod === 'maden' && w.R.c.maden[r]! >= 5) return red('İnşa', 'Maden işletmesi en üst düzeyde (5).');
       if (P.kod === 'maden' && !w.pkg.bolgeler[r]!.celik && !w.pkg.bolgeler[r]!.komur && !w.pkg.bolgeler[r]!.petrol) return red('İnşa', `${bAd(w, r)} bölgesinde maden ya da petrol yatağı yok.`);
       if (P.kod === 'demiryolu' && w.R.c.demiryolu[r]! >= 3) return red('İnşa', 'Demiryolu en üst düzeyde.');
+      // v1.6 T40: şehir düzeyi × 4 yapı yuvası; ağ/imar yatırımları yuva tüketmez
+      const yy = YUVALI_PROJE.has(P.kod) ? yapiYuvasi(w, r) : null;
+      if (yy && yy.bos <= 0) return red('İnşa', `${bAd(w, r)} yapı yuvaları dolu (${yy.kullanilan + yy.insada}/${yy.kapasite}). Şehir imarıyla düzeyi artırın.`);
       const indirim = insaIndirim(w, c, P.kod);
       const nakit = mulDiv(P.nakit, indirim, S).q;
-      return { gecerli: true, baslik: `${P.ad}: ${bAd(w, r)}`, kapsam: `${fmt(insaSP(w, c, P.sp) / 1000)} SP + ${fmt(nakit)} altın, kademeli`, bugun: ['Peşin ödeme yok; günlük ilerlemeyle harcanır'], tahmin: [`Referans süre ${P.gun} gün; gerçek süre sivil sanayi kapasitesine bağlı`], iptal: 'Harcanan iade edilmez' };
+      return { gecerli: true, baslik: `${P.ad}: ${bAd(w, r)}`, kapsam: `${fmt(insaSP(w, c, P.sp) / 1000)} SP + ${fmt(nakit)} altın, kademeli`, bugun: ['Peşin ödeme yok; günlük ilerlemeyle harcanır', yy ? `Yapı yuvası: ${yy.kullanilan + yy.insada + 1}/${yy.kapasite} kullanılacak` : 'Yapı yuvası tüketmez (ağ/imar yatırımı)'], tahmin: [`Referans süre ${P.gun} gün; gerçek süre sivil sanayi kapasitesine bağlı`, ...(P.kod === 'kent' ? [`Tamamlanınca düzey ${w.R.c.kent[r]! + 1}: ${YUVA_DUZEY} yeni yapı yuvası (fabrika ayrıca inşa edilir)`] : [])], iptal: 'Harcanan iade edilmez' };
     }
     case 'satinAl': case 'sat': {
       const m = clamp(n(e.mal), 0, MAL.length - 1);

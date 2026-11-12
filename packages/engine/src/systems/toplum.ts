@@ -272,7 +272,7 @@ function fmtKisi(n: number): string {
   return s.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
-/** Yıllık: kalabalıklaşan ve huzurlu şehirler kendiliğinden büyür (bir sivil fabrika ile). */
+/** Yıllık: kalabalıklaşan ve huzurlu şehirler kendiliğinden büyür (yalnız yapı kapasitesi; K-45). */
 export function yillikKent(w: World): void {
   const R = w.R.c;
   for (let r = 0; r < w.nR; r++) {
@@ -282,8 +282,8 @@ export function yillikKent(w: World): void {
     if (L >= 10 || R.hasar[r]! > 100_000 || w.C.c.huzur[c]! < 50_000 || savastaMi(w, c)) continue;
     const esik = (L + 1) * (L + 1) * 250_000;
     if (bolgeToplam(w, r) >= esik && w.R.c.isHizmet[r]! * 4 >= bolgeToplam(w, r) / 5) {
-      R.kent[r] = L + 1; R.sivilF[r] = R.sivilF[r]! + 1;
-      if (c === w.oyuncu) anlat(w, `${w.pkg.bolgeler[r]!.ad} büyüyerek ${L + 1}. düzey şehir oldu; yeni bir fabrika açıldı.`, 'proje', c, 1);
+      R.kent[r] = L + 1;
+      if (c === w.oyuncu) anlat(w, `${w.pkg.bolgeler[r]!.ad} büyüyerek ${L + 1}. düzey şehir oldu; dört yeni yapı yuvası açıldı.`, 'proje', c, 1);
     }
   }
   void YB; void hc;

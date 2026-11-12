@@ -165,7 +165,7 @@ export function bolge(w: World, r: number) {
     birlikler, yabanci, projeler, vergi: k === P ? R.vergiDun[r]! : null, baskent: w.pkg.ulkeler.findIndex((u) => u.baskent === r),
     sahipAd: w.pkg.ulkeler[R.sahip[r]!]!.ad, kontrolAd: w.pkg.ulkeler[k]!.ad, sahipRenk: w.pkg.ulkeler[R.sahip[r]!]!.renk, kontrolRenk: w.pkg.ulkeler[k]!.renk, isyan: R.isyan[r]!, cephe: w.gun - R.sonMuharebe[r]! <= 7,
     kis: ortak.kisDuzey(w, r), camur: ortak.camurDuzey(w, r),
-    kent: R.kent[r]!, maden: R.maden[r]!, kiyi: !!b.kiyi, petrol: b.petrol ? { miktar: b.petrol[0], yil: b.petrol[1] } : null, demPol: R.demPol[r]!,
+    kent: R.kent[r]!, yuva: R.sahip[r] === P ? gelisim.yapiYuvasi(w, r) : null, maden: R.maden[r]!, kiyi: !!b.kiyi, petrol: b.petrol ? { miktar: b.petrol[0], yil: b.petrol[1] } : null, demPol: R.demPol[r]!,
     komsu: b.komsu,
     insaYuva: (() => { const y = gelisim.insaYuvasi(w, b.eyalet); return { yuva: y.yuva, dolu: gelisim.insaSurenSayi(w, b.eyalet, (t) => !!PROJE[t]?.ozel), bilesen: y.bilesen.filter((x) => x.deger > 0) }; })(),
     // tahkimat: kendi bölgesi kesin, yabancı bölge keşif/istihbarat varsa görünür

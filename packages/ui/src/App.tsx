@@ -452,7 +452,7 @@ function OlayModal() {
         <p class="olay-metin">{ol.metin}</p>
         <div class="secenekler">
           {ol.secenekler.map((s: any, i: number) => (
-            <button class="secenek" onClick={async () => { const r = await istemci.istek('submit', { tur: 'olaySec', olay: ol.id, secim: i }); if (r.sonuc?.[0]?.kabul) { tost(`Karar verildi: ${s.ad}. İlk ilerleyen günde uygulanır.`, 'iyi'); await ilerlet('gun', 1); } }}>
+            <button class="secenek" onClick={async () => { const r = await istemci.istek('submit', { tur: 'olaySec', olay: ol.id, secim: i }); if (r.sonuc?.[0]?.kabul) { tost(`Karar uygulandı: ${s.ad}.`, 'iyi'); await tazele(); } }}>
               <strong>{s.ad}</strong><span>{s.etki}</span>
             </button>
           ))}

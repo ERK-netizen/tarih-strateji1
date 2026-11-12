@@ -70,6 +70,7 @@ function BolgeCekmece({ r, kapat }: { r: number; kapat: () => void }) {
           <dt>Altyapı · {d.terim.demiryolu}</dt><dd>{v.altyapi} · {v.demiryolu}</dd>
           {v.uretim !== null && <><dt>Tarım</dt><dd>{(v.uretim / 1000).toFixed(1).replace('.', ',')} birim/gün</dd></>}
           <dt>Şehir düzeyi</dt><dd>{v.kent}/10{v.maden > 0 ? ` · maden ocağı ${v.maden}` : ''}{v.kiyi ? ' · kıyı' : ''}</dd>
+          {v.yuva && <><dt>Yapı yuvası</dt><dd title="Her şehir düzeyi 4 yuva açar; demiryolu, sulama, altyapı ve imar yuva tüketmez">{v.yuva.kullanilan + v.yuva.insada}/{v.yuva.kapasite}{v.yuva.insada > 0 ? ` (${v.yuva.insada} inşaatta)` : ''}</dd></>}
           {v.petrol && <><dt>Petrol</dt><dd>{(v.petrol.miktar / 1000).toFixed(1)}/gün{v.petrol.yil > 0 ? ` (${v.petrol.yil}'den itibaren)` : ''}</dd></>}
           {(v.celik > 0 || v.komur > 0) && <><dt>Maden</dt><dd>{v.celik > 0 ? `${d.mallar[1].ad.toLocaleLowerCase('tr')} ${(v.celik / 1000).toFixed(1)}` : ''} {v.komur > 0 ? `${d.mallar[2].ad.toLocaleLowerCase('tr')} ${(v.komur / 1000).toFixed(1)}` : ''}</dd></>}
           {v.vergi !== null && <><dt>Vergi</dt><dd>{fmt(v.vergi)}/gün</dd></>}

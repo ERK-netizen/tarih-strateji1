@@ -1,5 +1,5 @@
 // Eylem yardımcıları: komut çalıştırma, önizleme, emir gönderme, zaman ilerletme.
-import { istemci, komutSonuc, tost, tazele, ilerliyor, ilerleme, rapor, harita, sessiz, komutHatirla, taninmayanEkle, seciliBirlik, ozet, panelSurum, cekmece } from './durum.ts';
+import { istemci, komutSonuc, tost, tazele, ilerliyor, ilerleme, rapor, harita, sessiz, komutHatirla, taninmayanEkle, seciliBirlik, ozet, cekmece } from './durum.ts';
 
 export async function komutCalistir(metin: string) {
   const m = metin.trim();
@@ -25,15 +25,15 @@ export async function onizle(emir: Record<string, unknown>) {
 }
 
 export async function gonder(emir: Record<string, unknown>) {
-  const r = await istemci.istek('submit', emir);
+  const r = await istemci.istek('submit', { ...emir, beklenenSurum: ozet.value?.surum });
   if (r.kabul === false) { tost(r.neden, 'hata'); return false; }
   const s = r.sonuc?.[0];
   if (s && !s.kabul) { tost(s.neden ?? 'Emir reddedildi.', 'hata'); return false; }
   komutSonuc.value = null;
-  tost(`Onaylandı: ${s?.esdeger ?? s?.baslik ?? 'emir'} — ilk ilerleyen günde işler.`, 'iyi');
+  tost(`Onaylandı: ${s?.esdeger ?? s?.baslik ?? 'emir'} — ${s?.aninda ? 'anında işlendi.' : 'sonraki gün işleyecek.'}`, 'iyi');
   if (emir.tur === 'hareket' || emir.tur === 'saldir' || emir.tur === 'dur') seciliBirlik.value = new Set();
-  // anlık emirleri görmek için bir gün ilerletmeden önizlemede kalır
-  panelSurum.value++;
+  // Anında verilen emirler (araştırma, proje, teklif vb.) bir gün atlamadan görünür.
+  await tazele();
   return true;
 }
 

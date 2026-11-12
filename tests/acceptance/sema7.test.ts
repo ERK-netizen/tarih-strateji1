@@ -211,7 +211,7 @@ describe('T311 ekonomi ayarları, petrol ve şehirler', () => {
     expect(w.C.c.petrol[GBR]).toBeGreaterThan(w.C.c.petrolIht[GBR]! * 60);
     expect(ekonomi.malStok(w, GBR, 4)).toBeGreaterThanOrEqual(0);
   });
-  test('şehir imarı şehir düzeyini ve fabrika sayısını artırır', () => {
+  test('şehir imarı şehir düzeyini artırır; bedelsiz fabrika vermez (K-45)', () => {
     const w = dunya(0, 0);
     const r = w.pkg.ulkeler[0]!.baskent;
     const k0 = w.R.c.kent[r]!, f0 = w.R.c.sivilF[r]!;
@@ -221,7 +221,7 @@ describe('T311 ekonomi ayarları, petrol ve şehirler', () => {
     w.PR.c.spKul[s] = w.PR.c.spTop[s]!; w.PR.c.nakitKul[s] = w.PR.c.nakitTop[s]!;
     for (let i = 0; i < 3 && w.PR.list().includes(s); i++) gunIlerle(w, false);
     expect(w.R.c.kent[r]).toBe(k0 + 1);
-    expect(w.R.c.sivilF[r]).toBeGreaterThan(f0);
+    expect(w.R.c.sivilF[r]).toBe(f0);
   });
 });
 

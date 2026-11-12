@@ -25,8 +25,12 @@ const bekle = () => new Promise<void>((r) => { bekleyen.push(r); ch.port2.postMe
 
 const sunucu = new Sunucu(null, gecikmeliDepo(), (m, aktar) => self.postMessage(m, aktar ?? []), bekle);
 
+let sira: Promise<void> = Promise.resolve();
 self.onmessage = (e: MessageEvent) => {
-  // stop: zaman ilerlerken anında işaretlenir
+  // Durdur: uzun simülasyonun sonraki günlük sınırında işlenir.
   if ((e.data as { t?: string })?.t === 'stop') { sunucu.durdurIstek = true; return; }
-  void sunucu.isle(e.data);
+  // İlerleme sürerken yeni mutasyonlar hemen meşgul hatası alır.
+  if (sunucu.calisiyor) { void sunucu.isle(e.data); return; }
+  const m = e.data;
+  sira = sira.then(() => sunucu.isle(m)).catch(() => { /* sunucu kendi protokol hatasını üretir */ });
 };

@@ -1,4 +1,5 @@
 import { usTersaneKur } from '../systems/us.ts';
+import { kentYuvaUyumla } from '../systems/gelisim.ts';
 // Bölüm 7: günlük faz hattı P0–P12, sıklık katmanları, durma koşulları, bütünlük ve hash.
 import type { World, Bildirim } from '../state/world.ts';
 import { hc } from '../state/world.ts';
@@ -32,6 +33,7 @@ export function senaryoBaslat(pkg: Paket, oyuncu: number, mod = 0): World {
   w.mod = mod;
   isDagit(w, true);
   usTersaneKur(w);
+  kentYuvaUyumla(w);
   hasatKademeSec(w);
   acilisOlaylari(w);
   // yönetim mesafeleri ilk aylık kapanıştan önce de doğru olsun

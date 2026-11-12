@@ -1,6 +1,6 @@
 // Simülasyon Worker'ının çekirdeği: tek yazar. Mesaj döngüsünden bağımsızdır (Node testlerinde de çalışır).
 import {
-  type World, type Paket, senaryoBaslat, gunIlerle, onizle, kuyrugaAl, serilestir, coz, acikla, tarihMetni, ayEkle, dunyaHash, anlatiHash, kayitPaketi,
+  type World, type Paket, senaryoBaslat, gunIlerle, onizle, uygula, kuyrugaAl, serilestir, coz, acikla, tarihMetni, ayEkle, dunyaHash, anlatiHash, kayitPaketi,
   type Emir, SEMA_SURUM,
 } from '@ts/engine';
 import { ayristir, emirMetni, type Sonuc } from '@ts/command';
@@ -11,6 +11,17 @@ import { danis } from './danisman.ts';
 import { dogrula, mesaj, type Mesaj, type AdvanceP } from '@ts/protocol';
 
 const SESSIZE_ALINAMAZ = new Set(['savas', 'baskent', 'teslim', 'temerrut', 'gida', 'olay', 'gerekce', 'baris']);
+// v1.6 P0: idari emirler onay anında uygulanır (gün ilerlemez); günlük üretim, yolculuk ve
+// ekonomik kapanış sonraki gün işler. Kaynak/zaman bağlayan emirler (birlik kurma, alım-satım,
+// borç, terhis) P2 kuyruğunda kalır.
+const ANLIK_EMIR = new Set([
+  'vergi', 'butce', 'harcama', 'askerlik', 'ekonomi', 'karne', 'isgalPol', 'tutum',
+  'teklif', 'teklifYanit', 'baris', 'olaySec', 'gerekce', 'savasIlan',
+  'arastir', 'insa', 'gemiInsa', 'ucakUret', 'uretim',
+  'hareket', 'saldir', 'dur', 'durus', 'otoCephe', 'otoTakviye', 'bakan',
+  'havaGorev', 'donanmaGorev', 'donanmaCephe', 'taburEkle', 'taburCikar',
+  'rejim', 'partiDestek', 'secimErken', 'sandbox', 'kaliciGida',
+]);
 
 export class Sunucu {
   w: World | null = null;
@@ -28,11 +39,15 @@ export class Sunucu {
     const d = dogrula(ham);
     if (!d.ok) { this.yanit((ham as { id?: number })?.id ?? -1, 'error', { kod: 'protokol', ayrinti: d.neden, oneri: 'Uygulamayı yeniden başlatın.' }); return; }
     const m = d.m;
+    if (this.calisiyor && !['stop', 'query', 'explain', 'preview'].includes(m.t)) {
+      this.yanit(m.id, 'error', { kod: 'mesgul', ayrinti: 'Simülasyon ilerliyor; önce Durdur.' });
+      return;
+    }
     try {
       switch (m.t) {
         case 'init': return this.init(m);
         case 'preview': return this.yanit(m.id, 'previewCard', this.kart(m.p as Emir));
-        case 'submit': return this.submit(m);
+        case 'submit': return void (await this.submit(m));
         case 'command': return this.komut(m);
         case 'advance': return void (await this.advance(m));
         case 'stop': this.durdurIstek = true; return;
@@ -44,7 +59,7 @@ export class Sunucu {
         case 'saves': return this.yanit(m.id, 'saveList', await this.kayit.yuvalar());
         case 'deleteSave': await this.kayit.sil(String(m.p)); return this.yanit(m.id, 'saveList', await this.kayit.yuvalar());
         case 'exportSave': { const b = this.paketle(); return this.yanit(m.id, 'fileReady', { ad: `tarih-strateji-${this.dunya().gun}.tsk`, bayt: b.buffer }, [b.buffer]); }
-        case 'sandbox': return this.submit({ ...m, p: { ...(m.p as object), tur: 'sandbox' } });
+        case 'sandbox': return void (await this.submit({ ...m, p: { ...(m.p as object), tur: 'sandbox' } }));
         case 'switch': { const p = m.p as { oyuncu: number; mod: number }; const w = this.dunya(); w.oyuncu = p.oyuncu; w.mod = p.mod; this.son = serilestir(w); return this.yanit(m.id, 'ready', this.hazir()); }
       }
     } catch (e) {
@@ -70,22 +85,40 @@ export class Sunucu {
   kart(e: Emir) {
     const w = this.dunya();
     const k = onizle(w, { ...e, ulke: w.oyuncu });
-    return { ...k, esdeger: emirMetni({ ...e, ulke: w.oyuncu }, katalogKur(w)) };
+    return { ...k, surum: w.surum, esdeger: emirMetni({ ...e, ulke: w.oyuncu }, katalogKur(w)) };
   }
 
-  private submit(m: Mesaj) {
+  private async submit(m: Mesaj): Promise<void> {
     const w = this.dunya();
     const p = m.p as { emirler?: Emir[]; beklenenSurum?: number } & Emir;
+    if (p.beklenenSurum !== undefined &&
+        (!Number.isSafeInteger(p.beklenenSurum) || p.beklenenSurum !== w.surum)) {
+      this.yanit(m.id, 'orderResult', { kabul: false, neden: 'Dünya sürümü değişti. Yeniden önizleyin.', kod: 'surum', surum: w.surum });
+      return;
+    }
     const emirler: Emir[] = p.emirler ?? [p as Emir];
-    if (w.mod === 2) return this.yanit(m.id, 'orderResult', { kabul: false, neden: 'Gözlemci modunda emir verilemez.' });
+    if (w.mod === 2) { this.yanit(m.id, 'orderResult', { kabul: false, neden: 'Gözlemci modunda emir verilemez.' }); return; }
+    let anlik = 0;
     const sonuc = emirler.map((e) => {
       const em = { ...e, ulke: w.oyuncu };
       const k = onizle(w, em);
       if (!k.gecerli) return { kabul: false, neden: k.neden, baslik: k.baslik };
+      if (ANLIK_EMIR.has(em.tur)) {
+        const r = uygula(w, em);
+        if (!r.ok) return { kabul: false, neden: r.neden, baslik: k.baslik };
+        anlik++;
+        return { kabul: true, aninda: true, baslik: k.baslik, esdeger: emirMetni(em, katalogKur(w)) };
+      }
       kuyrugaAl(w, em);
-      return { kabul: true, baslik: k.baslik, esdeger: emirMetni(em, katalogKur(w)) };
+      return { kabul: true, aninda: false, baslik: k.baslik, esdeger: emirMetni(em, katalogKur(w)) };
     });
-    this.yanit(m.id, 'orderResult', { sonuc, kuyruk: w.kuyruk.length });
+    // Aynı gün emri kesinleştir, hash/kurtarma anlık değişsin. Günlük fiziksel etkiler sonraki tick'te.
+    if (anlik) {
+      w.surum += 1;
+      this.son = serilestir(w);
+      await this.otoKaydet();
+    }
+    this.yanit(m.id, 'orderResult', { sonuc, kuyruk: w.kuyruk.length, anlik, surum: w.surum });
   }
 
   private komut(m: Mesaj) {

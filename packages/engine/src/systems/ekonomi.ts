@@ -379,9 +379,8 @@ function projeTamamla(w: World, s: number): void {
   else if (kod === 'havaus') R.havaUs[r] = Math.min(US_MAX, R.havaUs[r]! + 1);
   else if (kod === 'tersane') R.tersane[r] = Math.min(3, R.tersane[r]! + 1);
   else if (kod === 'kent') {
-    // şehir büyüdükçe fabrikalar da çoğalır: her düzey bir sivil, çift düzeyler bir askerî fabrika
-    R.kent[r] = Math.min(10, R.kent[r]! + 1); R.sivilF[r] = R.sivilF[r]! + 1;
-    if (R.kent[r]! % 2 === 0) R.askeriF[r] = R.askeriF[r]! + 1;
+    // v1.6 (K-45): şehir düzeyi yalnız yapı kapasitesini (+4 yuva) artırır; bedelsiz fabrika yoktur (T21)
+    R.kent[r] = Math.min(10, R.kent[r]! + 1);
   } else if (kod === 'maden') R.maden[r] = Math.min(5, R.maden[r]! + 1);
   else if (kod === 'gemi') { const k = P.alt[s]!; const C = w.C.c as unknown as Record<string, Float64Array>; C[`gs${k}`]![c] = C[`gs${k}`]![c]! + P.adet[s]!; }
   else if (kod === 'ucak') { const k = P.alt[s]!; const C = w.C.c as unknown as Record<string, Float64Array>; C[`h${k}`]![c] = C[`h${k}`]![c]! + P.adet[s]!; }
