@@ -1,5 +1,6 @@
 import { usTersaneKur } from '../systems/us.ts';
 import { kentYuvaUyumla } from '../systems/gelisim.ts';
+import { kuvvetKurHepsi, kuvvetGunu, kuvvetDenetim } from '../systems/kuvvet.ts';
 import { komutanBaslat, komutanDagit, komutanAy, komutanGunu } from '../systems/komutan.ts';
 // Bölüm 7: günlük faz hattı P0–P12, sıklık katmanları, durma koşulları, bütünlük ve hash.
 import type { World, Bildirim } from '../state/world.ts';
@@ -34,6 +35,7 @@ export function senaryoBaslat(pkg: Paket, oyuncu: number, mod = 0): World {
   w.mod = mod;
   isDagit(w, true);
   usTersaneKur(w);
+  kuvvetKurHepsi(w); // gemiler limanlardaki filolara, uçaklar hava üslerindeki kanatlara
   kentYuvaUyumla(w);
   hasatKademeSec(w);
   acilisOlaylari(w);
@@ -95,6 +97,8 @@ export function gunIlerle(w: World, kesinlestir = true): GunSonuc {
   kararGunu(w);
   // P2c: komutanların daimî emirleri (ikmal/organizasyon eşiği, savunma emri)
   komutanGunu(w);
+  // P2d: filolar varış gününde konum değiştirir; üssünü yitiren filo ve kanatlar çekilir
+  kuvvetGunu(w);
   fazDegisti(w);
   // P3: diplomasi
   teklifYanitlari(w);
@@ -172,6 +176,8 @@ export function butunluk(w: World, n0: number): void {
   if (beklenen !== gercek) throw new Error(`bütünlük: nüfus korunumu ${gercek} ≠ ${beklenen}`);
   const kok = kokenDenetim(w);
   if (kok) throw new Error(`bütünlük: köken muhasebesi ${kok}`);
+  const kv = kuvvetDenetim(w);
+  if (kv) throw new Error(`bütünlük: filo/kanat muhasebesi ${kv}`);
 }
 
 /** Σ birlik köken partileri + ulusal defter + yoldaki personel = Σ A hücreleri (eyalet bazında) (T102). */

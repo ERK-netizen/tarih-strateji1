@@ -6,12 +6,13 @@ import { largestRemainder } from '../num/index.ts';
 import { kentYuvaUyumla } from '../systems/gelisim.ts';
 import { kimlikEsitle } from '../systems/nufus.ts';
 import { komutanBaslat, komutanDagit } from '../systems/komutan.ts';
+import { kuvvetKurHepsi } from '../systems/kuvvet.ts';
 import type { Table } from '../state/table.ts';
 import type { Paket } from '../paket.ts';
 import { usTersaneKur } from '../systems/us.ts';
 import { hashV1, hashText } from '../hash/index.ts';
 
-export const SEMA_SURUM = 9;
+export const SEMA_SURUM = 10;
 /** Şema 9'da eklenen kolonlar (komutanlar). */
 const YENI9: Record<string, string[]> = { birlik: ['komutan'] };
 /** Şema 6'da eklenen kolonlar: 5 sürümlü kayıt okunurken atlanır, varsayılanla doldurulur. */
@@ -123,6 +124,7 @@ function tablolar(w: World, sv = SEMA_SURUM): Table[] {
   const l = [w.R, w.E, w.C, w.U, w.T, w.AN, w.SV, w.GR, w.HT, w.PR, w.YR, w.KE, w.TK, w.SP, w.OL] as unknown as Table[];
   if (sv >= 6) l.push(w.MOD as unknown as Table);
   if (sv >= 9) { l.push(w.KM as unknown as Table); l.push(w.IR as unknown as Table); }
+  if (sv >= 10) { l.push(w.FL as unknown as Table); l.push(w.KN as unknown as Table); }
   return l;
 }
 
@@ -170,6 +172,7 @@ export function serilestir(w: World): Uint8Array {
   y.str(kanonikJson(w.kuyruk));
   y.str(kanonikJson(w.olayBayrak));
   y.u32(w.komutanAd.length); for (const s of w.komutanAd) y.str(s);
+  y.u32(w.kuvvetAd.length); for (const s of w.kuvvetAd) y.str(s);
   return y.bytes();
 }
 
@@ -197,7 +200,7 @@ function cozIc(bytes: Uint8Array, pkg: Paket, paketSerbest: boolean): World {
   const o = new Okuyucu(bytes);
   if (o.u32() !== MAGIC) throw new Error('kayıt dosyası değil');
   const sv = o.u32();
-  if (sv !== SEMA_SURUM && sv !== 5 && sv !== 6 && sv !== 7 && sv !== 8) throw new Error(`şema sürümü uyumsuz: ${sv}`);
+  if (sv !== SEMA_SURUM && sv !== 5 && sv !== 6 && sv !== 7 && sv !== 8 && sv !== 9) throw new Error(`şema sürümü uyumsuz: ${sv}`);
   const pid = o.str(), psur = o.str();
   if (pid !== pkg.kimlik || (!paketSerbest && psur !== pkg.surum)) throw new Error(`paket uyumsuz: ${pid}@${psur}`);
   const gun = o.f64(), surum = o.f64(), tohum = o.f64(), oyuncu = o.f64(), mod = o.f64(), emirSira = o.f64(), rotaEpoch = o.f64();
@@ -239,6 +242,8 @@ function cozIc(bytes: Uint8Array, pkg: Paket, paketSerbest: boolean): World {
   if (sv < 8) usTersaneKur(w);
   if (sv >= 9) { const nk = o.u32(); w.komutanAd = []; for (let i = 0; i < nk; i++) w.komutanAd.push(o.str()); }
   else { komutanBaslat(w); for (let c = 0; c < w.nC; c++) komutanDagit(w, c); } // şema 8 → 9: kadro senaryo kuralıyla kurulur
+  if (sv >= 10) { const nk = o.u32(); w.kuvvetAd = []; for (let i = 0; i < nk; i++) w.kuvvetAd.push(o.str()); }
+  else kuvvetKurHepsi(w); // şema ≤ 9 → 10: ülke toplamları filo ve kanatlara dağıtılır (toplam korunur)
   return w;
 }
 
@@ -274,8 +279,8 @@ function yeniDunyaBos(pkg: Paket, oyuncu: number): World {
   const w = yeniDunya(bos, oyuncu);
   w.pkg = pkg;
   // hatları temizle (çözümleme tablodan yükler)
-  for (const t of [w.HT, w.U, w.AN, w.MOD, w.KM, w.IR]) { t.hw = 0; t.free = []; t.alive.fill(0); t.gen.fill(0); }
-  w.birlikAd = []; w.komutanAd = [];
+  for (const t of [w.HT, w.U, w.AN, w.MOD, w.KM, w.IR, w.FL, w.KN]) { t.hw = 0; t.free = []; t.alive.fill(0); t.gen.fill(0); }
+  w.birlikAd = []; w.komutanAd = []; w.kuvvetAd = [];
   return w;
 }
 
@@ -318,7 +323,7 @@ function haritaGoc(bytes: Uint8Array, pkg: Paket): World {
   w.gun = e.gun; w.surum = e.surum; w.tohum = e.tohum; w.mod = e.mod; w.emirSira = e.emirSira; w.rotaEpoch = e.rotaEpoch + 1;
   w.artik = e.artik; w.sayac = e.sayac; w.bayrak.set(e.bayrak); w.hasatKademe.set(e.hasatKademe);
   // boyutu değişmeyen tablolar ve diziler olduğu gibi devralınır
-  w.C = e.C; w.U = e.U; w.T = e.T; w.AN = e.AN; w.SV = e.SV; w.GR = e.GR; w.HT = e.HT; w.PR = e.PR; w.YR = e.YR; w.KE = e.KE; w.TK = e.TK; w.SP = e.SP; w.OL = e.OL; w.MOD = e.MOD; w.KM = e.KM; w.komutanAd = e.komutanAd; w.IR = e.IR;
+  w.C = e.C; w.U = e.U; w.T = e.T; w.AN = e.AN; w.SV = e.SV; w.GR = e.GR; w.HT = e.HT; w.PR = e.PR; w.YR = e.YR; w.KE = e.KE; w.TK = e.TK; w.SP = e.SP; w.OL = e.OL; w.MOD = e.MOD; w.KM = e.KM; w.komutanAd = e.komutanAd; w.IR = e.IR; w.FL = e.FL; w.KN = e.KN; w.kuvvetAd = e.kuvvetAd;
   w.ekip = e.ekip; w.tekIlerleme = e.tekIlerleme; w.tekBitti = e.tekBitti; w.tekMaliyet = e.tekMaliyet; w.arastirma = e.arastirma;
   w.gorus = e.gorus; w.tutum = e.tutum; w.tutumKilit = e.tutumKilit; w.esir = e.esir; w.fiyat = e.fiyat; w.pazarHacim = e.pazarHacim; w.savasTaraf = e.savasTaraf;
   w.birlikAd = e.birlikAd; w.olayBayrak = e.olayBayrak;
@@ -338,6 +343,8 @@ function haritaGoc(bytes: Uint8Array, pkg: Paket): World {
     if (T.tur[s] === T_KISI) T.alt[s] = yeni(T.alt[s]!);
   }
   for (const s of w.PR.rows()) w.PR.c.bolge[s] = yeni(w.PR.c.bolge[s]!);
+  for (const s of w.FL.rows()) { w.FL.c.us[s] = yeni(w.FL.c.us[s]!); w.FL.c.konum[s] = yeni(w.FL.c.konum[s]!); w.FL.c.hedef[s] = yeni(w.FL.c.hedef[s]!); }
+  for (const s of w.KN.rows()) { w.KN.c.us[s] = yeni(w.KN.c.us[s]!); w.KN.c.hedef[s] = yeni(w.KN.c.hedef[s]!); }
   for (const s of w.YR.rows()) w.YR.c.eyalet[s] = yeni(w.YR.c.eyalet[s]!);
   for (let c = 0; c < w.nC; c++) { w.C.c.donBolge[c] = yeni(w.C.c.donBolge[c]!); w.C.c.havaBolge[c] = yeni(w.C.c.havaBolge[c]!); }
   // bölge ve eyalet sütunları

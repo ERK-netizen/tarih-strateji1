@@ -114,6 +114,17 @@ export const BK = Object.fromEntries(BAKAN.map((t, i) => [t, 1 << i])) as Record
 export const BAKAN_VARSAYILAN = BK.arastirma;
 
 /**
+ * Filolar (şema 10, v1.6 PR-08): gemiler ülke toplamı değil, kalıcı kimlikli filolardadır. us: ana liman (bölge);
+ * konum: bulunduğu kıyı bölgesi; hedef/varis: yoldaysa varacağı bölge ve gün (yoksa hedef −1); gorev: DENIZ_GOREV;
+ * g0–g4: sınıf başına gemi; hasar: S ölçekli. Ülke sütunları gs0–gs4 bu tablonun toplamıdır (ayna).
+ */
+export const FILO_KOL = [['ulke', i32], ['ad', i32], ['us', i32], ['konum', i32], ['hedef', i32], ['varis', f], ['gorev', i32], ['g0', f], ['g1', f], ['g2', f], ['g3', f], ['g4', f], ['hasar', f]] as const;
+/**
+ * Hava kanatları (şema 10): us: bağlı olduğu hava üssü (bölge); gorev: HAVA_GOREV; hedef: görev bölgesi (yoksa −1);
+ * u0–u2: tür başına uçak; hasar: S ölçekli. Ülke sütunları h0–h2 bu tablonun toplamıdır (ayna).
+ */
+export const KANAT_KOL = [['ulke', i32], ['ad', i32], ['us', i32], ['gorev', i32], ['hedef', i32], ['u0', f], ['u1', f], ['u2', f], ['hasar', f]] as const;
+/**
  * İstihbarat raporları (şema 9, v1.6 PR-12): ajanın getirdiği bilgi kesin değer değil, gözlem günü taşıyan bir aralıktır.
  * ulke: raporun sahibi; hedef: hakkında bilgi toplanan devlet; konu: ISTIHBARAT_KONU indeksi; gozlem: gözlem günü;
  * alt/ust: tahmin aralığı; guven: S ölçekli güvenilirlik; bitis: raporun geçerliliğini yitirdiği gün.
@@ -175,6 +186,9 @@ export interface World {
   MOD: Table<(typeof MOD_KOL)[number][0]>;
   KM: Table<(typeof KOMUTAN_KOL)[number][0]>;
   IR: Table<(typeof ISTIHBARAT_KOL)[number][0]>;
+  FL: Table<(typeof FILO_KOL)[number][0]>;
+  KN: Table<(typeof KANAT_KOL)[number][0]>;
+  kuvvetAd: string[]; // FL.ad ve KN.ad indeksli dizge tablosu
   komutanAd: string[]; // KM.ad indeksli dizge tablosu
   /** Olay kararlarıyla açılan tarih bayrakları (sıralı küme; dallanan senaryo akışı) */
   olayBayrak: string[];
@@ -247,7 +261,7 @@ export function yeniDunya(pkg: Paket, oyuncu: number): World {
     SV: new Table('savas', SAVAS_KOL, 4), GR: new Table('gerekce', GEREKCE_KOL, 4), HT: new Table('hat', HAT_KOL, 32),
     PR: new Table('proje', PROJE_KOL, 16), YR: new Table('yarali', YARALI_KOL, 32), KE: new Table('kalici', KALICI_KOL, 8),
     TK: new Table('teklif', TEKLIF_KOL, 8), SP: new Table('siparis', SIPARIS_KOL, 16), OL: new Table('olay', OLAY_KOL, 8),
-    MOD: new Table('mod', MOD_KOL, 8), KM: new Table('komutan', KOMUTAN_KOL, 16), IR: new Table('istihbarat', ISTIHBARAT_KOL, 16), komutanAd: [], olayBayrak: [],
+    MOD: new Table('mod', MOD_KOL, 8), KM: new Table('komutan', KOMUTAN_KOL, 16), IR: new Table('istihbarat', ISTIHBARAT_KOL, 16), FL: new Table('filo', FILO_KOL, 16), KN: new Table('kanat', KANAT_KOL, 16), kuvvetAd: [], komutanAd: [], olayBayrak: [],
     birlikAd: [], rotaEpoch: 1, kuyruk: [], emirSira: 0,
     savasTaraf: new Int8Array(SV_MAX * nC), iddia: new Int16Array(nR * IDDIA_MAX), teklifBolge: {}, diploSurum: 1, savasSurum: 1, anSurum: 1,
     artik: { dogum: 0, olum: 0, kohort: 0 },

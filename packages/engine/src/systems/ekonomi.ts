@@ -6,6 +6,7 @@ import { ST, YB, NHUCRE, K, EKONOMI, YONETIM, ISGAL, EKIPMAN, MUHIMMAT, TEKNOLOJ
 import { MT, NYUVA } from '../state/world.ts';
 import { KADEME_MAX, EKO_MODEL, TARIM_ODAK, PETROL_KULLANIM } from '../katalogEk.ts';
 import { kuvvetBakimi, gemiSay, ucakSay } from './deniz.ts';
+import { gemiTeslim, ucakTeslim } from './kuvvet.ts';
 import { GEMI, HAVA } from '../katalogEk.ts';
 import { S, mulDiv, mulRatio, clamp, largestRemainder, sqrtRatio, approach } from '../num/index.ts';
 import { rng, AMAC, uniformInt } from '../rng/index.ts';
@@ -382,8 +383,8 @@ function projeTamamla(w: World, s: number): void {
     // v1.6 (K-45): şehir düzeyi yalnız yapı kapasitesini (+4 yuva) artırır; bedelsiz fabrika yoktur (T21)
     R.kent[r] = Math.min(10, R.kent[r]! + 1);
   } else if (kod === 'maden') R.maden[r] = Math.min(5, R.maden[r]! + 1);
-  else if (kod === 'gemi') { const k = P.alt[s]!; const C = w.C.c as unknown as Record<string, Float64Array>; C[`gs${k}`]![c] = C[`gs${k}`]![c]! + P.adet[s]!; }
-  else if (kod === 'ucak') { const k = P.alt[s]!; const C = w.C.c as unknown as Record<string, Float64Array>; C[`h${k}`]![c] = C[`h${k}`]![c]! + P.adet[s]!; }
+  else if (kod === 'gemi') gemiTeslim(w, c, r, P.alt[s]!, P.adet[s]!);
+  else if (kod === 'ucak') ucakTeslim(w, c, P.alt[s]!, P.adet[s]!);
   if (kod === 'gemi' || kod === 'ucak') {
     const ad = kod === 'gemi' ? GEMI[AKTIF.donem][P.alt[s]!]?.ad ?? 'gemi' : HAVA[AKTIF.donem][P.alt[s]!]?.ad ?? 'uçak';
     const m = kod === 'gemi' ? `${w.pkg.bolgeler[r]!.ad} tersanesinde ${P.adet[s]} ${trKucuk(ad)} denize indirildi.` : `${P.adet[s]} ${trKucuk(ad)} hizmete girdi.`;

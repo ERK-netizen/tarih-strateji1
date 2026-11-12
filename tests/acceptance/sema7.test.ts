@@ -26,9 +26,9 @@ describe('T300–T302 donanma ve hava kuvvetleri (1914)', () => {
   test('T301 filo muharebesi iki tarafa kayıp verdirir; üstün taraf abluka kurar', () => {
     const w = senaryoBaslat(p, GER, 0);
     diplomasi.savasIlan(w, GER, GBR);
-    w.C.c.donGorev[GER] = 1; w.C.c.donGorev[GBR] = 2;
+    emir(w, { tur: 'donanmaGorev', ulke: GER, gorev: 1 }); emir(w, { tur: 'donanmaGorev', ulke: GBR, gorev: 2 });
     const g0 = toplamGemi(w, GER), b0 = toplamGemi(w, GBR);
-    for (let i = 0; i < 120; i++) { w.gun += 7; w.C.c.gHasar[GER] = 0; w.C.c.gHasar[GBR] = 0; deniz.denizHaftasi(w); }
+    for (let i = 0; i < 120; i++) { w.gun += 7; for (const f of w.FL.rows()) w.FL.c.hasar[f] = 0; deniz.denizHaftasi(w); }
     expect(toplamGemi(w, GER)).toBeLessThan(g0);
     expect(toplamGemi(w, GBR)).toBeLessThan(b0);
     expect(w.anlati.some((a) => a.metin.startsWith('Deniz muharebesi'))).toBe(true);
