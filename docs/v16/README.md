@@ -1,41 +1,57 @@
-# v1.6 geliştirme kiti — entegrasyon durumu
+# v1.6 geliştirme durumu
 
-Kaynak: `Tarih_Strateji_v1_6_Entegre_Gelistirme_Kit.zip` (temel commit `3fdd26d`).
+Bu dizin iki kaynak paketi ve bunların oyuna işlenme durumunu içerir.
 
-- `V16_BUTUNLESIK_ANA_GELISTIRME_PROMPTU.md` — v1.6'nın bütün gereksinimleri (değiştirilmeden alındı).
-- `V16_MIMARI_VE_KABUL_PLANI.md` — mimari, sözleşmeler ve P0–P8 entegrasyon sırası.
-- `referans/` — kitin **oyuna bağlı olmayan** referans kodu (`core/*.ts`), bağımsız smoke testi ve Canvas muharebe prototipi.
-  Derlemeye, lint'e ve `npm test`e girmez. Bağımsız çalıştırma:
-  `cd docs/v16/referans && node --experimental-strip-types --test tests/v16-smoke.test.ts` (9/9 geçer).
+- `KARSILASTIRMALI_ANALIZ_VE_BUTUNCUL_GELISTIRME.md` — altı referans oyunla karşılaştırma, hedef mimari, 17 iş paketi (PR-01…PR-17) ve 70 kabul testi (bütüncül geliştirme paketi, 12 Kasım 2026).
+- `KOD_BULGULARI_VE_COZUMLER.csv`, `IS_PAKETLERI_VE_BAGIMLILIKLAR.csv`, `SISTEMLER_ARASI_ETKI_MATRISI.csv` — paketin izleme tabloları.
+- `V16_BUTUNLESIK_ANA_GELISTIRME_PROMPTU.md`, `V16_MIMARI_VE_KABUL_PLANI.md` — ilk v1.6 kitinin belgeleri.
+- `kabul-matrisi-v16.csv` — **70 kabul testinin bu depodaki gerçek durumu ve kanıtı.**
+- `referans/` — ilk kitin oyuna bağlı olmayan örnek kodu ve prototipi (derlemeye girmez).
 
-## Bu dalda uygulananlar
+## İş paketleri: durum
 
-| Kalem | Durum | Kanıt |
+| Paket | Durum | Depodaki karşılığı |
 |---|---|---|
-| P0 istemci: akışlı isteğe `error` gelince Promise reddedilir; Worker çökerse bütün bekleyenler reddedilir; `postMessage` hatası yakalanır | tamamlandı / testlendi | T36 — `tests/acceptance/v16.test.ts` |
-| P0 Worker tek yazar: mesajlar tek sırada; zaman ilerlerken sorgu/önizleme dışı mesaj `mesgul` | tamamlandı / testlendi | T38 (meşgul) |
-| P0 sürüm kilidi (`beklenenSurum`), başarılı anlık emirde sürüm + hash yenilenir | tamamlandı / testlendi | T37 |
-| P0 aynı gün idari emir + otomatik kayıt; olay kararı artık bir gün ilerletmez | tamamlandı / testlendi | T38, T39; K-46 |
-| İstihbarat giderleri hazineyi negatife düşüremez | tamamlandı / testlendi | T47 |
-| README: Android portre (`sensorPortrait`) | tamamlandı | `README.md` |
-| Şehir düzeyi × 4 yapı yuvası; ağ/imar yatırımları yuva tüketmez; bedelsiz fabrika yok | tamamlandı / testlendi | T21, T40; K-45; bölge çekmecesinde “Yapı yuvası” satırı |
-| `core/cities.ts` | motora uyarlandı (`systems/gelisim.ts` `yapiYuvasi`) | T40 |
+| PR-01 Worker kararlılığı | tamamlandı | Promise reddi, sürüm kilidi, tek sıra, meşgul, idempotency, çökme sonrası kurtarma (K-46, K-53) |
+| PR-02 Anlık emirler | tamamlandı | İdari emirler gün ilerletmeden uygulanır ve kaydedilir; olay kararı anında |
+| PR-03 Kayıt ve kimlik | kısmen | Şema 9 (komutan, istihbarat raporu); şema 5–8 ve harita v1 kayıtları göç eder. Genel etki defteri ve kaynak defteri yok |
+| PR-04 Şehir ve inşa | tamamlandı | Düzey × 4 yapı yuvası, bedelsiz fabrika yok (K-45) |
+| PR-05 Harita %70 | tamamlandı | 813 bölge, senaryo mirası, 1914/1939 inceltmesi, kayıt göçü (K-47) |
+| PR-06 Demografi | kısmen | Ülke geneli halk dökümü, iskân kuralı (K-52). Seyrek kohort tablosu (dil, meslek, eğitim) yok; bölge başına 7 kimlik hücresi sürüyor |
+| PR-07 Komutan/ordu | kısmen | Komutanlar, atama, kapasite, daimî emir (K-49). Kolordu/ordu grubu hiyerarşisi ve çizilen cephe hatları yok |
+| PR-08 Deniz/hava | yapılmadı | Donanma ve hava hâlâ ülke düzeyinde sınıf sayıları ve tek görev |
+| PR-09 Lojistik | yapılmadı | Mevcut ortak kenar kapasitesi sürüyor; kara/deniz ortak taşıma bütçesi yok |
+| PR-10 Teknoloji/ekipman | yapılmadı | Araştırma → prototip → üretim aşamaları ve adlı ekipman modelleri yok |
+| PR-11 Kişiler/siyaset | kısmen | Komutanlar kalıcı kişidir; siyasetçiler hâlâ takvimden türetilir, beş parti şablonu sürüyor |
+| PR-12 İstihbarat | kısmen | Gözlem günlü, aralıklı, eskiyen raporlar (K-52). Ajan ağı ve karşı istihbarat yok |
+| PR-13 Diplomasi/barış | kısmen | Çok maddeli atomik antlaşma (K-51). Barış konferansı ve silahsızlanma maddesi yok |
+| PR-14 Alternatif tarih/YZ | kısmen | Kesin sonuç cephesi (K-48), 1939 yıldırım etkisi. Plan hafızası yok |
+| PR-15 Muharebe ekranı | tamamlandı | Kayıt + dikey Canvas görüntüleyici (K-50). Görüntüleyiciden taktik emir verilmez |
+| PR-16 Arayüz/rapor | kısmen | 3 ve 6 aylık adım, Devletim / Dünya Olayları raporu, komutan ve antlaşma formları. Etkileşimli teknoloji grafiği ve kalıcı plan dili yok |
+| PR-17 Son kabul ve APK | kısmen | 284 otomatik test, beş senaryoda 365 gün koşu, web derlemesi, CI'da APK. Gerçek cihaz denemesi ve 5/10/25 yıllık koşular yapılmadı |
 
-### Kitteki yamadan bilerek uygulanmayanlar
+## Kabul testleri (V16-T01…T70)
 
-- **1914 Brezilya başkenti** (`bas: 'Rio de Janeiro'`): haritada bu adla bölge yoktur; derleyici başkenti bulamaz.
-  Brasília bölgesi 1914 ve 1939'da `adlar` eşlemesiyle zaten “Rio de Janeiro” olarak gösterilir. Hata değildir.
-- README'deki ikinci metin değişikliği: çapa metni güncel README'de yoktu.
+`kabul-matrisi-v16.csv`: **44 PASS, 18 PARTIAL, 6 NOT_IMPLEMENTED, 2 NOT_RUN.** PARTIAL: davranış var ama kapsayıcı otomatik test ya da tam model yok; ayrıntı satırlarda.
 
-## Henüz yapılmayanlar (eksik)
+## Bulgular (F-01…F-20)
 
-P1 harita 463 → 787+ bölge ve kayıt göçü; P2 komutan/kişi/karargâh tabloları; P3 bağımsız filo/kanat tabloları;
-P4 araştırma → prototip → üretim aşamaları; P5 seyrek demografi kohortları ve dinamik partiler; P6 çok maddeli
-atomik barış ve güven aralıklı istihbarat raporları; P7 ayrı muharebe ekranı (P9 kayıtlarını oynatan), 3/6 aylık
-zaman adımı ve iki ayrı rapor; P8 T01–T35, T41–T46, T48 ve 5/10/25 yıllık benchmark'lar; APK bu ortamda üretilmedi.
-`referans/core/` içindeki diğer modüller (kişi, komutan, operasyon, muharebe, araştırma, demografi, barış, etki defteri)
-bu kalemlerin taslağıdır; motorun saflık kurallarına (CLAUDE.md 2–5) göre uyarlanmadan bağlanmamalıdır.
+Kapanan: F-01–F-06, F-08, F-12, F-13, F-14, F-18. Kısmen: F-09 (komutanlar için), F-11 (ülke geneli döküm). Açık: F-07, F-10, F-15, F-16, F-17, F-20.
+F-19 (1914 Brezilya başkenti) hata değildir: haritada ayrı “Rio de Janeiro” bölgesi yoktur; Brasília bölgesi 1914 ve 1939'da bu adla gösterilir.
 
-## Doğrulama (bu dal)
+## Doğrulama
 
-`npm run tip` ✓ · `npm run lint` ✓ · `npm test` 220/220 ✓ · `npm run lab -- 365` iki koşuda aynı hash `fa35f69599b4c793`.
+- `npm run tip`, `npm run lint`, `npm test` (17 dosya, 284 test) yeşil.
+- `npm run lab -- 365` iki koşuda aynı hash.
+- Gözlemci koşuları, 365 gün, bütünlük denetimi açık, kayıt-yükleme hash'i eşit (tek koşu süreleri: 1914 ≈ 27 ms/gün, 2026 ≈ 49 ms/gün, masaüstü):
+
+| Senaryo | Hash | Not |
+|---|---|---|
+| s750 | `51f2d9348e749da9` | |
+| s1600 | `28ced586f7aa1028` | |
+| s1914 | `e7eacd059f08ed81` | Belçika 20 Aralık 1914'te teslim; Almanya 1915 ortasında 37 bölge |
+| s1939 | `4cc903635cdd8c08` | Polonya 25 Ekim 1939'da teslim |
+| s2026 | `2181e2f7221ec20f` | |
+
+- Tarayıcı denemesi (360×800, Playwright): senaryo seçimi, olay kararı (gün ilerlemeden), komutan paneli, bir günlük ilerleme, muharebe görüntüleyicisi; konsol hatası yok.
+- Savaş sonuçları tohuma ve komutan kadrosuna duyarlıdır; yukarıdaki tarihler kabul eşiği değil, sabit tohumlu gözlemdir.

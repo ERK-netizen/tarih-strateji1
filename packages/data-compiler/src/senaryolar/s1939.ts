@@ -122,8 +122,8 @@ export const S1939: SenaryoTanim = {
   olaylar: [
     { kod: 'gleiwitz', tarih: '1939-09-01', ulke: 'GER', baslik: 'Weiss Harekâtı', metin: 'SS birlikleri Gleiwitz radyo istasyonuna sahte bir "Polonya saldırısı" düzenledi. Şafakta Schleswig-Holstein zırhlısı Westerplatte\'yi bombaladı; 1,5 milyon asker Polonya sınırını geçti.',
       sec: [
-        { ad: 'Yıldırım savaşını sürdür', etki: 'Savaşa destek +5.', yz: 90, e: [['destek', 'GER', 5]] },
-        { ad: 'Batıya barış sinyali ver', etki: 'Britanya ve Fransa ile gerginlik biraz azalır.', yz: 10, e: [['gorus', 'GBR', 'GER', 5], ['gorus', 'FRA', 'GER', 5]] },
+        { ad: 'Yıldırım savaşını sürdür', etki: 'Savaşa destek +5; zırhlı ve hava-kara iş birliği 75 gün boyunca taarruzu %40 güçlendirir.', yz: 90, e: [['destek', 'GER', 5], ['etki', 'GER', 'saldiri', 40, 75]] },
+        { ad: 'Batıya barış sinyali ver', etki: 'Britanya ve Fransa ile gerginlik biraz azalır.', yz: 1, e: [['gorus', 'GBR', 'GER', 5], ['gorus', 'FRA', 'GER', 5]] },
       ] },
     { kod: 'ingiliz', tarih: '1939-09-03', ulke: 'GBR', kosul: { savasta: ['GER', 'POL'] }, baslik: 'Ültimatomun Sonu', metin: 'Almanya\'ya verilen ültimatomun süresi sabah 11.00\'de doldu. Chamberlain radyoda konuşacak: "Bu ülke Almanya ile savaştadır."',
       sec: [

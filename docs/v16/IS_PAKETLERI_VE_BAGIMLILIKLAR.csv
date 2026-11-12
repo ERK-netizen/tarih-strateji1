@@ -1,0 +1,18 @@
+﻿Paket ID,Kod hedefleri,Teslim,Kapı ve test,Bağımlılık
+PR-01 Worker kararlılığı,"worker/sunucu.ts, ui/istemci.ts, protocol, test","Promise finalizasyonu, expectedVersion, hata/stop","F-01,F-02 kapanır",Yok
+PR-02 Anlık emirler,"orders.ts, phases, worker, eylem, olay modalı","4 zaman sınıfı, teklif aynı gün, proje anlık","F-03–05, çift onay yok",PR-01
+PR-03 Kayıt ve kimlik,"state/world, storage, serileştirme, lab","SoA kimlikleri, jenerasyon, şema göç",Eski kayıt hash/veri karşılaştırması,PR-01
+PR-04 Şehir ve inşa,"gelisim, ekonomi, orders, UI",Seviye1–10; 4 slot; tesis maliyetleri,Bina ücretsiz oluşmuyor,PR-03
+PR-05 Harita 70%,"data-compiler/harita.ts, map, senaryolar","≥788 bölge, geografi testi, eski ID göç","Bölge/nüfus korunum, tıklama",PR-03
+PR-06 Demografi,"nufus, toplum, world, UI","Seyrek kohortlar, azınlık istatistikleri",Göç/asker/kimlik korunum,"PR-03,05"
+PR-07 Komutan/ordu,"kara, decision, yeni commanders",Komuta hiyerarşisi ve planları,"Kapasite, mevki, plan uygulama",PR-03
+PR-08 Deniz/hava,"deniz, us, yeni fleets/air",Filo/kanat görev ve üs,"Çift kullanım yok, menzil doğru","PR-03,07"
+PR-09 Lojistik,"ortak, ekonomi, kara, deniz",Ortak kara/deniz taşıma bütçesi,Kaynak toplamı korunur,"PR-04,08"
+PR-10 Teknoloji/ekipman,"catalog, ekonomi, orders, UI","DAG, prototip, gerçek model, üretim",Araştırma stok yaratmıyor,"PR-04,09"
+PR-11 Kişiler/siyaset,"siyasiKisiler, toplum, decision","Biyografi, ülke partileri, ideologlar","Ölüm, çift görev ve seçim","PR-03,06"
+PR-12 İstihbarat,"emirEk, gorunum, decision","Ajan/rapor, bilgi sisi, sabit maliyet",YZ/görünüm gizli bilgi sızdırmaz,"PR-03,11"
+PR-13 Diplomasi/barış,"diplomasi, orders, world",Çok maddeli antlaşma ve şartlı barış,"Atomik transfer, koalisyon","PR-09,11"
+PR-14 Alternatif tarih/AI,"olaylar, decision, senaryo DSL","Dinamik koşul, plan hafızası",Tarihsel olmayan zorlama yok,PR-10–13
+PR-15 Muharebe UI,"ui, map, yeni BattleViewer",Dikey Canvas savaş animasyonu,"Tek muharebe sonucu, replay hash","PR-07,08"
+PR-16 Arayüz/danışman/rapor,"ui, command, worker, README","Portre, sol menü, 2 rapor, 3/6 ay",360px kullanım ve komut testi,"PR-02,14"
+PR-17 Son kabul ve APK,test/lab/android/workflow,"CI, performans, Android APK","Senaryo hash, cihaz, kırılım, save",PR-01–16

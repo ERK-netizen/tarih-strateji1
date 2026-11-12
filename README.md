@@ -12,7 +12,23 @@ Android için çevrimdışı, yapay zekâsız, komut öncelikli büyük strateji
 | İkinci Dünya Savaşı | 1 Eylül 1939 | 68 | Almanya–Polonya ve Japonya–Çin savaşları; Hitler, Chamberlain, Stalin, Roosevelt, Mussolini, İnönü |
 | Modern Dünya | 1 Ocak 2026 | 179 | Rusya–Ukrayna ve Sudan savaşları, NATO; 2026 başındaki devlet ve hükümet başkanları |
 
-Harita Natural Earth sınırları ve GeoNames şehirleriyle derlenir (463 bölge, 179 ülke); her senaryo bölge adlarını, sahiplerini, liderleri, kültürleri, orduları ve tarihî olay zincirini kendi döneminden alır. Birlik, ekipman, teknoloji ve tesis adları dönemle değişir (ör. 750'de Piyade Ordusu ve mancınık, 2026'da mekanize tugay ve roket taburu).
+Harita Natural Earth sınırları ve GeoNames şehirleriyle derlenir (**813 bölge**, 179 ülke; v1.6'da 463'ten genişletildi, eski bölgelerin tamamı korunur); her senaryo bölge adlarını, sahiplerini, liderleri, kültürleri, orduları ve tarihî olay zincirini kendi döneminden alır. Birlik, ekipman, teknoloji ve tesis adları dönemle değişir (ör. 750'de Piyade Ordusu ve mancınık, 2026'da mekanize tugay ve roket taburu).
+
+## v1.6'da gelenler
+
+| Alan | Yenilik |
+|---|---|
+| Harita | 463 → 813 bölge (+%76): Belçika, Ren, Alsas-Loren, Polonya, Baltık, Balkanlar, Boğazlar (Çanakkale, Gelibolu), Kafkasya (Kars, Batum), Süveyş, Kuzey Afrika ayrı bölgeler; 1914 ve 1939 sınırları inceltildi; eski kayıtlar yeni haritaya taşınır |
+| Anında emirler | Politika, araştırma, inşa, teklif yanıtı, olay kararı, görev ve komutan emirleri gün ilerletmeden uygulanır ve kaydedilir; sürüm kilidi ve çift dokunuş koruması |
+| Komutanlar | Tarihî (1914, 1939) ve kurgu komutanlar; birlik ataması, kapasite, taarruz/savunma/lojistik etkisi, deneyim, kurmay eğitimi; “ikmal %70 altındaysa taarruz etme” gibi daimî emirler |
+| Muharebe ekranı | Ordu panelindeki muharebe listesinden açılan dikey ekran; motorun günlük sonuçlarını birlik kartları ve çubuklarla oynatır, “neden” özetini gösterir |
+| Şehirler | Şehir düzeyi × 4 yapı yuvası; demiryolu, sulama, altyapı ve imar yuva tüketmez; bedelsiz fabrika yok |
+| Diplomasi | Çok maddeli barış antlaşması: toprak + taksitli tazminat + ateşkes süresi + garanti, tek atomik teklif |
+| İstihbarat | Casusluk kesin değer yerine gözlem tarihli tahmin aralığı ve güvenilirlik verir; rapor eskir |
+| Demografi | Ülke geneli halk dökümü (%0,001 hassasiyet); iskân için hedefte aynı kültür şartı kalktı |
+| Yapay zekâ | Çok cepheli savaşta ezici üstünlük kurulan düşmana ağırlık verir, sessiz cepheleri inceltir |
+
+Ayrıntı, kabul matrisi (70 madde) ve henüz yapılmayanlar: [`docs/v16/README.md`](docs/v16/README.md).
 
 ## Oyunda ne var
 
