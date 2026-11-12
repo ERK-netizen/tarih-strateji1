@@ -25,12 +25,14 @@ export async function onizle(emir: Record<string, unknown>) {
 }
 
 export async function gonder(emir: Record<string, unknown>) {
-  const r = await istemci.istek('submit', { ...emir, beklenenSurum: ozet.value?.surum });
+  // idempotency: aynı dünya sürümünde aynı emre iki kez dokunmak tek emir sayılır
+  const surum = ozet.value?.surum;
+  const r = await istemci.istek('submit', { ...emir, beklenenSurum: surum, idem: `${surum}:${JSON.stringify(emir)}` });
   if (r.kabul === false) { tost(r.neden, 'hata'); return false; }
   const s = r.sonuc?.[0];
   if (s && !s.kabul) { tost(s.neden ?? 'Emir reddedildi.', 'hata'); return false; }
   komutSonuc.value = null;
-  tost(`Onaylandı: ${s?.esdeger ?? s?.baslik ?? 'emir'} — ${s?.aninda ? 'anında işlendi.' : 'sonraki gün işleyecek.'}`, 'iyi');
+  tost(`Onaylandı: ${s?.esdeger ?? s?.baslik ?? 'emir'} — ${s?.aninda ? 'anında işlendi' : 'sonraki gün işleyecek'}${r.kayit === true ? ', kaydedildi.' : r.kayit === false ? '; KAYIT YAZILAMADI.' : '.'}`, r.kayit === false ? 'hata' : 'iyi');
   if (emir.tur === 'hareket' || emir.tur === 'saldir' || emir.tur === 'dur') seciliBirlik.value = new Set();
   // Anında verilen emirler (araştırma, proje, teklif vb.) bir gün atlamadan görünür.
   await tazele();

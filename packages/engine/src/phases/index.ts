@@ -1,5 +1,6 @@
 import { usTersaneKur } from '../systems/us.ts';
 import { kentYuvaUyumla } from '../systems/gelisim.ts';
+import { komutanBaslat, komutanDagit, komutanAy, komutanGunu } from '../systems/komutan.ts';
 // Bölüm 7: günlük faz hattı P0–P12, sıklık katmanları, durma koşulları, bütünlük ve hash.
 import type { World, Bildirim } from '../state/world.ts';
 import { hc } from '../state/world.ts';
@@ -43,6 +44,9 @@ export function senaryoBaslat(pkg: Paket, oyuncu: number, mod = 0): World {
   for (let c = 0; c < w.nC; c++) w.C.c.bazTek[c] = w.C.c.tekSay[c]!;
   // aylık kapanışların başlangıç değerleri: gelir tarihçesi için ilk gün tahmini
   for (let c = 0; c < w.nC; c++) w.C.c.sonPlan[c] = 0;
+  // komutan kadrosu ve ilk dağıtım (oyuncu sonradan değiştirebilir)
+  komutanBaslat(w);
+  for (let c = 0; c < w.nC; c++) komutanDagit(w, c);
   baslangicNufus.set(w, toplamNufus(w));
   return w;
 }
@@ -75,6 +79,7 @@ export function gunIlerle(w: World, kesinlestir = true): GunSonuc {
     aylikOlaylar(w);
     aylikArastirma(w);
     aylikSiyasetEk(w);
+    komutanAy(w);
     for (let c = 0; c < w.nC; c++) w.C.c.vergiAy[c] = 0;
     tarihceEkle(w);
     if (t.m === 1) { hasatKademeSec(w); hasatAnlat(w); yillikKent(w); }
@@ -87,6 +92,8 @@ export function gunIlerle(w: World, kesinlestir = true): GunSonuc {
   }
   fazDegisti(w);
   kararGunu(w);
+  // P2c: komutanların daimî emirleri (ikmal/organizasyon eşiği, savunma emri)
+  komutanGunu(w);
   fazDegisti(w);
   // P3: diplomasi
   teklifYanitlari(w);

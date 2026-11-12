@@ -15,6 +15,7 @@ import { gerekceVar, gorusDegis, kuklaBagimsizlik, anlasmaKur, anlasmaBoz } from
 import { rejimDegistir, secimYap, zulumUygula, kimlikAdi, kimlikHucresi, devrim, partiPay } from './systems/toplum.ts';
 import { K } from './catalog.ts';
 import { trEkK } from './tr.ts';
+import { komutanAdi, komutanYuk, birlikKomutani, etkinNitelik, ulkeKomutanlari, komutanDagit, KOMUTAN_EMIR, EGITIM_AZAMI, EGITIM_PG, EGITIM_ALTIN, EGITIM_ARTIS, NITELIK_TAVAN } from './systems/komutan.ts';
 
 const n = (x: unknown, d = 0): number => (typeof x === 'number' && Number.isFinite(x) ? Math.trunc(x) : d);
 const arr = (x: unknown): number[] => (Array.isArray(x) ? x.map((v) => n(v, -1)).filter((v) => v >= 0) : []);
@@ -499,4 +500,83 @@ function zulumEmri(tur: 'surgun' | 'soykirim'): EkEmir {
     uygula(w, e) { zulumUygula(w, e.ulke, n(e.bolge), n(e.kimlik), tur); },
   };
 }
+
+// ---------- Komutanlar (şema 9, v1.6 PR-07) ----------
+/** Emirdeki komutanı çözer: oyuncunun görevdeki komutanı olmalı (ölü ya da yabancı komutan atanamaz; V16-T24). */
+function komutanCoz(w: World, e: Emir): { k: number; neden?: string } {
+  const k = w.KM.resolve(n(e.komutan, -1));
+  if (k < 0 || w.KM.c.ulke[k] !== e.ulke) return { k: -1, neden: 'Komutan bulunamadı.' };
+  if (w.KM.c.durum[k] !== 0) return { k: -1, neden: `${komutanAdi(w, k)} artık görevde değil.` };
+  return { k };
+}
+EK_EMIRLER.komutanAta = {
+  onizle(w, e) {
+    const ids = arr(e.birlikler);
+    if (!ids.length) return red('Komutan', 'Önce birlik seçin.');
+    const U = uc(w);
+    for (const id of ids) { const u = w.U.resolve(id); if (u < 0 || U.ulke![u] !== e.ulke) return red('Komutan', 'Birlik bulunamadı.'); }
+    if (n(e.komutan, -1) < 0) return tamam('Komutandan ayır', `${ids.length} birlik komutansız kalır`, [], ['Komutan etkisi kalkar']);
+    const { k, neden } = komutanCoz(w, e);
+    if (k < 0) return red('Komutan', neden!);
+    const K = w.KM.c;
+    const yuk = komutanYuk(w);
+    let ek = 0; for (const id of ids) if (birlikKomutani(w, w.U.resolve(id)) !== k) ek++;
+    const yeni = yuk[k]! + ek, kap = K.kapasite[k]!;
+    const d = K.deneyim[k]!;
+    return tamam(`Komutan ata: ${komutanAdi(w, k)}`, `${ids.length} birlik · yük ${yeni}/${kap}`,
+      [`Taarruz ${etkinNitelik(K.saldiri[k]!, d)}, savunma ${etkinNitelik(K.savunma[k]!, d)}, lojistik ${etkinNitelik(K.lojistik[k]!, d)}`],
+      [yeni > kap ? `Kapasite aşılıyor: etki %${Math.floor((kap * 100) / yeni)} oranına seyrelir` : 'Tam etki: taarruz/savunma en çok +%20, ikmal verimi en çok +%10', 'Etki ilk muharebede uygulanır'],
+      'Yeniden atanabilir', yeni > kap ? { uyari: ['Komutanın kapasitesi aşılıyor.'] } : {});
+  },
+  uygula(w, e) {
+    const U = uc(w);
+    const k = n(e.komutan, -1) < 0 ? -1 : w.KM.resolve(n(e.komutan));
+    for (const id of arr(e.birlikler)) { const u = w.U.resolve(id); if (u >= 0) U.komutan![u] = k < 0 ? 0 : w.KM.id(k) + 1; }
+  },
+};
+EK_EMIRLER.komutanEmir = {
+  onizle(w, e) {
+    const { k, neden } = komutanCoz(w, e);
+    if (k < 0) return red('Komutan emri', neden!);
+    const em = n(e.emir, -1), ik = n(e.ikmalEsik, 0), og = n(e.orgEsik, 0);
+    if (!KOMUTAN_EMIR[em]) return red('Komutan emri', 'Emir: serbest, savun ya da taarruz.');
+    if (ik < 0 || ik > S || og < 0 || og > S) return red('Komutan emri', 'Eşikler %0–100 arasında olmalı.');
+    const kosul = [ik > 0 ? `ikmal %${Math.floor(ik / 10_000)} altındaysa taarruz etmez` : '', og > 0 ? `organizasyon %${Math.floor(og / 10_000)} altındaysa taarruz etmez` : ''].filter(Boolean);
+    return tamam(`${komutanAdi(w, k)}: ${KOMUTAN_EMIR[em]}`, kosul.length ? kosul.join('; ') : 'Koşulsuz', ['Emir bugün yürürlüğe girer'],
+      [em === 1 ? 'Otomasyonun verdiği taarruzlar iptal edilir; elle verdiğiniz emirler geçerlidir' : 'Koşul tutmazsa komutan taarruzu durdurur ve gerekçesini bildirir']);
+  },
+  uygula(w, e) {
+    const k = w.KM.resolve(n(e.komutan));
+    w.KM.c.emir[k] = n(e.emir); w.KM.c.ikmalEsik[k] = n(e.ikmalEsik, 0); w.KM.c.orgEsik[k] = n(e.orgEsik, 0);
+  },
+};
+EK_EMIRLER.komutanEgit = {
+  onizle(w, e) {
+    const { k, neden } = komutanCoz(w, e);
+    if (k < 0) return red('Kurmay eğitimi', neden!);
+    const K = w.KM.c, c = e.ulke;
+    if (K.egitim[k]! >= EGITIM_AZAMI) return red('Kurmay eğitimi', `${komutanAdi(w, k)} en çok ${EGITIM_AZAMI} kez eğitilebilir.`);
+    if (w.C.c.pg[c]! < EGITIM_PG) return red('Kurmay eğitimi', `${EGITIM_PG / 1000} siyasi güç ister.`);
+    if (w.C.c.hazine[c]! < EGITIM_ALTIN) return red('Kurmay eğitimi', `Bedel ${fmt(EGITIM_ALTIN)} altın; hazine yetersiz.`);
+    return tamam(`Kurmay eğitimi: ${komutanAdi(w, k)}`, `${K.egitim[k]! + 1}/${EGITIM_AZAMI}. eğitim`, [`Siyasi güç −${EGITIM_PG / 1000}, ${fmt(EGITIM_ALTIN)} altın`],
+      [`Taarruz, savunma ve lojistik +${EGITIM_ARTIS} (tavan ${NITELIK_TAVAN})`], 'Geri alınamaz');
+  },
+  uygula(w, e) {
+    const k = w.KM.resolve(n(e.komutan)), K = w.KM.c, c = e.ulke;
+    w.C.c.pg[c] = w.C.c.pg[c]! - EGITIM_PG; w.C.c.hazine[c] = w.C.c.hazine[c]! - EGITIM_ALTIN;
+    K.saldiri[k] = Math.min(NITELIK_TAVAN, K.saldiri[k]! + EGITIM_ARTIS); K.savunma[k] = Math.min(NITELIK_TAVAN, K.savunma[k]! + EGITIM_ARTIS);
+    K.lojistik[k] = Math.min(NITELIK_TAVAN, K.lojistik[k]! + EGITIM_ARTIS); K.egitim[k] = K.egitim[k]! + 1;
+    K.kapasite[k] = 6 + Math.floor(K.lojistik[k]! / 20);
+  },
+};
+EK_EMIRLER.komutanOto = {
+  onizle(w, e) {
+    if (!ulkeKomutanlari(w, e.ulke).length) return red('Komutanlar', 'Görevde komutan yok.');
+    let bos = 0; const U = uc(w);
+    for (const u of w.U.rows()) if (U.ulke![u] === e.ulke && birlikKomutani(w, u) < 0) bos++;
+    if (!bos) return red('Komutanlar', 'Komutansız birlik yok.');
+    return tamam('Komutanları dağıt', `${bos} komutansız birlik`, [], ['En yetenekli komutandan başlanır; kapasite aşılmaz', 'Aynı bölgedeki birlikler aynı komutana verilir']);
+  },
+  uygula(w, e) { komutanDagit(w, e.ulke); },
+};
 void NYUVA;

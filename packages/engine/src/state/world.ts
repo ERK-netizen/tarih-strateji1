@@ -59,6 +59,20 @@ export const BIRLIK_KOL = [
   ['savasGun', f], ['adNo', f], ['atamaGun', f], ['taburSay', i32], ...taburKol, ...ekipKol, ...kokenKol, ...kokenSay,
   // şema 6: oyuncunun elle verdiği emrin önceliği bitene dek (gün) bakanlık bu birliğe dokunmaz
   ['elle', f],
+  // şema 9: komutan kimliği + 1 (0 = komutansız)
+  ['komutan', f],
+] as const;
+
+/**
+ * Komutanlar (şema 9): kalıcı kişi kaydı. ad: `komutanAd` dizge tablosu indeksi; kaynak: 0 tarihî, 1 kurgu;
+ * dogum/bitis: yıl (bitis = ölüm ya da hizmetten ayrılış); saldiri/savunma/lojistik: 1–100 (oyun değerlendirmesi);
+ * deneyim: 0–100.000; kapasite: tam etkiyle komuta ettiği birlik sayısı; emir: 0 serbest, 1 savun, 2 taarruz;
+ * ikmalEsik/orgEsik: S ölçekli taarruz koşulları; durum: 0 görevde, 1 öldü/ayrıldı (tarihçe için satır kalır);
+ * kod: tarihî katalog satırı + 1 (aynı kişi iki kez oluşmaz); egitim: alınan kurmay eğitimi sayısı.
+ */
+export const KOMUTAN_KOL = [
+  ['ulke', i32], ['ad', i32], ['kaynak', i32], ['dogum', i32], ['bitis', i32], ['saldiri', i32], ['savunma', i32], ['lojistik', i32],
+  ['deneyim', f], ['kapasite', i32], ['emir', i32], ['ikmalEsik', f], ['orgEsik', f], ['durum', i32], ['kod', i32], ['egitim', i32],
 ] as const;
 
 export const TRANSIT_KOL = [
@@ -99,6 +113,16 @@ export const BK = Object.fromEntries(BAKAN.map((t, i) => [t, 1 << i])) as Record
 /** Oyuncu için başlangıçta açık bakanlıklar: cephe, takviye, üretim, ekonomi, araştırma. */
 export const BAKAN_VARSAYILAN = BK.arastirma;
 
+/** Bir bölgede bir günün muharebesi: motorun P9'da kesinleştirdiği sonuç (ikinci bir hesap değildir). */
+export interface MuharebeBirlik { id: number; ad: string; ulke: number; taraf: 0 | 1; sablon: number; komutan: string; guc: number; savunma: number; orgOnce: number; orgSonra: number; orgMax: number; kisiOnce: number; kisiSonra: number }
+export interface MuharebeKaydi {
+  gun: number; bolge: number; saldiran: number; savunan: number;
+  /** savunma çarpanı (S), topçu baskısı (S), saldırının geldiği bölge sayısı, hava üstünlüğü (saldıran, S işaretli) */
+  savCarpan: number; baski: number; yon: number; hava: number;
+  birlikler: MuharebeBirlik[];
+  /** 0 sürüyor, 1 saldıran bölgeyi aldı, 2 saldırı püskürtüldü */
+  sonuc: number;
+}
 export interface AnlatiKaydi { gun: number; metin: string; tur: string; ulke: number; onem: number }
 export interface Bildirim { tur: string; metin: string; ulke: number; durdur: boolean; gun: number; kimlik: number }
 
@@ -142,6 +166,8 @@ export interface World {
   SP: Table<(typeof SIPARIS_KOL)[number][0]>;
   OL: Table<(typeof OLAY_KOL)[number][0]>;
   MOD: Table<(typeof MOD_KOL)[number][0]>;
+  KM: Table<(typeof KOMUTAN_KOL)[number][0]>;
+  komutanAd: string[]; // KM.ad indeksli dizge tablosu
   /** Olay kararlarıyla açılan tarih bayrakları (sıralı küme; dallanan senaryo akışı) */
   olayBayrak: string[];
   birlikAd: string[]; // adNo indeksli dizge tablosu
@@ -160,6 +186,8 @@ export interface World {
   sayac: { dogum: number; dogalOlum: number; askerOlum: number; ekOlum: number }; // kümülatif (korunum)
   // Hash dışı alanlar
   anlati: AnlatiKaydi[];
+  /** Hash dışı: P9 muharebe kayıtları (görüntüleyici yalnız bunları oynatır; şartname v1.6 PR-15) */
+  muharebeler: MuharebeKaydi[];
   bildirim: Bildirim[];
   tarihce: { gun: number; ulke: number[][] }[];
   onbellek: Map<string, unknown>;
@@ -211,12 +239,12 @@ export function yeniDunya(pkg: Paket, oyuncu: number): World {
     SV: new Table('savas', SAVAS_KOL, 4), GR: new Table('gerekce', GEREKCE_KOL, 4), HT: new Table('hat', HAT_KOL, 32),
     PR: new Table('proje', PROJE_KOL, 16), YR: new Table('yarali', YARALI_KOL, 32), KE: new Table('kalici', KALICI_KOL, 8),
     TK: new Table('teklif', TEKLIF_KOL, 8), SP: new Table('siparis', SIPARIS_KOL, 16), OL: new Table('olay', OLAY_KOL, 8),
-    MOD: new Table('mod', MOD_KOL, 8), olayBayrak: [],
+    MOD: new Table('mod', MOD_KOL, 8), KM: new Table('komutan', KOMUTAN_KOL, 16), komutanAd: [], olayBayrak: [],
     birlikAd: [], rotaEpoch: 1, kuyruk: [], emirSira: 0,
     savasTaraf: new Int8Array(SV_MAX * nC), iddia: new Int16Array(nR * IDDIA_MAX), teklifBolge: {}, diploSurum: 1, savasSurum: 1, anSurum: 1,
     artik: { dogum: 0, olum: 0, kohort: 0 },
     sayac: { dogum: 0, dogalOlum: 0, askerOlum: 0, ekOlum: 0 },
-    anlati: [], bildirim: [], tarihce: [], onbellek: new Map(), ayarlar: { zorlaTamYol: false, onbellekKapali: false },
+    anlati: [], muharebeler: [], bildirim: [], tarihce: [], onbellek: new Map(), ayarlar: { zorlaTamYol: false, onbellekKapali: false },
     komsuluk: pkg.bolgeler.map((b) => b.komsu), kenarKm: new Map(), depo: new Int32Array(pkg.eyaletler.map((e) => e.merkez)),
   };
   BAYRAK.forEach((b, i) => { w.bayrak[i] = pkg.bayraklar[b] ? 1 : 0; });

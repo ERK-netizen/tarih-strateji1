@@ -515,10 +515,12 @@ export function uygula(w: World, e: Emir): { ok: boolean; neden?: string } {
 function sandboxUygula(w: World, e: Emir): void {
   w.mod = 1; // kalıcı etiket
   const c = e.hedefUlke !== undefined ? n(e.hedefUlke) : e.ulke;
-  const m = n(e.miktar);
+  // Sandbox da kanonik sayı sözleşmesine uyar (V16-T60): Infinity/NaN `n` ile sıfırlanır, miktar ±10¹² ile,
+  // hazine 4×10¹⁵ ile sınırlanır; "sınırsız bütçe" güvenli tamsayı aralığında büyük bir bakiyedir.
+  const m = clamp(n(e.miktar), -1_000_000_000_000, 1_000_000_000_000);
   const C = w.C.c;
   const alan = String(e.alan);
-  if (alan === 'hazine') C.hazine[c] = Math.max(0, C.hazine[c]! + m);
+  if (alan === 'hazine') C.hazine[c] = clamp(C.hazine[c]! + m, 0, 4_000_000_000_000_000);
   else if (alan === 'pg') C.pg[c] = clamp(C.pg[c]! + m * 1000, 0, 500_000);
   else if (alan === 'gida') { const e2 = w.pkg.bolgeler[w.pkg.ulkeler[c]!.baskent]!.eyalet; w.E.c.gida[e2] = Math.max(0, w.E.c.gida[e2]! + m * 1000); }
   else if (alan === 'muhimmat') C.muhimmat[c] = Math.max(0, C.muhimmat[c]! + m * 1000);

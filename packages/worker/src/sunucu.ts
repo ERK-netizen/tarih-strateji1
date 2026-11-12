@@ -88,9 +88,13 @@ export class Sunucu {
     return { ...k, surum: w.surum, esdeger: emirMetni({ ...e, ulke: w.oyuncu }, katalogKur(w)) };
   }
 
+  /** Son işlenen emirlerin sonuçları (idempotency anahtarı → yanıt): çift dokunuş ikinci kez uygulanmaz (V16-T03). */
+  private idem = new Map<string, unknown>();
   private async submit(m: Mesaj): Promise<void> {
     const w = this.dunya();
-    const p = m.p as { emirler?: Emir[]; beklenenSurum?: number } & Emir;
+    const p = m.p as { emirler?: Emir[]; beklenenSurum?: number; idem?: string } & Emir;
+    const anahtar = typeof p.idem === 'string' && p.idem.length > 0 ? p.idem : null;
+    if (anahtar && this.idem.has(anahtar)) { this.yanit(m.id, 'orderResult', { ...(this.idem.get(anahtar) as object), yinelenen: true }); return; }
     if (p.beklenenSurum !== undefined &&
         (!Number.isSafeInteger(p.beklenenSurum) || p.beklenenSurum !== w.surum)) {
       this.yanit(m.id, 'orderResult', { kabul: false, neden: 'Dünya sürümü değişti. Yeniden önizleyin.', kod: 'surum', surum: w.surum });
@@ -98,9 +102,10 @@ export class Sunucu {
     }
     const emirler: Emir[] = p.emirler ?? [p as Emir];
     if (w.mod === 2) { this.yanit(m.id, 'orderResult', { kabul: false, neden: 'Gözlemci modunda emir verilemez.' }); return; }
-    let anlik = 0;
+    let anlik = 0, kuyruk = 0;
     const sonuc = emirler.map((e) => {
-      const em = { ...e, ulke: w.oyuncu };
+      const em = { ...e, ulke: w.oyuncu } as Emir & { idem?: unknown; beklenenSurum?: unknown; emirler?: unknown };
+      delete em.idem; delete em.beklenenSurum; delete em.emirler;
       const k = onizle(w, em);
       if (!k.gecerli) return { kabul: false, neden: k.neden, baslik: k.baslik };
       if (ANLIK_EMIR.has(em.tur)) {
@@ -110,15 +115,20 @@ export class Sunucu {
         return { kabul: true, aninda: true, baslik: k.baslik, esdeger: emirMetni(em, katalogKur(w)) };
       }
       kuyrugaAl(w, em);
+      kuyruk++;
       return { kabul: true, aninda: false, baslik: k.baslik, esdeger: emirMetni(em, katalogKur(w)) };
     });
-    // Aynı gün emri kesinleştir, hash/kurtarma anlık değişsin. Günlük fiziksel etkiler sonraki tick'te.
-    if (anlik) {
+    // Kabul edilen her emir (anlık ya da kuyruklu) dünya sürümünü ilerletir ve kalıcı kayda yazılır.
+    // "kabul" ile "kalıcı kaydedildi" ayrı bildirilir (V16-T68): kayıt yazılamazsa emir yine geçerlidir ama kayit=false döner.
+    let kayit: boolean | null = null;
+    if (anlik + kuyruk > 0) {
       w.surum += 1;
       this.son = serilestir(w);
-      await this.otoKaydet();
+      kayit = await this.otoKaydet();
     }
-    this.yanit(m.id, 'orderResult', { sonuc, kuyruk: w.kuyruk.length, anlik, surum: w.surum });
+    const yanit = { sonuc, kuyruk: w.kuyruk.length, anlik, surum: w.surum, kayit };
+    if (anahtar) { this.idem.set(anahtar, yanit); if (this.idem.size > 64) this.idem.delete(this.idem.keys().next().value as string); }
+    this.yanit(m.id, 'orderResult', yanit);
   }
 
   private komut(m: Mesaj) {
@@ -239,14 +249,17 @@ export class Sunucu {
     const w = this.dunya();
     return `oto-${w.pkg.kimlik}-${w.mod === 2 ? 'gozlem' : w.pkg.ulkeler[w.oyuncu]!.kod.toLowerCase()}`;
   }
-  async otoKaydet(): Promise<void> {
+  /** Otomatik kayıt; yazılabildiyse true. */
+  async otoKaydet(): Promise<boolean> {
     try {
       await this.kaydet(-1, this.otoYuva());
       // en çok altı otomatik sefer yuvası tutulur (en eskiler silinir)
       const oto = (await this.kayit.yuvalar()).filter((b) => b.yuva.startsWith('oto-'));
       for (const b of oto.slice(6)) await this.kayit.sil(b.yuva);
+      return true;
     } catch (e) {
       this.yanit(-1, 'error', { kod: 'kayit', ayrinti: `Otomatik kayıt yazılamadı: ${String((e as Error)?.message ?? e)}`, oneri: 'Depolama dolu olabilir; Kayıt panelinden eski kayıtları silin ya da dosyaya aktarın.' });
+      return false;
     }
   }
 
