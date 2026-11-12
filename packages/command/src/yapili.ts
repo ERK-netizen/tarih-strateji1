@@ -51,6 +51,31 @@ export function yapiliAyristir(c: YBaglam): Yorum | string | null {
   const bolgeler = [...new Set(v.filter((x) => x.tur === 'bolge' && !(ulke && x.i0 === ulke.i0 && v.some((y) => y.tur === 'ulke' && y.i0 === x.i0 && y.id === ulke.id))).map((x) => x.id))];
   const bolge = bolgeler[0];
   const yuzde = c.yuzde ?? sayilar[0];
+  // ---------- Komutanlar (şema 9) ----------
+  if (k.komutanlar && k.komutanlar.length) {
+    const ki = adBul(toks, k.komutanlar.map((x) => x.ad));
+    const anahtar = has(/ komutan/);
+    if (anahtar && has(/ dagit/)) return yorum({ tur: 'komutanOto', ulke: P }, 'komutanları dağıt', k);
+    if (anahtar && has(/ ayir/)) {
+      const ids = c.birlikler();
+      if (!ids.length) return 'Hangi birlik? Birliği adıyla yazın ya da seçin.';
+      return yorum({ tur: 'komutanAta', ulke: P, komutan: -1, birlikler: ids }, 'komutandan ayır', k);
+    }
+    if (ki >= 0 && (anahtar || has(/ (ata|atansin|ikmal|kurmay) /))) {
+      const kom = k.komutanlar[ki]!;
+      if (has(/ (kurmay|egitim)/)) return yorum({ tur: 'komutanEgit', ulke: P, komutan: kom.id }, `kurmay eğitimi: ${kom.ad}`, k);
+      if (has(/ (ikmal|organizasyon|serbest|savun|taarruz|saldir)/) && !has(/ (olsun|ata|atansin) /)) {
+        const emir = has(/ emir savun/) || (!has(/ emir /) && has(/ savun/)) ? 1 : has(/ emir taarruz/) ? 2 : 0;
+        // eşikler: "ikmal %70", "organizasyon %50" (her biri kendi sözcüğünün ardındaki yüzde)
+        const deger = (re: RegExp) => { const m = re.exec(f); const x = m ? Number(m[1]) : 0; return x > 0 && x <= 100 ? Math.round(x * 10_000) : 0; };
+        const ikmalEsik = deger(/ ikmal (?:yuzde )?(\d+)/), orgEsik = deger(/ organizasyon (?:yuzde )?(\d+)/);
+        return yorum({ tur: 'komutanEmir', ulke: P, komutan: kom.id, emir, ikmalEsik, orgEsik }, `komutan emri: ${kom.ad}`, k);
+      }
+      const ids = c.birlikler();
+      if (!ids.length) return `${kom.ad} hangi birliklere atanacak? Birlikleri seçin ya da adlarını yazın.`;
+      return yorum({ tur: 'komutanAta', ulke: P, komutan: kom.id, birlikler: ids }, `komutan ata: ${kom.ad}`, k);
+    }
+  }
   // ---------- Donanma ----------
   if (has(/ tersane/) || (has(/ (insa|siparis)/) && k.gemiler && adBul(toks, k.gemiler.map((g) => g.ad), k.gemiler.map((g) => g.kisa)) >= 0 && !has(/ fabrika/))) {
     const s = k.gemiler ? adBul(toks, k.gemiler.map((g) => g.ad), k.gemiler.map((g) => g.kisa)) : -1;
@@ -164,7 +189,12 @@ export function yapiliMetin(e: Emir, k: Katalog): string | null {
     return a.map((id) => k.birlikler.find((x) => x.id === id)?.ad ?? '?').join(', ');
   };
   const bs = (r: unknown) => ((r as number[]) ?? []).map(b).join(', ');
+  const kAd = (id: unknown) => k.komutanlar?.find((x) => x.id === Number(id))?.ad ?? '?';
   switch (e.tur) {
+    case 'komutanAta': return Number(e.komutan) < 0 ? `${birl(e.birlikler)}: komutandan ayır` : `${birl(e.birlikler)}: komutan ${kAd(e.komutan)} olsun`;
+    case 'komutanEmir': return `Komutan ${kAd(e.komutan)}: emir ${['serbest', 'savun', 'taarruz'][Number(e.emir)] ?? 'serbest'}${Number(e.ikmalEsik) > 0 ? `, ikmal ${yuzdeYaz(Number(e.ikmalEsik))} altında beklesin` : ''}${Number(e.orgEsik) > 0 ? `, organizasyon ${yuzdeYaz(Number(e.orgEsik))} altında beklesin` : ''}`;
+    case 'komutanEgit': return `Komutan ${kAd(e.komutan)} kurmay eğitimi alsın`;
+    case 'komutanOto': return 'Komutanları birliklere dağıt';
     case 'gemiInsa': return `${b(e.bolge)} tersanesinde ${Number(e.adet)} ${kucukIlk(k.gemiler?.[Number(e.sinif)]?.ad ?? '?')} inşa et`;
     case 'ucakUret': return `${Number(e.adet)} filo ${kucukIlk(k.ucaklar?.[Number(e.tip)]?.ad ?? '?')} sipariş et`;
     case 'donanmaGonder': return `Donanma ${b(e.bolge)} cephesine gitsin`;

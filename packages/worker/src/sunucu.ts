@@ -21,6 +21,7 @@ const ANLIK_EMIR = new Set([
   'hareket', 'saldir', 'dur', 'durus', 'otoCephe', 'otoTakviye', 'bakan',
   'havaGorev', 'donanmaGorev', 'donanmaCephe', 'taburEkle', 'taburCikar',
   'rejim', 'partiDestek', 'secimErken', 'sandbox', 'kaliciGida',
+  'komutanAta', 'komutanEmir', 'komutanEgit', 'komutanOto',
 ]);
 
 export class Sunucu {
@@ -159,6 +160,8 @@ export class Sunucu {
       case 'istatistik': v = G.istatistik(w, p.kapsam ?? w.oyuncu); break;
       case 'kronik': v = G.kronik(w, !!p.hepsi); break;
       case 'danisman': v = danis(w, 'oneri'); break;
+      case 'komutan': v = G.komutanG(w); break;
+      case 'muharebe': v = G.muharebeG(w); break;
       default: v = null;
     }
     this.yanit(m.id, 'view', { gorunum: p.gorunum, veri: v });
@@ -224,7 +227,7 @@ export class Sunucu {
   paketle(): Uint8Array {
     const w = this.dunya();
     const sim = serilestir(w);
-    const ek = new TextEncoder().encode(JSON.stringify({ anlati: w.anlati, tarihce: w.tarihce, anlatiHash: anlatiHash(w) }));
+    const ek = new TextEncoder().encode(JSON.stringify({ anlati: w.anlati, tarihce: w.tarihce, muharebeler: w.muharebeler, anlatiHash: anlatiHash(w) }));
     const out = new Uint8Array(8 + sim.length + ek.length);
     const dv = new DataView(out.buffer);
     dv.setUint32(0, 0x43534b54, true); dv.setUint32(4, sim.length, true);
@@ -240,7 +243,7 @@ export class Sunucu {
     if (!k) throw new Error('Geçersiz kayıt dosyası');
     if (!this.pkg || this.pkg.kimlik !== k.kimlik) throw Object.assign(new Error('paket'), { paket: k.kimlik });
     const w = coz(sim, this.pkg);
-    try { const ek = JSON.parse(new TextDecoder().decode(b.subarray(8 + n))); w.anlati = ek.anlati ?? []; w.tarihce = ek.tarihce ?? []; } catch { /* anlatı yok */ }
+    try { const ek = JSON.parse(new TextDecoder().decode(b.subarray(8 + n))); w.anlati = ek.anlati ?? []; w.tarihce = ek.tarihce ?? []; w.muharebeler = ek.muharebeler ?? []; } catch { /* anlatı yok */ }
     return w;
   }
 

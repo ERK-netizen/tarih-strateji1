@@ -5,6 +5,7 @@ import {
 } from './durum.ts';
 import { onizle, komutCalistir } from './eylem.ts';
 import { bolgeyeGit, KomutAlani } from './App.tsx';
+import { KomutanBolumu, MuharebeBolumu } from './Muharebe.tsx';
 import { hazirKomutlar } from './hazirKomutlar.ts';
 import { SablonSecici, KonuslanmaSecici, konuslanmaBolgesi, OrgBar, diploOdak } from './Cekmece.tsx';
 import { BirlikPulu, Simge } from './Simge.tsx';
@@ -197,6 +198,7 @@ function Ordu() {
           <button class="ana" disabled={hedef < 0} onClick={() => onizle({ tur: 'birlikKur', sablon: sab, adet, bolge: hedef })}>Önizle</button>
         </div>
       </section>
+      <KomutanBolumu />
       <section>
         <div class="bolum-bas"><h3>Birlikler · {b.length}</h3>{sec.size > 0 && <button class="kucuk-dugme" onClick={() => { seciliBirlik.value = new Set(); }}>Seçimi bırak ({sec.size})</button>}</div>
         {sec.size > 0 && <div class="dugmeler sar">
@@ -219,7 +221,7 @@ function Ordu() {
                     <li key={x.id} class={sec.has(x.id) ? 'secili' : ''}>
                       <button class="satir-dugme" aria-pressed={sec.has(x.id)} onClick={() => tikla(x.id)}>
                         <BirlikPulu simge={s.simge} renk={o.ulke.renk} boy={26} />
-                        <span class="bl-ad"><strong>{x.ad}</strong><span class="soluk kucuk">{x.egitim ? `eğitimde ${x.egitim} gün` : x.muharebe ? 'muharebede' : x.hedefAd ? `→ ${x.hedefAd}` : x.durus}</span>{x.neden && !x.egitim && <span class="kucuk kotu-yazi">{x.neden}</span>}</span>
+                        <span class="bl-ad"><strong>{x.ad}</strong><span class="soluk kucuk">{x.egitim ? `eğitimde ${x.egitim} gün` : x.muharebe ? 'muharebede' : x.hedefAd ? `→ ${x.hedefAd}` : x.durus}</span>{x.komutan && <span class="soluk kucuk">Komutan: {x.komutan}</span>}{x.neden && !x.egitim && <span class="kucuk kotu-yazi">{x.neden}</span>}</span>
                         <span class="sayi kucuk">{fmt(x.kisi)}<span class="soluk">/{kisalt(x.kisiHedef)}</span><br /><span class="soluk">ikmal {yuzde(Math.min(x.ikmalGida, x.ikmalMuh))}</span></span>
                         <OrgBar v={x.org / Math.max(1, x.orgMax)} />
                       </button>
@@ -232,6 +234,7 @@ function Ordu() {
         })}
         {!b.length && <p class="soluk">Ordunuz yok. Yukarıdan birlik kurun.</p>}
       </section>
+      <MuharebeBolumu />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
+import { MuharebeIzleyici } from './Muharebe.tsx';
 import { signal } from '@preact/signals';
 import { HaritaCizici, type HaritaModu } from '@ts/map';
 import {
@@ -32,6 +33,7 @@ function Oyun() {
       {bolgeSecimi.value && <SecimBandi />}
       {ilerleme.value && <Ilerleme />}
       <OlayModal />
+      <MuharebeIzleyici />
       <Yikildi />
       {nedenAcik.value && <Neden />}
       <Tostlar />

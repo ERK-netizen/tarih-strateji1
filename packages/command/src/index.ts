@@ -26,6 +26,8 @@ export interface Katalog {
   butce: number[];
   askerlikMevcut: number;
   // şema 7 adları (dönemin kataloğundan; eksikse ilgili kalıplar devre dışı)
+  /** şema 9: oyuncunun görevdeki komutanları */
+  komutanlar?: { id: number; ad: string }[];
   gemiler?: { ad: string; kisa: string }[];
   ucaklar?: { ad: string; kisa: string }[];
   denizGorev?: string[];
