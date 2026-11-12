@@ -3,7 +3,7 @@ import {
   type World, tarihMetni, ortak, ekonomi, siyaset, nufus, diplomasi, olaylar, bolgeGozlem, istihbaratDuzeyi, aralik, hazineKademe,
   ARAZI, ASKERLIK, EKONOMI, ISGAL, YONETIM, KISILIK, TUTUM, TEKNOLOJI, NTEK, EKIPMAN, AILE_EKIP, TABUR, SABLON, MAL, PROJE, URUN_MUH, A, ANLASMA_TUR, K,
   hc, ST, YB, kara, arastirmaYuvalari, AKTIF, DONEMLER, sablonIhtiyac, TEK_DAL, BAKAN, BAKAN_AD, MOD_TUR, REJIM_AD,
-  gelisim, us, deniz, toplum, komutan, tarih, type MuharebeKaydi, kademe, KADEME_MAX, GEMI, HAVA, DENIZ_GOREV, HAVA_GOREV, PARTI, SECIMLI, EKO_MODEL, TARIM_ODAK, DONEM_FIYAT, NKIMLIK, MALI, mulDiv,
+  gelisim, us, deniz, toplum, komutan, tarih, raporlar, ISTIHBARAT_KONU, type MuharebeKaydi, kademe, KADEME_MAX, GEMI, HAVA, DENIZ_GOREV, HAVA_GOREV, PARTI, SECIMLI, EKO_MODEL, TARIM_ODAK, DONEM_FIYAT, NKIMLIK, MALI, mulDiv,
 } from '@ts/engine';
 import { KOL_E, KOL_T } from '@ts/engine';
 
@@ -249,7 +249,7 @@ export function diplomasiG(w: World) {
       gorusBize: w.gorus[c * w.nC + P]!, gorusumuz: w.gorus[P * w.nC + c]!, tutumumuz: TUTUM[w.tutum[P * w.nC + c]!], tutumlari: TUTUM[w.tutum[c * w.nC + P]!],
       anlasmalar: anl, digerAnlasmalar: kendiAnl, savasta: ortak.savasta(w, P, c),
       gerekceBize: diplomasi.gerekceSurecte(w, c, P) >= 0, gerekceBizim: diplomasi.gerekceSurecte(w, P, c) >= 0 ? (diplomasi.gerekceVar(w, P, c) ? 'hazır' : 'hazırlanıyor') : null,
-      tehdit: t.puan, tehditBilesen: t.bilesen, hazine: hazineKademe(w, c), gucAlt, gucUst, istihbarat: istihbaratDuzeyi(w, P, c),
+      tehdit: t.puan, tehditBilesen: t.bilesen, rapor: raporlar(w, P, c).map((s) => ({ konu: ISTIHBARAT_KONU[w.IR.c.konu[s]!], k: w.IR.c.konu[s]!, alt: w.IR.c.alt[s]!, ust: w.IR.c.ust[s]!, guven: w.IR.c.guven[s]!, gozlem: tarihMetni(w.IR.c.gozlem[s]!), yas: w.gun - w.IR.c.gozlem[s]! })), hazine: hazineKademe(w, c), gucAlt, gucUst, istihbarat: istihbaratDuzeyi(w, P, c),
       guvenilir: w.C.c.guvenilir[c]!, un: w.C.c.un[c]!, savastaMi: ortak.dusmanlar(w, c).map((d) => w.pkg.ulkeler[d]!.kisa),
       skor: ortak.savasta(w, P, c) ? diplomasi.savasSkoru(w, P, c) : null, isteklilikleri: ortak.savasta(w, P, c) ? diplomasi.istekliligi(w, c, P) : null,
       tavizButcesi: ortak.savasta(w, P, c) ? diplomasi.tavizButcesi(w, c, P) : null,
@@ -377,7 +377,29 @@ export function siyasetG(w: World) {
     iktidar: C.iktidar[P]!, secim: C.secim[P]! > 0 ? tarihMetni(C.secim[P]!) : null, secimGun: C.secim[P]! > 0 ? C.secim[P]! - w.gun : null, secimli: SECIMLI.has(C.rejim[P]!),
     gecis: C.gecis[P]! > w.gun ? C.gecis[P]! - w.gun : 0, nufusPol: C.nufusPol[P]!, zulum: C.zulum[P]!, pg: C.pg[P]!, mesru: C.mesru[P]!, huzur: C.huzur[P]!,
     bolgeler: bolgeler.slice(0, 40),
+    halklar: halklar(w, P),
   };
+}
+
+/**
+ * Ülke geneli halk dökümü (v1.6 PR-06): bölgelerdeki kimlik hücreleri (kültür · inanç) toplanır; en küçük topluluk da
+ * ayrı satırdır. pay: milyonda (ppm) — arayüz %0,001 hassasiyetle gösterir. Toplam, ülke nüfusuna eşittir (V16-T21, T22).
+ */
+export function halklar(w: World, c: number): { toplam: number; liste: { ad: string; kisi: number; ppm: number; bolge: number }[] } {
+  const m = new Map<string, { kisi: number; bolge: number }>();
+  let toplam = 0;
+  for (let r = 0; r < w.nR; r++) {
+    if (w.R.c.sahip[r] !== c) continue;
+    for (let k = 0; k < NKIMLIK; k++) {
+      const n = w.kim[r * NKIMLIK + k]!;
+      if (n <= 0) continue;
+      const ad = toplum.kimlikAdi(w, r, k);
+      const x = m.get(ad) ?? m.set(ad, { kisi: 0, bolge: 0 }).get(ad)!;
+      x.kisi += n; x.bolge++; toplam += n;
+    }
+  }
+  const liste = [...m.entries()].map(([ad, x]) => ({ ad, kisi: x.kisi, ppm: mulDiv(x.kisi, 1_000_000, Math.max(1, toplam)).q, bolge: x.bolge })).sort((a, b) => b.kisi - a.kisi || (a.ad < b.ad ? -1 : 1));
+  return { toplam, liste };
 }
 
 /** Bölüm 22: devlet istatistikleri (kendi ülkesi kesin, yabancılar sisli). */

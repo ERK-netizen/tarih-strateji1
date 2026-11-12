@@ -135,7 +135,7 @@ export function kimlikHucresi(w: World, r: number, kultur: number, inanc = -2): 
   for (let k = 0; k < a.length; k++) if (a[k]![0] === kultur && (inanc === -2 || a[k]![1] === inanc)) return k;
   return -1;
 }
-const digerHucre = (w: World, r: number): number => { const a = w.pkg.bolgeler[r]!.kimlikAnahtar; for (let k = 0; k < a.length; k++) if (a[k]![0] < 0) return k; return a.length - 1; };
+export const digerHucre = (w: World, r: number): number => { const a = w.pkg.bolgeler[r]!.kimlikAnahtar; for (let k = 0; k < a.length; k++) if (a[k]![0] < 0) return k; return a.length - 1; };
 export function kimlikAdi(w: World, r: number, k: number): string {
   const [ku, inn] = w.pkg.bolgeler[r]!.kimlikAnahtar[k] ?? [-1, -1];
   if (ku < 0) return 'diğer';
@@ -170,8 +170,11 @@ export function demografiHaftasi(w: World): void {
     const c = R.sahip[r]!;
     if (c < 0 || R.kontrolEden[r] !== c) { R.demPol[r] = 0; continue; }
     const U = w.pkg.ulkeler[c]!;
-    const hedefK = kimlikHucresi(w, r, U.kultur);
-    if (hedefK < 0) { R.demPol[r] = 0; continue; }
+    // iskân için hedef bölgede aynı kültürün önceden bulunması gerekmez (V16-T17): kayıt yoksa yerleşimciler
+    // "Diğer" hanesinde sayılır. Asimilasyon ise dönüşecek bir hedef kimlik ister.
+    const kendiK = kimlikHucresi(w, r, U.kultur);
+    const hedefK = kendiK >= 0 ? kendiK : digerHucre(w, r);
+    if (kendiK < 0 && pol === 1) { R.demPol[r] = 0; continue; }
     if (pol === 1) {
       // asimilasyon: hedef kimliğin haftada %0,3'ü devletin kültürüne geçer (okul, dil yasağı, ad değişikliği)
       const k = R.demKim[r]!;

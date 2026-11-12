@@ -18,7 +18,7 @@ import { denizHaftasi, havaHaftasi, denizUstunlukGuncelle } from '../systems/den
 import { aylikSiyasetEk, demografiHaftasi, yillikKent } from '../systems/toplum.ts';
 import { olayGunu, aylikOlaylar, hasatAnlat, acilisOlaylari } from '../systems/olaylar.ts';
 import { serilestir } from '../serialize/index.ts';
-import { fazDegisti } from '../observe/index.ts';
+import { fazDegisti, istihbaratAy } from '../observe/index.ts';
 import { hashV1 } from '../hash/index.ts';
 import { uc, anlat, savasta as ortakSavasta, eyaletUlke, savastaMi, modTemizle, yonetimMesafeleri } from '../systems/ortak.ts';
 import { sayac } from '../num/index.ts';
@@ -80,6 +80,7 @@ export function gunIlerle(w: World, kesinlestir = true): GunSonuc {
     aylikArastirma(w);
     aylikSiyasetEk(w);
     komutanAy(w);
+    istihbaratAy(w);
     for (let c = 0; c < w.nC; c++) w.C.c.vergiAy[c] = 0;
     tarihceEkle(w);
     if (t.m === 1) { hasatKademeSec(w); hasatAnlat(w); yillikKent(w); }

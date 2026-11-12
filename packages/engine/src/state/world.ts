@@ -113,6 +113,13 @@ export const BK = Object.fromEntries(BAKAN.map((t, i) => [t, 1 << i])) as Record
 /** Oyuncu için başlangıçta açık bakanlıklar: cephe, takviye, üretim, ekonomi, araştırma. */
 export const BAKAN_VARSAYILAN = BK.arastirma;
 
+/**
+ * İstihbarat raporları (şema 9, v1.6 PR-12): ajanın getirdiği bilgi kesin değer değil, gözlem günü taşıyan bir aralıktır.
+ * ulke: raporun sahibi; hedef: hakkında bilgi toplanan devlet; konu: ISTIHBARAT_KONU indeksi; gozlem: gözlem günü;
+ * alt/ust: tahmin aralığı; guven: S ölçekli güvenilirlik; bitis: raporun geçerliliğini yitirdiği gün.
+ */
+export const ISTIHBARAT_KOL = [['ulke', i32], ['hedef', i32], ['konu', i32], ['gozlem', f], ['alt', f], ['ust', f], ['guven', f], ['bitis', f]] as const;
+export const ISTIHBARAT_KONU = ['Hazine', 'Birlik sayısı', 'Ordu mevcudu', 'Huzur', 'Meşruiyet'] as const;
 /** Bir bölgede bir günün muharebesi: motorun P9'da kesinleştirdiği sonuç (ikinci bir hesap değildir). */
 export interface MuharebeBirlik { id: number; ad: string; ulke: number; taraf: 0 | 1; sablon: number; komutan: string; guc: number; savunma: number; orgOnce: number; orgSonra: number; orgMax: number; kisiOnce: number; kisiSonra: number }
 export interface MuharebeKaydi {
@@ -167,6 +174,7 @@ export interface World {
   OL: Table<(typeof OLAY_KOL)[number][0]>;
   MOD: Table<(typeof MOD_KOL)[number][0]>;
   KM: Table<(typeof KOMUTAN_KOL)[number][0]>;
+  IR: Table<(typeof ISTIHBARAT_KOL)[number][0]>;
   komutanAd: string[]; // KM.ad indeksli dizge tablosu
   /** Olay kararlarıyla açılan tarih bayrakları (sıralı küme; dallanan senaryo akışı) */
   olayBayrak: string[];
@@ -239,7 +247,7 @@ export function yeniDunya(pkg: Paket, oyuncu: number): World {
     SV: new Table('savas', SAVAS_KOL, 4), GR: new Table('gerekce', GEREKCE_KOL, 4), HT: new Table('hat', HAT_KOL, 32),
     PR: new Table('proje', PROJE_KOL, 16), YR: new Table('yarali', YARALI_KOL, 32), KE: new Table('kalici', KALICI_KOL, 8),
     TK: new Table('teklif', TEKLIF_KOL, 8), SP: new Table('siparis', SIPARIS_KOL, 16), OL: new Table('olay', OLAY_KOL, 8),
-    MOD: new Table('mod', MOD_KOL, 8), KM: new Table('komutan', KOMUTAN_KOL, 16), komutanAd: [], olayBayrak: [],
+    MOD: new Table('mod', MOD_KOL, 8), KM: new Table('komutan', KOMUTAN_KOL, 16), IR: new Table('istihbarat', ISTIHBARAT_KOL, 16), komutanAd: [], olayBayrak: [],
     birlikAd: [], rotaEpoch: 1, kuyruk: [], emirSira: 0,
     savasTaraf: new Int8Array(SV_MAX * nC), iddia: new Int16Array(nR * IDDIA_MAX), teklifBolge: {}, diploSurum: 1, savasSurum: 1, anSurum: 1,
     artik: { dogum: 0, olum: 0, kohort: 0 },

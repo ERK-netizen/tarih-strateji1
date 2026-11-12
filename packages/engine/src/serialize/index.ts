@@ -122,7 +122,7 @@ function diziler(w: World): [string, ArrayLike<number>][] {
 function tablolar(w: World, sv = SEMA_SURUM): Table[] {
   const l = [w.R, w.E, w.C, w.U, w.T, w.AN, w.SV, w.GR, w.HT, w.PR, w.YR, w.KE, w.TK, w.SP, w.OL] as unknown as Table[];
   if (sv >= 6) l.push(w.MOD as unknown as Table);
-  if (sv >= 9) l.push(w.KM as unknown as Table);
+  if (sv >= 9) { l.push(w.KM as unknown as Table); l.push(w.IR as unknown as Table); }
   return l;
 }
 
@@ -274,7 +274,7 @@ function yeniDunyaBos(pkg: Paket, oyuncu: number): World {
   const w = yeniDunya(bos, oyuncu);
   w.pkg = pkg;
   // hatları temizle (çözümleme tablodan yükler)
-  for (const t of [w.HT, w.U, w.AN, w.MOD, w.KM]) { t.hw = 0; t.free = []; t.alive.fill(0); t.gen.fill(0); }
+  for (const t of [w.HT, w.U, w.AN, w.MOD, w.KM, w.IR]) { t.hw = 0; t.free = []; t.alive.fill(0); t.gen.fill(0); }
   w.birlikAd = []; w.komutanAd = [];
   return w;
 }
@@ -318,7 +318,7 @@ function haritaGoc(bytes: Uint8Array, pkg: Paket): World {
   w.gun = e.gun; w.surum = e.surum; w.tohum = e.tohum; w.mod = e.mod; w.emirSira = e.emirSira; w.rotaEpoch = e.rotaEpoch + 1;
   w.artik = e.artik; w.sayac = e.sayac; w.bayrak.set(e.bayrak); w.hasatKademe.set(e.hasatKademe);
   // boyutu değişmeyen tablolar ve diziler olduğu gibi devralınır
-  w.C = e.C; w.U = e.U; w.T = e.T; w.AN = e.AN; w.SV = e.SV; w.GR = e.GR; w.HT = e.HT; w.PR = e.PR; w.YR = e.YR; w.KE = e.KE; w.TK = e.TK; w.SP = e.SP; w.OL = e.OL; w.MOD = e.MOD; w.KM = e.KM; w.komutanAd = e.komutanAd;
+  w.C = e.C; w.U = e.U; w.T = e.T; w.AN = e.AN; w.SV = e.SV; w.GR = e.GR; w.HT = e.HT; w.PR = e.PR; w.YR = e.YR; w.KE = e.KE; w.TK = e.TK; w.SP = e.SP; w.OL = e.OL; w.MOD = e.MOD; w.KM = e.KM; w.komutanAd = e.komutanAd; w.IR = e.IR;
   w.ekip = e.ekip; w.tekIlerleme = e.tekIlerleme; w.tekBitti = e.tekBitti; w.tekMaliyet = e.tekMaliyet; w.arastirma = e.arastirma;
   w.gorus = e.gorus; w.tutum = e.tutum; w.tutumKilit = e.tutumKilit; w.esir = e.esir; w.fiyat = e.fiyat; w.pazarHacim = e.pazarHacim; w.savasTaraf = e.savasTaraf;
   w.birlikAd = e.birlikAd; w.olayBayrak = e.olayBayrak;

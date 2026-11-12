@@ -15,6 +15,7 @@ import { gerekceVar, gorusDegis, kuklaBagimsizlik, anlasmaKur, anlasmaBoz, tekli
 import { rejimDegistir, secimYap, zulumUygula, kimlikAdi, kimlikHucresi, devrim, partiPay } from './systems/toplum.ts';
 import { K } from './catalog.ts';
 import { trEkK } from './tr.ts';
+import { istihbaratRaporu } from './observe/index.ts';
 import { komutanAdi, komutanYuk, birlikKomutani, etkinNitelik, ulkeKomutanlari, komutanDagit, KOMUTAN_EMIR, EGITIM_AZAMI, EGITIM_PG, EGITIM_ALTIN, EGITIM_ARTIS, NITELIK_TAVAN } from './systems/komutan.ts';
 
 const n = (x: unknown, d = 0): number => (typeof x === 'number' && Number.isFinite(x) ? Math.trunc(x) : d);
@@ -237,9 +238,10 @@ export const EK_EMIRLER: Record<string, EkEmir> = {
         return tamam(`Asimilasyon: ${kimlikAdi(w, r, k)} · ${bAd(w, r)}`, 'Haftada %0,3 kültürel dönüşüm (dil ve okul politikası)', ['Bölgede direniş artar, ülke huzuru yavaş düşer'], [`Bölgede ${fmt(w.kim[r * NKIMLIK + k]!)} kişi`], 'Kaldırılabilir', { siyasi: 'Akraba devletlerin görüşü aylık düşer' });
       }
       if (ey === 2) {
-        if (hedefK < 0) return red('İskân', 'Bölgede kültürünüzün yerleşebileceği bir topluluk yok.');
         if (r === U.baskent) return red('İskân', 'Başkente iskân yapılmaz.');
-        return tamam(`İskân: ${bAd(w, r)}`, 'Haftada başkentten nüfusun ‰0,5\'i bölgeye yerleşir', ['Yerleşimci başına 2 altın'], ['Bölgede direniş biraz artar']);
+        // kaynak nüfus şart: yoktan insan yaratılmaz (V16-T16); hedefte aynı kültürün bulunması şart değildir (V16-T17)
+        if (kimlikHucresi(w, U.baskent, U.kultur) < 0 || w.kim[U.baskent * NKIMLIK + kimlikHucresi(w, U.baskent, U.kultur)]! < 2000) return red('İskân', 'Başkentte yerleşimci verecek kendi halkınızdan nüfus yok.');
+        return tamam(`İskân: ${bAd(w, r)}`, 'Haftada başkentten nüfusun ‰0,5\'i bölgeye yerleşir', ['Yerleşimci başına 2 altın'], ['Bölgede direniş biraz artar', ...(hedefK < 0 ? ['Bölgede kültürünüzün kaydı yok: yerleşimciler "Diğer" hanesinde sayılır'] : [])]);
       }
       return red('Demografi', 'Eylem bulunamadı.');
     },
@@ -385,8 +387,11 @@ export const EK_EMIRLER: Record<string, EkEmir> = {
       const c = e.ulke, d = n(e.hedef);
       w.C.c.pg[c] = w.C.c.pg[c]! - 20_000; w.C.c.hazine[c] = w.C.c.hazine[c]! - 10_000;
       if (uniformInt(rng(w.tohum, w.gun, 44, c, d, AMAC.sabotage, 0, 0), 100) < 20) { gorusDegis(w, d, c, -10_000); anlat(w, `${uAd(w, d)}, ${trEkK(w.pkg.ulkeler[c]!.kisa, 'in')} ajanını yakaladı.`, 'diplomasi', c, 1); return; }
-      let birlik = 0; for (const u of w.U.rows()) if (w.U.c.ulke[u] === d) birlik++;
-      anlat(w, `İstihbarat raporu — ${uAd(w, d)}: hazine ${fmt(w.C.c.hazine[d]!)}, ${birlik} birlik, rejim ${REJIM_AD[AKTIF.donem][w.C.c.rejim[d]!] ?? '?'}, meşruiyet %${Math.floor(w.C.c.mesru[d]! / 1000)}, huzur %${Math.floor(w.C.c.huzur[d]! / 1000)}.`, 'diplomasi', c, 3);
+      // rapor kesin değer vermez: gözlem günü, tahmin aralığı ve güvenilirlik taşır (V16-T46)
+      const rs = istihbaratRaporu(w, c, d);
+      const R = w.IR.c;
+      const ar = (s: number, bol = 1) => `${fmt(Math.floor(R.alt[s]! / bol))}–${fmt(Math.floor(R.ust[s]! / bol))}`;
+      anlat(w, `İstihbarat raporu — ${uAd(w, d)} (güven %${Math.floor(R.guven[rs[0]!]! / 10_000)}): hazine ${ar(rs[0]!)}, birlik ${ar(rs[1]!)}, ordu ${ar(rs[2]!)} kişi, huzur %${ar(rs[3]!, 1000)}, meşruiyet %${ar(rs[4]!, 1000)}; rejim ${REJIM_AD[AKTIF.donem][w.C.c.rejim[d]!] ?? '?'}.`, 'diplomasi', c, 3);
     },
   },
   suikast: {

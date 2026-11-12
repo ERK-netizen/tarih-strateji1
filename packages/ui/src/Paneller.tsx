@@ -303,6 +303,11 @@ function Siyaset() {
         {s.zulum > 0 && <p class="kotu-yazi kucuk">Uluslararası suç kaydı: {puan(s.zulum)} — dünya sizi unutmuyor; görüşler ve ticaret bundan etkilenir.</p>}
       </section>
       <section>
+        <h3>Halklar · ülke geneli</h3>
+        <p class="soluk kucuk">{s.halklar.liste.length} topluluk, {fmt(s.halklar.toplam)} kişi. Paylar %0,001 hassasiyetle gösterilir; tarihî nüfus verisi tahmindir.</p>
+        <ul class="liste">{s.halklar.liste.map((h: any) => <li key={h.ad}><span>{h.ad} <span class="soluk kucuk">{h.bolge} bölge</span></span><span class="sayi kucuk">{fmt(h.kisi)} · %{(h.ppm / 10_000).toFixed(3).replace('.', ',')}</span></li>)}</ul>
+      </section>
+      <section>
         <h3>Demografi · halklar</h3>
         <p class="soluk kucuk">Azınlığı bulunan bölgeleriniz. Asimilasyon ve iskân yavaş ve görece barışçıdır; sürgün ve soykırım insanlığa karşı suçtur: kalıcı uluslararası kayıt, savaş gerekçesi, ambargo ve direniş getirir.</p>
         {s.bolgeler.length === 0 && <p class="soluk">Kayda değer azınlık yok.</p>}
@@ -544,6 +549,7 @@ function Diplomasi() {
                       {u.gerekceBizim && <span> · Gerekçemiz {u.gerekceBizim}</span>}
                     </p>
                     <p class="soluk kucuk">Niyet işaretleri: {u.tehditBilesen.filter((b: any) => b.deger > 0).map((b: any) => b.ad.toLocaleLowerCase('tr')).join(', ') || 'yok'} · hazine {u.hazine} · ordu ≈ {Math.round(u.gucAlt / 1000)}–{Math.round(u.gucUst / 1000)} güç{u.savastaMi.length ? ` · savaşta: ${u.savastaMi.join(', ')}` : ''}{u.digerAnlasmalar.length ? ` · ${u.digerAnlasmalar.slice(0, 4).join(', ')}` : ''}</p>
+                    {u.rapor?.length > 0 && <p class="kucuk">İstihbarat raporu <span class="soluk">({u.rapor[0].gozlem} · {u.rapor[0].yas} gün önce · güven %{Math.round(u.rapor[0].guven / 10_000)})</span>: {u.rapor.map((x: any) => `${x.konu.toLocaleLowerCase('tr')} ${x.k >= 3 ? `%${Math.round(x.alt / 1000)}–${Math.round(x.ust / 1000)}` : `${kisalt(x.alt)}–${kisalt(x.ust)}`}`).join(' · ')}. <span class="soluk">Aralıktır; kesin değer bilinmez ve rapor eskidikçe güncelliğini yitirir.</span></p>}
                     <DipEylem u={u} P={P} />
                   </div>
                 )}
