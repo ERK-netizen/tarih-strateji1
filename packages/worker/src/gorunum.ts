@@ -3,7 +3,7 @@ import {
   type World, tarihMetni, ortak, ekonomi, siyaset, nufus, diplomasi, olaylar, bolgeGozlem, istihbaratDuzeyi, aralik, hazineKademe,
   ARAZI, ASKERLIK, EKONOMI, ISGAL, YONETIM, KISILIK, TUTUM, TEKNOLOJI, NTEK, EKIPMAN, AILE_EKIP, TABUR, SABLON, MAL, PROJE, URUN_MUH, A, ANLASMA_TUR, K,
   hc, ST, YB, kara, arastirmaYuvalari, AKTIF, DONEMLER, sablonIhtiyac, TEK_DAL, BAKAN, BAKAN_AD, MOD_TUR, REJIM_AD,
-  gelisim, us, deniz, toplum, komutan, tarih, raporlar, ISTIHBARAT_KONU, type MuharebeKaydi, kademe, KADEME_MAX, GEMI, HAVA, DENIZ_GOREV, HAVA_GOREV, PARTI, SECIMLI, EKO_MODEL, TARIM_ODAK, DONEM_FIYAT, NKIMLIK, MALI, mulDiv,
+  gelisim, us, deniz, toplum, komutan, kuvvet, tarih, raporlar, ISTIHBARAT_KONU, type MuharebeKaydi, kademe, KADEME_MAX, GEMI, HAVA, DENIZ_GOREV, HAVA_GOREV, PARTI, SECIMLI, EKO_MODEL, TARIM_ODAK, DONEM_FIYAT, NKIMLIK, MALI, mulDiv,
 } from '@ts/engine';
 import { KOL_E, KOL_T } from '@ts/engine';
 
@@ -349,6 +349,26 @@ export function kuvvetG(w: World) {
     cepheler: us.cepheler(w, P).map((r) => ({ r, ad: w.pkg.bolgeler[r]!.ad, bizim: w.R.c.kontrolEden[r] === P, menzilde: us.usMesafesi(w, P, r) <= us.havaMenzili(), kiyi: us.kiyidaMi(w, r) })),
     ucakSayisi: us.ucakToplam(w, P), ucakKapasite: us.ucakKapasitesi(w, P), havaMenzil: us.havaMenzili(),
     donBolge: C.donBolge[P]! - 1, donBolgeAd: C.donBolge[P]! > 0 ? w.pkg.bolgeler[C.donBolge[P]! - 1]!.ad : null,
+    // şema 10: bağımsız filolar ve hava kanatları
+    filolar: kuvvet.ulkeFilolari(w, P).map((f) => {
+      const F = w.FL.c, yolda = kuvvet.filoYolda(w, f);
+      return {
+        id: w.FL.id(f), ad: kuvvet.filoAdi(w, f), us: F.us[f]!, usAd: w.pkg.bolgeler[F.us[f]!]!.ad, konum: F.konum[f]!, konumAd: w.pkg.bolgeler[F.konum[f]!]!.ad,
+        hedef: yolda ? F.hedef[f]! : -1, hedefAd: yolda ? w.pkg.bolgeler[F.hedef[f]!]!.ad : null, kalan: yolda ? F.varis[f]! - w.gun : 0,
+        gorev: F.gorev[f]!, gemi: kuvvet.FG.map((g) => F[g][f]!), toplam: kuvvet.filoGemi(w, f), guc: deniz.filoGucu(w, f), hasar: F.hasar[f]!,
+      };
+    }),
+    kanatlar: kuvvet.ulkeKanatlari(w, P).map((k) => {
+      const K = w.KN.c, u = kuvvet.usDoluluk(w, K.us[k]!);
+      return {
+        id: w.KN.id(k), ad: kuvvet.kanatAdi(w, k), us: K.us[k]!, usAd: w.pkg.bolgeler[K.us[k]!]!.ad, usUcak: u.ucak, usKapasite: u.kapasite,
+        gorev: K.gorev[k]!, hedef: K.hedef[k]!, hedefAd: K.hedef[k]! >= 0 ? w.pkg.bolgeler[K.hedef[k]!]!.ad : null,
+        ucak: kuvvet.KU.map((t) => K[t][k]!), toplam: kuvvet.kanatUcak(w, k), hava: deniz.kanatGucu(w, k, 'hava'), hasar: K.hasar[k]!,
+        menzilde: us.cepheler(w, P).filter((r) => kuvvet.kanatMenzilde(w, k, r)),
+      };
+    }),
+    limanlarim: kuvvet.limanlar(w, P).slice(0, 12).map((r) => ({ r, ad: w.pkg.bolgeler[r]!.ad })),
+    denizMenzil: kuvvet.denizMenzili(), filoAzami: kuvvet.FILO_AZAMI, kanatAzami: kuvvet.KANAT_AZAMI,
     uslerim: w.pkg.bolgeler.map((b, r) => ({ r, ad: b.ad, us: w.R.c.havaUs[r]!, ters: w.R.c.tersane[r]!, sahip: w.R.c.sahip[r] === P })).filter((x) => x.sahip && (x.us > 0 || x.ters > 0)).map(({ sahip: _s, ...x }) => x),
   };
 }

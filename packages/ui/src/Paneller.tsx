@@ -6,6 +6,7 @@ import {
 import { onizle, komutCalistir } from './eylem.ts';
 import { bolgeyeGit, KomutAlani } from './App.tsx';
 import { KomutanBolumu, MuharebeBolumu } from './Muharebe.tsx';
+import { FiloBolumu, KanatBolumu } from './Kuvvetler.tsx';
 import { hazirKomutlar } from './hazirKomutlar.ts';
 import { SablonSecici, KonuslanmaSecici, konuslanmaBolgesi, OrgBar, diploOdak } from './Cekmece.tsx';
 import { BirlikPulu, Simge } from './Simge.tsx';
@@ -361,8 +362,9 @@ function Kuvvet() {
         {k.kiyilar.length === 0 && <p class="soluk kucuk">Tersaneniz yok: kıyı bölgesinde “Tersane” inşa edin (bölge çekmecesi → İnşa).</p>}
         <p class="soluk kucuk">Cepheye gönderim: {k.donBolgeAd ? `donanma ${k.donBolgeAd} cephesinde (kıyı bombardımanı)` : 'donanma cephede değil'}</p>
         <div class="cipler sar">{k.cepheler.filter((x: any) => x.kiyi).map((x: any) => <button key={x.r} class={`cip ${k.donBolge === x.r ? 'acik' : ''}`} onClick={() => onizle({ tur: 'donanmaGonder', bolge: x.r })}>⚓ {x.ad}</button>)}</div>
-        <SecimSatiri ad="Görev" secenek={k.denizGorevler} deger={k.donGorev} sec={(i) => onizle({ tur: 'donanmaGorev', gorev: i })} />
+        <SecimSatiri ad="Bütün filolara görev" secenek={k.denizGorevler} deger={k.donGorev} sec={(i) => onizle({ tur: 'donanmaGorev', gorev: i })} />
       </section>
+      <FiloBolumu k={k} />
       {k.havaVar ? (
         <section>
           <h3>Hava kuvvetleri</h3>
@@ -379,8 +381,10 @@ function Kuvvet() {
             </select></div>
           <div class="cipler sar">{k.havaGorevler.map((g: string, i: number) => <button key={g} class={`cip ${k.havaGorev === i ? 'acik' : ''}`} disabled={i > 0 && hedef < 0} onClick={() => onizle({ tur: 'havaGorev', gorev: i, bolge: i === 0 ? -1 : hedef })}>{g}</button>)}</div>
           {k.cepheler.length === 0 && <p class="soluk kucuk">Etkin cephe yok: hava gücü yalnız savaşılan cephelere, hava üssü menzili içinde gönderilebilir.</p>}
+          <p class="soluk kucuk">Yukarıdaki görev bütün kanatlara verilir; hedef, üssünün menzili dışında kalan kanatlar üste bekler.</p>
         </section>
       ) : <section><h3>Hava kuvvetleri</h3><p class="soluk">Bu çağda hava kuvveti yok.</p></section>}
+      {k.havaVar && <KanatBolumu k={k} />}
       {k.siparis.length > 0 && <section><h3>Siparişler</h3><ul class="liste">{k.siparis.map((x: any, i: number) => <li key={i}><span>{x.adet} {x.ad}{x.gemi ? ` · ${x.bolge}` : ''}</span><OrgBar v={x.yuzde / 100} /></li>)}</ul></section>}
       {(pet.ihtiyac > 0 || pet.uretim > 0) && (
         <section>
