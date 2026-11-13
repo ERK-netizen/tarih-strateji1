@@ -1,5 +1,5 @@
 import { PROJE } from '../catalog.ts';
-import { ucakToplam, ucakKapasitesi } from '../systems/us.ts';
+import { ucakToplam, ucakKapasitesi, kiyidaMi, havaMenzili } from '../systems/us.ts';
 // Bölüm 19: karar modülü. Yalnız gözlem görünümü, kamu bilgisi ve kendi verisini kullanır;
 // emirlerini oyuncuyla aynı doğrulama yolundan (orders.uygula) geçirir.
 import type { World } from '../state/world.ts';
@@ -14,11 +14,14 @@ import {
 } from '../systems/ortak.ts';
 import { insanGucu } from '../systems/nufus.ts';
 import { ulkeGidaStok, zorunluGider, krediLimiti, acikYuva } from '../systems/ekonomi.ts';
-import { denizGucu, akinGucu, korumaGucu, havaGucu, havaUstunluk } from '../systems/deniz.ts';
+import { denizGucu, akinGucu, korumaGucu, havaGucu, havaUstunluk, kanatGucu } from '../systems/deniz.ts';
+import { ulkeFilolari, ulkeKanatlari, filoGemi, kanatUcak, filoYolda, sicrama, denizMenzili, kanatMenzilde, usler, limanlar, usDoluluk } from '../systems/kuvvet.ts';
 import { HAVA } from '../katalogEk.ts';
 import { savunmaCarpan, topcuBaski } from '../systems/kara.ts';
-import { TK, ESIK, gerekceVar, gerekceSurecte, barisKabul, savasSkoru, istekliligi, tavizButcesi, bolgeDegeri, teslimKosulu, teklifBolgeleri } from '../systems/diplomasi.ts';
+import { TK, ESIK, gerekceVar, gerekceSurecte, antlasmaKabul, antlasmaAc, barisKabul, savasSkoru, istekliligi, tavizButcesi, bolgeDegeri, teslimKosulu, teklifBolgeleri } from '../systems/diplomasi.ts';
 
+/** Kesin sonuç cephesi (K-47): gereken genel üstünlük ve o cephenin tehdit ağırlığı katı (×0,1). */
+const AGIRLIK_USTUNLUK = 2_000_000, AGIRLIK_KAT = 120;
 const ESIK_SALDIRI = [1_300_000, 1_800_000, 1_400_000, 1_600_000, 1_500_000]; // kişiliğe göre (Atılgan/Temkinli/...)
 
 /** Karar modülünün emirleri bakan emri olarak işaretlenir (oyuncu adına verilen emir bakanı görevden almaz). */
@@ -138,6 +141,7 @@ function kabulEder(w: World, b: number, a: number, tur: number, p1: number, p2: 
       return benim * 10 >= karsiGuc * 6 || g >= 75_000;
     }
     case TK.baris: return barisKabul(w, b, a, p1, istenen).kabul;
+    case TK.antlasma: return antlasmaKabul(w, b, a, antlasmaAc(p1, p2, istenen)).kabul;
     case TK.devir: {
       // toprak satışı: iyi ilişki, ana yurt dışı bölge ve en az üç yıllık katma değer kadar bedel (kuklalar efendiye itiraz etmez)
       if (savasta(w, a, b)) return false;
@@ -485,20 +489,99 @@ function kuvvetGorev(w: World, c: number): void {
     if (C.gHasar[c]! > (gorev === 3 ? 400_000 : 250_000)) gorev = 0; // ağır hasarlı filo onarım için limana döner
   }
   if (C.donGorev[c] !== gorev) emir(w, c, 'donanmaGorev', { gorev });
-  // hava: en sıcak cephe bölgesinde üstünlük ya da yakın destek
-  if (HAVA[AKTIF.donem].length && havaGucu(w, c, 'hava') + havaGucu(w, c, 'destek') > 0) {
-    if (dus.length) {
-      const U = uc(w);
-      const say = new Map<number, number>();
-      for (const u of w.U.rows()) if (U.ulke![u] === c && U.muharebe![u]) say.set(U.bolge![u]!, (say.get(U.bolge![u]!) ?? 0) + 1);
-      // muharebe yoksa düşmana komşu en kalabalık cephe bölgesi
-      if (say.size === 0) for (const u of w.U.rows()) if (U.ulke![u] === c && w.komsuluk[U.bolge![u]!]!.some((q) => dus.includes(w.R.c.kontrolEden[q]!))) say.set(U.bolge![u]!, (say.get(U.bolge![u]!) ?? 0) + 1);
-      let r = -1, m = 0; for (const [b, v] of [...say.entries()].sort((x, y) => x[0] - y[0])) if (v > m) { m = v; r = b; }
-      if (r < 0) r = w.pkg.ulkeler[c]!.baskent;
-      // önce gökyüzü: üstünlük kurulmadan yakın destek boşa gider
-      const g = havaGucu(w, c, 'destek') > 0 && havaUstunluk(w, c, r) >= 300_000 ? 2 : 1;
-      if (C.havaGorev[c] !== g || C.havaBolge[c] !== r) emir(w, c, 'havaGorev', { gorev: g, bolge: r });
-    } else if (C.havaGorev[c] !== 0) emir(w, c, 'havaGorev', { gorev: 0, bolge: -1 });
+  // sıcak cepheler: muharebedeki birliklerimizin bölgeleri; yoksa düşmana komşu birlik bölgeleri (kalabalık olan önce)
+  const U = uc(w);
+  const say = new Map<number, number>();
+  if (dus.length) {
+    const benim = ulkeBirimleri(w, c).filter((u) => U.egitimBitis![u]! <= w.gun);
+    // muharebedeki birlik iki, düşmana komşu bekleyen birlik bir puan: sessiz ama kalabalık taarruz cephesi de hava desteği alır
+    for (const u of benim) {
+      const b = U.bolge![u]!;
+      if (U.muharebe![u]) say.set(b, (say.get(b) ?? 0) + 2);
+      else if (w.komsuluk[b]!.some((q) => dus.includes(w.R.c.kontrolEden[q]!))) say.set(b, (say.get(b) ?? 0) + 1);
+    }
+    // kesin sonuç cephesi (K-48): ezici üstün olduğumuz düşmana bakan bölgeler dört kat ağırlıklı
+    if (dus.length > 1) {
+      let kesin = -1, zu = AGIRLIK_USTUNLUK;
+      for (const k of dus) {
+        let komsu = false;
+        for (const b of say.keys()) if (w.komsuluk[b]!.some((q) => w.R.c.kontrolEden[q] === k)) { komsu = true; break; }
+        if (!komsu) continue;
+        const u = ustunluk(w, c, k, benim);
+        if (u > zu) { zu = u; kesin = k; }
+      }
+      if (kesin >= 0) for (const [b, v] of say) if (w.komsuluk[b]!.some((q) => w.R.c.kontrolEden[q] === kesin)) say.set(b, v * 4);
+    }
+  }
+  const cephe = [...say.entries()].sort((x, y) => y[1] - x[1] || x[0] - y[0]).slice(0, 8);
+  // filolar: denizdeki (hâkimiyet/abluka) her filo, ana limanının menzilindeki en yakın kıyı cephesine gider (kıyı desteği)
+  if (gorev === 1 || gorev === 2) {
+    const kiyi = cephe.filter(([r]) => kiyidaMi(w, r));
+    const tutulan = new Set<number>();
+    for (const f of ulkeFilolari(w, c)) {
+      const F = w.FL.c;
+      if (filoGemi(w, f) <= 0 || filoYolda(w, f)) continue;
+      const yer = F.konum[f]!;
+      // zaten bir cepheyi destekliyorsa yerinde kalır
+      const mevcut = kiyi.find(([r]) => r === yer || w.komsuluk[yer]!.includes(r));
+      if (mevcut) { tutulan.add(mevcut[0]); continue; }
+      let hedef = -1, en = 999;
+      for (const [r] of kiyi) {
+        if (tutulan.has(r) || sicrama(w, F.us[f]!, r, denizMenzili()) > denizMenzili()) continue;
+        const d = sicrama(w, yer, r, 40);
+        if (d < en) { en = d; hedef = r; }
+      }
+      if (hedef >= 0) { if (emir(w, c, 'filoGorev', { filo: w.FL.id(f), gorev, bolge: hedef })) tutulan.add(hedef); continue; }
+      // menzilde kıyı cephesi yok: en sıcak kıyı cephesini menziline alan en yakın kendi limanına bağlanır
+      if (kiyi.length) {
+        const ana = kiyi[0]![0];
+        let liman = -1, yakin = 999;
+        for (const q of limanlar(w, c)) {
+          if (q === F.us[f]) continue;
+          const d = sicrama(w, q, ana, denizMenzili());
+          if (d < yakin) { yakin = d; liman = q; }
+        }
+        if (liman >= 0 && yakin <= denizMenzili() && emir(w, c, 'filoUs', { filo: w.FL.id(f), bolge: liman })) continue;
+      }
+      // genel görev değişmişse (ör. yeni limana varan filo) filo ülke görevine döner
+      if (F.gorev[f] !== gorev) emir(w, c, 'filoGorev', { filo: w.FL.id(f), gorev, bolge: -1 });
+    }
+  }
+  // hava: her kanat kendi menzilindeki en sıcak cephede üstünlük ya da yakın destek; menzil dışındaysa cepheye yakın üsse geçer
+  if (HAVA[AKTIF.donem].length && ulkeKanatlari(w, c).length) {
+    const K = w.KN.c;
+    const yuk = new Map<number, number>();
+    for (const k of ulkeKanatlari(w, c)) {
+      if (kanatUcak(w, k) <= 0) continue;
+      const id = w.KN.id(k);
+      if (!cephe.length) { if (K.gorev[k] !== 0) emir(w, c, 'kanatGorev', { kanat: id, gorev: 0, bolge: -1 }); continue; }
+      let r = -1, puan = -1;
+      for (const [b, v] of cephe) {
+        if (!kanatMenzilde(w, k, b)) continue;
+        const p = Math.floor((v * 1000) / (1 + (yuk.get(b) ?? 0)));
+        if (p > puan) { puan = p; r = b; }
+      }
+      if (r >= 0) {
+        yuk.set(r, (yuk.get(r) ?? 0) + 1);
+        // önce gökyüzü: üstünlük kurulmadan yakın destek boşa gider
+        const g = kanatGucu(w, k, 'destek') > 0 && havaUstunluk(w, c, r) >= 300_000 ? 2 : 1;
+        if (K.gorev[k] !== g || K.hedef[k] !== r) emir(w, c, 'kanatGorev', { kanat: id, gorev: g, bolge: r });
+        continue;
+      }
+      // menzilde cephe yok: en sıcak cepheyi menziline alan, yeri olan en yakın kendi üssüne aktar
+      const ana = cephe[0]![0];
+      let us = -1, en = 999;
+      for (const q of usler(w, c)) {
+        if (q === K.us[k]) continue;
+        const d = sicrama(w, q, ana, havaMenzili());
+        if (d > havaMenzili() || d >= en) continue;
+        const dol = usDoluluk(w, q);
+        if (dol.ucak + kanatUcak(w, k) > dol.kapasite) continue;
+        en = d; us = q;
+      }
+      if (us >= 0) emir(w, c, 'kanatUs', { kanat: id, bolge: us });
+      else if (K.gorev[k] !== 0) emir(w, c, 'kanatGorev', { kanat: id, gorev: 0, bolge: -1 });
+    }
   }
 }
 
@@ -677,16 +760,19 @@ function cepheYonet(w: World, c: number): void {
   const tehdit = new Map<number, number>();
   /** Sınır bölgesinin karşısındaki gözlenen düşman gücü (savunma için tutulması gereken güç hesabı). */
   const karsiGuc = new Map<number, number>();
+  const karsiUlke = new Map<number, Map<number, number>>(); // bölge → düşman ülke → karşıdaki gözlenen güç
   for (const { r, v: vs } of sinirlarHam) {
     let t = 0, kg = 0;
+    const ku = new Map<number, number>();
     for (const v of vs) {
       const k = R.kontrolEden[v]!;
       const dus = savasta(w, c, k);
       const o = gozlem.get(v);
-      if (o) for (const [u2, gg] of o) if (u2 === k || savasta(w, c, u2)) { t += gg; if (savasta(w, c, u2)) kg += gg; }
+      if (o) for (const [u2, gg] of o) if (u2 === k || savasta(w, c, u2)) { t += gg; if (savasta(w, c, u2)) { kg += gg; ku.set(u2, (ku.get(u2) ?? 0) + gg); } }
       t += dus ? 20_000 : 5000;
     }
     karsiGuc.set(r, kg);
+    karsiUlke.set(r, ku);
     // ana yurt ve başkent önce korunur; uzak sömürge sınırları daha az birlik çeker
     if (!w.pkg.bolgeler[r]!.anaYurt.includes(c)) t = Math.floor(t / 2);
     else if (w.pkg.ulkeler[c]!.baskent === r || w.komsuluk[w.pkg.ulkeler[c]!.baskent]!.includes(r)) t = Math.floor((t * 3) / 2);
@@ -696,6 +782,12 @@ function cepheYonet(w: World, c: number): void {
     // barış ve tehdit yok: birlikler başkent ve eyalet merkezlerinde beklesin
     return;
   }
+  // kaynak bölgede kalması gereken güç: karşıdaki düşman gücünün %70'i, bölgenin savunma çarpanıyla bölünür
+  // ezici üstün olduğumuz düşmanın (ezilen) karşı taarruzu beklenmez: onun payı yarım sayılır; öteki düşmanlara karşı güç tam tutulur
+  const tutGerek = (r: number, ezilen = -1) => {
+    const kg = (karsiGuc.get(r) ?? 0) - (ezilen >= 0 ? Math.floor((karsiUlke.get(r)?.get(ezilen) ?? 0) / 2) : 0);
+    return mulDiv(mulDiv(kg, 700_000, S).q, S, Math.max(S, savunmaCarpan(w, r, 0))).q;
+  };
   // taarruz adayları (yalnız savaşta)
   const atanmis = new Set<number>();
   if (savas) {
@@ -723,17 +815,19 @@ function cepheYonet(w: World, c: number): void {
       adaylar.push({ hedef: r, deger, kaynak, oran });
     }
     adaylar.sort((a, b) => b.oran - a.oran || b.deger - a.deger || a.hedef - b.hedef);
-    // kaynak bölgede kalması gereken güç: karşıdaki düşman gücünün %70'i, bölgenin savunma çarpanıyla bölünür
     const bolgeGuc = new Map<number, number>();
     for (const u of birimler) { const s = birlikIstat(w, u); bolgeGuc.set(U.bolge![u]!, (bolgeGuc.get(U.bolge![u]!) ?? 0) + s.YS + s.SV); }
-    const tutGerek = (r: number) => mulDiv(mulDiv(karsiGuc.get(r) ?? 0, 700_000, S).q, S, Math.max(S, savunmaCarpan(w, r, 0))).q;
     let say = 0;
+    // ezici üstünlük kurulan düşmana karşı eşzamanlı taarruz sayısı orduyla büyür (harita v2: cephe bölgeleri çoğaldı)
+    const azamiEzici = Math.max(3, Math.floor(birimler.length / 6));
     for (const a of adaylar) {
-      if (say >= 3) break;
+      if (say >= azamiEzici) break;
       // ezici üstünlük: düşman ordusunun (gözlenen) 2,5 katı güçteysek eşik düşer, başkent hedefi daha da cazip
       const hk = R.kontrolEden[a.hedef]!;
       let e = esik;
-      if (ustunluk(w, c, hk, birimler) >= 2_500_000) e = Math.max(1_100_000, mulDiv(esik, w.pkg.ulkeler[hk]?.baskent === a.hedef ? 700_000 : 800_000, S).q);
+      const ezici = ustunluk(w, c, hk, birimler) >= 2_500_000;
+      if (say >= 3 && !ezici) continue;
+      if (ezici) e = Math.max(1_100_000, mulDiv(esik, w.pkg.ulkeler[hk]?.baskent === a.hedef ? 700_000 : 800_000, S).q);
       if (a.oran < e) continue;
       // savunmayı boşaltmamak için kaynak bölgede tehdide yetecek güç kalır; boş bölgeye en çok iki birlik yeter
       const kullan = a.kaynak.filter((u) => !atanmis.has(u)).sort((x, y) => birlikIstat(w, y).YS - birlikIstat(w, x).YS || x - y);
@@ -742,7 +836,8 @@ function cepheYonet(w: World, c: number): void {
         const r = U.bolge![u]!;
         const s = birlikIstat(w, u);
         const kalan = (bolgeGuc.get(r) ?? 0) - s.YS - s.SV;
-        if (kalan < tutGerek(r)) continue;
+        // büyük kent yığınağı kuşatmayı kilitlemesin: ezilen düşmanın payı yarım sayılır (bkz. tutGerek)
+        if (kalan < tutGerek(r, ezici ? hk : -1)) continue;
         bolgeGuc.set(r, kalan);
         giden.push(u);
         if (a.oran >= 10 * S && giden.length >= 2) break;
@@ -754,12 +849,50 @@ function cepheYonet(w: World, c: number): void {
   }
   // savunma dağılımı: tehdit oranında
   const serbest = birimler.filter((u) => !atanmis.has(u) && U.muharebe![u]! === 0 && (w.gun - U.atamaGun![u]! >= 7 || U.hedef![u]! < 0));
+  // Kesin sonuç cephesi (harita v2, K-47): genel üstünlüğümüzün ezici olduğu (≥ AGIRLIK_USTUNLUK) düşmana bakan
+  // bölgelerin tehdit ağırlığı artırılır; oransal dağıtım birlikleri o düşmanın ana kuvvetinin karşısında toplar ve
+  // başka cephelerin büyük tehdidi seferi bitmeden kuvveti dağıtmaz.
+  const hamTehdit = new Map(tehdit);
+  let zayifCephe: Set<number> | null = null;
+  if (savas && dusman.length > 1) {
+    let zayif = -1, zu = AGIRLIK_USTUNLUK;
+    for (const k of dusman) {
+      let komsu = false;
+      for (const [r] of tehdit) if (w.komsuluk[r]!.some((v) => R.kontrolEden[v] === k)) { komsu = true; break; }
+      if (!komsu) continue;
+      const u = ustunluk(w, c, k, birimler);
+      if (u > zu) { zu = u; zayif = k; }
+    }
+    if (zayif >= 0) {
+      zayifCephe = new Set<number>();
+      for (const [r, tt] of tehdit) if (w.komsuluk[r]!.some((v) => R.kontrolEden[v] === zayif)) { tehdit.set(r, mulDiv(tt, AGIRLIK_KAT, 10).q); zayifCephe.add(r); }
+    }
+  }
   const sinirlar = [...tehdit.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0]);
   const yedek = Math.floor(serbest.length * 15 / 100);
   const ihtiyac = new Map<number, number>();
   const tTop = sinirlar.reduce((s, [, t]) => s + t, 0);
   const dagit = serbest.length - yedek;
   for (const [r, t] of sinirlar) ihtiyac.set(r, Math.max(1, Math.floor((dagit * t) / Math.max(1, tTop))));
+  // Etkin cepheler soyulmaz: son 14 günde muharebe gören (kendisinde ya da karşısındaki düşman bölgesinde) sınır bölgesi,
+  // ağırlık kaydırılmadan önceki payını korur; yalnız sessiz cepheler inceltilir. Açık, kesin sonuç cephesinden karşılanır.
+  if (zayifCephe && zayifCephe.size > 0) {
+    let hamTop = 0; for (const t of hamTehdit.values()) hamTop += t;
+    const sicak = (r: number) => (R.sonMuharebe[r]! > 0 && w.gun - R.sonMuharebe[r]! <= 14) || w.komsuluk[r]!.some((v) => R.kontrolEden[v] !== c && R.sonMuharebe[v]! > 0 && w.gun - R.sonMuharebe[v]! <= 14);
+    let acik = 0;
+    for (const [r] of sinirlar) {
+      if (zayifCephe.has(r) || !sicak(r)) continue;
+      const ham = Math.max(1, Math.floor((dagit * hamTehdit.get(r)!) / Math.max(1, hamTop)));
+      const ih = ihtiyac.get(r)!;
+      if (ham > ih) { acik += ham - ih; ihtiyac.set(r, ham); }
+    }
+    const veren = sinirlar.map(([r]) => r).filter((r) => zayifCephe!.has(r)).sort((a, b) => ihtiyac.get(b)! - ihtiyac.get(a)! || a - b);
+    for (let i = 0; acik > 0 && veren.length > 0; i++) {
+      const r = veren[i % veren.length]!;
+      if (ihtiyac.get(r)! > 1) { ihtiyac.set(r, ihtiyac.get(r)! - 1); acik--; }
+      else if (veren.every((x) => ihtiyac.get(x)! <= 1)) break;
+    }
+  }
   // mevcut yerleşimi say
   const mevcut = new Map<number, number>();
   for (const u of birimler) { const h = U.hedef![u]! >= 0 ? U.hedef![u]! : U.bolge![u]!; mevcut.set(h, (mevcut.get(h) ?? 0) + 1); }

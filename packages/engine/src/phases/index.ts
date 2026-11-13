@@ -1,4 +1,7 @@
 import { usTersaneKur } from '../systems/us.ts';
+import { kentYuvaUyumla } from '../systems/gelisim.ts';
+import { kuvvetKurHepsi, kuvvetGunu, kuvvetDenetim } from '../systems/kuvvet.ts';
+import { komutanBaslat, komutanDagit, komutanAy, komutanGunu } from '../systems/komutan.ts';
 // Bölüm 7: günlük faz hattı P0–P12, sıklık katmanları, durma koşulları, bütünlük ve hash.
 import type { World, Bildirim } from '../state/world.ts';
 import { hc } from '../state/world.ts';
@@ -16,7 +19,7 @@ import { denizHaftasi, havaHaftasi, denizUstunlukGuncelle } from '../systems/den
 import { aylikSiyasetEk, demografiHaftasi, yillikKent } from '../systems/toplum.ts';
 import { olayGunu, aylikOlaylar, hasatAnlat, acilisOlaylari } from '../systems/olaylar.ts';
 import { serilestir } from '../serialize/index.ts';
-import { fazDegisti } from '../observe/index.ts';
+import { fazDegisti, istihbaratAy } from '../observe/index.ts';
 import { hashV1 } from '../hash/index.ts';
 import { uc, anlat, savasta as ortakSavasta, eyaletUlke, savastaMi, modTemizle, yonetimMesafeleri } from '../systems/ortak.ts';
 import { sayac } from '../num/index.ts';
@@ -32,6 +35,8 @@ export function senaryoBaslat(pkg: Paket, oyuncu: number, mod = 0): World {
   w.mod = mod;
   isDagit(w, true);
   usTersaneKur(w);
+  kuvvetKurHepsi(w); // gemiler limanlardaki filolara, uçaklar hava üslerindeki kanatlara
+  kentYuvaUyumla(w);
   hasatKademeSec(w);
   acilisOlaylari(w);
   // yönetim mesafeleri ilk aylık kapanıştan önce de doğru olsun
@@ -41,6 +46,9 @@ export function senaryoBaslat(pkg: Paket, oyuncu: number, mod = 0): World {
   for (let c = 0; c < w.nC; c++) w.C.c.bazTek[c] = w.C.c.tekSay[c]!;
   // aylık kapanışların başlangıç değerleri: gelir tarihçesi için ilk gün tahmini
   for (let c = 0; c < w.nC; c++) w.C.c.sonPlan[c] = 0;
+  // komutan kadrosu ve ilk dağıtım (oyuncu sonradan değiştirebilir)
+  komutanBaslat(w);
+  for (let c = 0; c < w.nC; c++) komutanDagit(w, c);
   baslangicNufus.set(w, toplamNufus(w));
   return w;
 }
@@ -73,6 +81,8 @@ export function gunIlerle(w: World, kesinlestir = true): GunSonuc {
     aylikOlaylar(w);
     aylikArastirma(w);
     aylikSiyasetEk(w);
+    komutanAy(w);
+    istihbaratAy(w);
     for (let c = 0; c < w.nC; c++) w.C.c.vergiAy[c] = 0;
     tarihceEkle(w);
     if (t.m === 1) { hasatKademeSec(w); hasatAnlat(w); yillikKent(w); }
@@ -85,6 +95,10 @@ export function gunIlerle(w: World, kesinlestir = true): GunSonuc {
   }
   fazDegisti(w);
   kararGunu(w);
+  // P2c: komutanların daimî emirleri (ikmal/organizasyon eşiği, savunma emri)
+  komutanGunu(w);
+  // P2d: filolar varış gününde konum değiştirir; üssünü yitiren filo ve kanatlar çekilir
+  kuvvetGunu(w);
   fazDegisti(w);
   // P3: diplomasi
   teklifYanitlari(w);
@@ -162,6 +176,8 @@ export function butunluk(w: World, n0: number): void {
   if (beklenen !== gercek) throw new Error(`bütünlük: nüfus korunumu ${gercek} ≠ ${beklenen}`);
   const kok = kokenDenetim(w);
   if (kok) throw new Error(`bütünlük: köken muhasebesi ${kok}`);
+  const kv = kuvvetDenetim(w);
+  if (kv) throw new Error(`bütünlük: filo/kanat muhasebesi ${kv}`);
 }
 
 /** Σ birlik köken partileri + ulusal defter + yoldaki personel = Σ A hücreleri (eyalet bazında) (T102). */

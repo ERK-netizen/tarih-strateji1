@@ -1,0 +1,71 @@
+Test ID,Doğrulanacak koşul,Durum,Kanıt
+V16-T01,"Akışlı Worker hata yanıtı, id'li Promise'i reddeder ve bekleyen istek kaydını siler",PASS,tests/acceptance/v16.test.ts › T36
+V16-T02,expectedVersion eskiyse hiçbir kaynak/alan değişmez,PASS,v16.test.ts › T37
+V16-T03,Aynı idempotencyKey iki kez gönderilince bir kez uygulanır,PASS,v16b.test.ts › V16-T03
+V16-T04,Aynı gün teklif kabulü gun ilerletmeden ülke anlaşmalarına işlenir,PASS,v16.test.ts › T38
+V16-T05,Olay kararı aynı gün kaydedilir; zorunlu bir gün atlama yoktur,PASS,olaySec anlık emir sınıfında (sunucu.ts ANLIK_EMIR); tarayıcı denemesinde olay kararı gün ilerletmeden uygulandı; ayrı otomatik test yok
+V16-T06,"Araştırma başlatma aynı gün görünür, ilerleme sonraki günlük fazlarda gerçekleşir",PASS,v16.test.ts › T39
+V16-T07,"Yeni komutan emri aynı gün görünür, fiziksel hareket ayrı fazda ilerler",PASS,komutan.test.ts › V16-T07/T28
+V16-T08,İlerleme sırasında gelen emir deterministik olarak doğru sıraya girer veya açık busy alır,PASS,v16.test.ts › T38 (mesgul)
+V16-T09,Worker çöküp yeniden açıldığında son kesinleşmiş kayıt hashsiz eksik gün içermez,PASS,v16b.test.ts › V16-T09
+V16-T10,Üs/tersane siparişi para ve kapasite yetersizse mutasyon olmadan reddedilir,PARTIAL,"kapasite reddi: v16.test.ts › T40; projelerde peşin ödeme olmadığından para yetersizliği günlük ilerlemeyi durdurur, emri reddetmez"
+V16-T11,"Şehir 1 seviyedeyken 4, 10 seviyedeyken 40 slot kapasitesi vardır",PASS,v16.test.ts › T40
+V16-T12,Demiryolu/sulama/altyapı/imar bina slotu tüketmez ama kaynak kullanır,PASS,v16.test.ts › T40
+V16-T13,Sıfır yatırımla ücretsiz fabrika oluşmaz,PASS,"v16.test.ts › T40, sema7.test.ts (K-45)"
+V16-T14,İşgal ve ilhak farklı mülkiyet/denetim değerlerini korur,PASS,antlasma.test.ts › V16-T49 (kontrol ≠ mülkiyet)
+V16-T15,4 slot doluyken yeni sanayi binası reddedilir; şehir yükseltilirse kabul edilebilir,PASS,v16.test.ts › T40
+V16-T16,Nüfus kaynağı olmayan yerleşim emri yoktan insan yaratmaz,PASS,toplum16.test.ts
+V16-T17,Hedef bölgedeki kültür bulunmasa bile kaynak kohort varsa iskân yapılır,PASS,toplum16.test.ts
+V16-T18,Göçte hedef artışı ile kaynak azalışı tam eşittir,PASS,toplum16.test.ts
+V16-T19,Asker alma iş gücünden çıkar ve askere ekler; toplam nüfus değişmez,PASS,P12 bütünlük (nüfus korunumu) her gün; simulasyon.test.ts
+V16-T20,"Yaralı, esir ve terhis statü değişimleri nüfusu çoğaltmaz",PASS,P12 bütünlük ve köken muhasebesi; simulasyon.test.ts
+V16-T21,"%0,01'lik azınlık istatistikte ayrı ve doğru görünür",PASS,toplum16.test.ts
+V16-T22,Kimlik/kültür/din alt toplamları bölge toplamıyla tutarlıdır,PASS,toplum16.test.ts
+V16-T23,"Tarihsel kitle felaketlerinin insani, ekonomik ve diplomatik bedelleri raporlanır",PARTIAL,"zulüm kaydı, görüş kaybı, direniş ve ölüm anlatıya yazılır (K-41); ayrı rapor bölümü ve ekonomik bedel dökümü yok"
+V16-T24,Ölü gerçek kişi yeniden atanamaz; aynı kişi iki kez üretilmez,PASS,komutan.test.ts
+V16-T25,Gerçek kişi/kurgu kişi kayıtları ayrılır ve kaynak kontrol edilir,PASS,komutan.test.ts (kaynak: tarihî/kurgu)
+V16-T26,Komutan kendi kapasitesinin üzerindeki orduya tam bonus veremez,PASS,komutan.test.ts
+V16-T27,Aynı komutan bonusu hiyerarşide iki kez hesaplanmaz,PASS,komutan.test.ts
+V16-T28,Komutan emirleri ikmal/yorgunluk şartlarına uyar; gerekçeyle durabilir,PASS,komutan.test.ts
+V16-T29,"Gelişmiş eğitim/deneyim, maliyet ve üst sınırla kazanılır",PASS,komutan.test.ts
+V16-T30,Model ekipman eksikliğinde gerçek birlik ateş/hız/organizasyon etkilenir,PARTIAL,birlik ekipman doluluğu gücü etkiler (ortak.birlikIstat); adlı ekipman modeli stoku yok (PR-10)
+V16-T31,Aynı filo iki deniz bölgesinde eşzamanlı bulunamaz,PASS,"kuvvet.test.ts: filo tek konumlu; yoldayken çıktığı ve varacağı bölgede etkisiz; varınca yalnız orada ve komşularında; gemi tek filoya ait (FL tablosu, şema 10)"
+V16-T32,Aynı uçak kanadı iki görevde çift sayılmaz,PASS,"kuvvet.test.ts: kanat yalnız hedefinde ve komşularında sayılır; hedef değişince eski bölgeden çıkar; üstünlük görevindeki kanat yakın destek vermez; dost kanatlar yıpranmada birlikte sayılır"
+V16-T33,Hava menzili dışındaki görev saldırıya katkı vermez,PASS,"kuvvet.test.ts: menzil kanadın kendi üssünden; menzil dışı hedef reddedilir ve katkı vermez; genel hava emri menzil dışı kanatlara geçmez; haftalık menzil güvencesi"
+V16-T34,Deniz görevi liman/yakıt/seyahat süresi koşullarına uyar,PASS,"kuvvet.test.ts: hedef kıyıda ve ana liman menzilinde; petrolsüz filo açılamaz; seyir süresi sıçrama × çağ hızı; ana liman değişimi (filoUs); limanda hızlı onarım"
+V16-T35,Ortak harekât aynı nakliyeyi/ikmali iki kere tüketmez,PARTIAL,"nakliye gemisi tek filoya aittir ve toplam ayna sütunla denetlenir (kuvvet.test.ts); kara/deniz ortak taşıma bütçesi yok (PR-09)"
+V16-T36,Muharebe viewer açılıp kapatılması kayıp/ekipman stok toplamlarını değiştirmez,PASS,komutan.test.ts › V16-T36
+V16-T37,Aynı BattleEvent replay aynı görsel sıra ve aynı battle hash'i üretir,PASS,komutan.test.ts › V16-T37
+V16-T38,"1914 siper, 1939 manevra, 2026 modern ekipman etkileri dönem kurallarına uyar",PARTIAL,"dönem katalogları, tahkimat tavanı (K-28) ve 1939 yıldırım etkisi var; kapsayıcı test yok"
+V16-T39,Araştırma tamamlanınca otomatik ekipman stoku artmaz,PARTIAL,araştırma stok üretmez (mevcut tasarım); ayrı test yok
+V16-T40,Prototip/üretim hazırlığı/seri üretim farklı kaynak ve süre maliyeti taşır,NOT_IMPLEMENTED,prototip/üretim hazırlığı aşamaları yok (PR-10)
+V16-T41,Yüksek bilim yatırımı bir alanda erken 1950 düzeyini mümkün kılar (denge senaryosu),PARTIAL,K-38 kademe ve yatırım kuralı (sema7.test.ts); 1914→1930 denge senaryosu koşulmadı
+V16-T42,Erken araştırma bütün dallarda bedelsiz hızlanmaz; yatırım fırsat maliyeti vardır,PARTIAL,bilim bütçesi diğer kalemlerden düşer; ayrı test yok
+V16-T43,"Üretim işçi, malzeme, enerji ve lojistikten biri sıfırsa fiziksel çıktı üretilmez",PARTIAL,işçi doluluğu ve girdi (çelik/kömür) üretimi sınırlar (sistemler.test.ts); enerji ayrı kaynak değil
+V16-T44,Demiryolu kenar kapasitesinde sivil+askerî kullanım tavanı aşmaz,PARTIAL,ortak kenar kapasitesi (sistemler.test.ts); sivil/askerî ayrı sayaç yok
+V16-T45,Yaptırım ve abluka fiilen sevkiyatı ve ülke stokunu azaltabilir,PARTIAL,abluka ve ambargo ticareti daraltır (sema7.test.ts)
+V16-T46,Başarılı istihbarat raporu observedDay ve güvenilirlik aralığı taşır,PASS,toplum16.test.ts
+V16-T47,Rakip YZ gizli gerçek düşman stokunu tahmin diye kullanamaz,PARTIAL,"karar modülü yabancı gücü observe aralığından okur (ESLint kuralı, cekirdek testleri); kapsayıcı sızıntı testi yok"
+V16-T48,"Başarılı antlaşma tüm maddeleri bir kere uygular, geçersiz tek madde tüm taslağı reddeder",PASS,antlasma.test.ts
+V16-T49,Toprak+tazminat+garanti aynı barış teklifinde bulunabilir,PASS,antlasma.test.ts
+V16-T50,Koalisyonda bir devletin barışı diğer savaşı otomatik sona erdirmez,PASS,antlasma.test.ts
+V16-T51,Osmanlı tarafsızsa tarihsel Çanakkale savaşı kendiliğinden gerçekleşmez,PARTIAL,1914 olay zinciri bayraklıdır (K-34); Çanakkale için ayrı test yok
+V16-T52,1939 tarihsel olayları coğrafi/siyasi ön koşullar bozulunca durur veya değişir,PARTIAL,"olay koşulları (kontrol, savaş, bayrak) veriyle tanımlı; ayrı test yok"
+V16-T53,2026 başlangıç verisi 1 Ocak 2026 kesitine uygundur,NOT_RUN,2026 başlangıç verisi bu çalışmada kaynakla yeniden denetlenmedi
+V16-T54,Oyuncu danışmanı öğrenilmemiş düşman bilgisini kesin olarak göstermez,PARTIAL,danışman görünümleri sisli (gorunum.ts); kapsayıcı test yok
+V16-T55,"Türkçe kalıcı emir, doğru PlanDSL ve geçerli alt emirler üretir",NOT_IMPLEMENTED,kalıcı plan dili yok; komutan daimî emri ve bakanlar var
+V16-T56,1×180 günlük atlama ile aynı günlerin tek tek işlenmesi eşdeğer hash verir,PASS,v16b.test.ts
+V16-T57,"1 ay/3 ay/6 ay takvim günlerini doğru hesaplar, artık yıla uyar",PASS,v16b.test.ts
+V16-T58,Dünya ve Devletim raporları bilgi görünürlüğüne ve tarihe göre ayrılır,PASS,v16b.test.ts
+V16-T59,Dikey 360×800 Android görünümde komut/harita/çekmece/geri tuşu kullanılabilir,PARTIAL,"360×800 tarayıcı denemesi (Playwright, ekran görüntüleri); otomatik test ve geri tuşu denemesi yok"
+V16-T60,Sandbox normal ekonomiye Infinity/NaN sokmaz ve normal kayıttan ayrılır,PASS,v16b.test.ts
+V16-T61,"463→≥788 bölge göçü nüfus, stok, mülkiyet, komşuluk ve birlikleri korur",PASS,harita.test.ts (12 test)
+V16-T62,"Eski şema 5, 6 ve 7 kayıtları hedef şemaya belirlenimci göç eder",PASS,"sema7.test.ts, derinlik.test.ts (5→7), harita.test.ts (8→9 + harita göçü), kuvvet.test.ts (≤9→10: ülke toplamlarından filo/kanat, toplamlar korunur)"
+V16-T63,Save→Load→Replay ile kesintisiz koşu hash'leri eşleşir,PASS,v16b.test.ts
+V16-T64,Aynı seed+aynı emirler farklı önbellek ayarıyla aynı kanonik hash verir,PASS,v16b.test.ts
+V16-T65,750/1600 senaryolarında çağ dışı hava/modern ekipman otomatik oluşmaz,PASS,v16b.test.ts
+V16-T66,1914/1939/2026 gözlemci uzun koşularında negatif nüfus/kaynak ve çifte filo yoktur,PARTIAL,"beş senaryo 365 gün gözlemci koşusu bütünlük hatasız (filo/kanat ayna denetimi dahil), kayıt-yükleme hash eşit; 5/10/25 yıl koşulmadı"
+V16-T67,Proje/komuta/replay kayıtları uygulama kapanıp açılınca kaybolmaz,PASS,"komutan.test.ts (şema 9 kayıt), muharebe kayıtları kayıt ekinde"
+V16-T68,İdari emir onaylanınca kullanıcıya “kabul” ve “kalıcı kaydedildi” doğru ayrılır,PASS,v16b.test.ts
+V16-T69,"Gerçek cihazda portre, güvenli alan ve giriş klavyesi taşma yapmaz",NOT_RUN,gerçek cihaz denemesi yapılmadı
+V16-T70,Eski otomasyon ve yeni bakan/komutan planları aynı kararı iki kez üretmez,PARTIAL,oyuncu elle emri bakanı görevden alır (K-35); komutan savun emri otomasyon taarruzunu iptal eder; ayrı çakışma testi yok

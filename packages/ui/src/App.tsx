@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
+import { MuharebeIzleyici } from './Muharebe.tsx';
 import { signal } from '@preact/signals';
 import { HaritaCizici, type HaritaModu } from '@ts/map';
 import {
@@ -32,6 +33,7 @@ function Oyun() {
       {bolgeSecimi.value && <SecimBandi />}
       {ilerleme.value && <Ilerleme />}
       <OlayModal />
+      <MuharebeIzleyici />
       <Yikildi />
       {nedenAcik.value && <Neden />}
       <Tostlar />
@@ -452,7 +454,7 @@ function OlayModal() {
         <p class="olay-metin">{ol.metin}</p>
         <div class="secenekler">
           {ol.secenekler.map((s: any, i: number) => (
-            <button class="secenek" onClick={async () => { const r = await istemci.istek('submit', { tur: 'olaySec', olay: ol.id, secim: i }); if (r.sonuc?.[0]?.kabul) { tost(`Karar verildi: ${s.ad}. İlk ilerleyen günde uygulanır.`, 'iyi'); await ilerlet('gun', 1); } }}>
+            <button class="secenek" onClick={async () => { const r = await istemci.istek('submit', { tur: 'olaySec', olay: ol.id, secim: i }); if (r.sonuc?.[0]?.kabul) { tost(`Karar uygulandı: ${s.ad}.`, 'iyi'); await tazele(); } }}>
               <strong>{s.ad}</strong><span>{s.etki}</span>
             </button>
           ))}

@@ -1,6 +1,6 @@
-// Deniz ve hava kuvvetleri (şema 7): ülke düzeyinde soyut filolar.
-// Donanma: sınıf başına gemi sayısı, hasar ve tek görev (liman, hâkimiyet, abluka, ticaret akını, konvoy).
-// Hava: tür başına uçak, hasar, görev (üstünlük, yakın destek, stratejik bombardıman, keşif) ve hedef bölge.
+// Deniz ve hava kuvvetleri. Şema 10'dan beri gemiler filolarda, uçaklar hava kanatlarındadır (systems/kuvvet.ts):
+// her filonun tek konumu ve görevi (liman, hâkimiyet, abluka, ticaret akını, konvoy), her kanadın tek üssü, görevi
+// (üstünlük, yakın destek, stratejik bombardıman, keşif) ve hedef bölgesi vardır. Ülke sütunları toplamların aynasıdır.
 // Haftalık çözülür; kara muharebesi hava üstünlüğünü, deniz geçişi deniz üstünlüğünü kullanır.
 import type { World, UlkeK } from '../state/world.ts';
 import { AKTIF } from '../catalog.ts';
@@ -8,6 +8,7 @@ import { GEMI, HAVA, NGEMI, NHAVA, DONEM_FIYAT, PETROL_KULLANIM } from '../katal
 import { S, mulDiv, clamp } from '../num/index.ts';
 import { rng, uniformInt, AMAC } from '../rng/index.ts';
 import { savasta, tarafi, savasUyeleri, pasif, anlat, bildir, uc } from './ortak.ts';
+import { FG, KU, ulkeFilolari, ulkeKanatlari, filoYolda, kuvvetEsitle, kanatKapsar, kanatMenzilde, usDoluluk } from './kuvvet.ts';
 
 const GK = ['gs0', 'gs1', 'gs2', 'gs3', 'gs4'] as const satisfies readonly UlkeK[];
 const HK = ['h0', 'h1', 'h2'] as const satisfies readonly UlkeK[];
@@ -40,51 +41,79 @@ export function yakitIhtiyaci(w: World, c: number): { filo: number; hava: number
   return { filo, hava, ordu, sanayi, toplam: filo + hava + ordu + sanayi };
 }
 
-/** Donanma muharebe gücü (×10 birim): sınıf gücü × sayı × (1 − hasar) × yakıt. */
-export function denizGucu(w: World, c: number): number {
-  const d = AKTIF.donem;
+/** Filonun gücü (×10 birim): sınıf katsayısı × gemi × (1 − hasar); muharebe gücü ayrıca yakıtla ölçeklenir. */
+export function filoGucu(w: World, f: number, alan: 'guc' | 'akin' | 'koruma' = 'guc'): number {
+  const F = w.FL.c;
   let g = 0;
-  GEMI[d].forEach((s, k) => { g += gemiSay(w, c, k) * s.guc; });
-  g = mulDiv(g, S - w.C.c.gHasar[c]!, S).q;
-  return mulDiv(g, yakitCarpan(w, c), S).q;
+  GEMI[AKTIF.donem].forEach((s, k) => { g += F[FG[k]!][f]! * s[alan]; });
+  g = mulDiv(g, S - F.hasar[f]!, S).q;
+  return alan === 'guc' ? mulDiv(g, yakitCarpan(w, F.ulke[f]!), S).q : g;
 }
+/** Filo denizde mi: hâkimiyet ya da abluka görevinde, yolda değil ve savaşabilir durumda. */
+const filoDenizde = (w: World, f: number): boolean => (w.FL.c.gorev[f] === 1 || w.FL.c.gorev[f] === 2) && !filoYolda(w, f) && filoGucu(w, f) > 0;
+/** Donanma muharebe gücü: ülkenin bütün filoları. */
+export function denizGucu(w: World, c: number): number {
+  let g = 0;
+  for (const f of ulkeFilolari(w, c)) g += filoGucu(w, f);
+  return g;
+}
+/** Ticaret akını gücü: yalnız akın görevindeki, yolda olmayan filolar. */
 export function akinGucu(w: World, c: number): number {
-  let g = 0; GEMI[AKTIF.donem].forEach((s, k) => { g += gemiSay(w, c, k) * s.akin; }); return mulDiv(g, S - w.C.c.gHasar[c]!, S).q;
+  let g = 0;
+  for (const f of ulkeFilolari(w, c)) if (w.FL.c.gorev[f] === 3 && !filoYolda(w, f)) g += filoGucu(w, f, 'akin');
+  return g;
 }
+/** Konvoy koruma gücü: konvoy görevindeki filolar iki kat, diğerleri yarım sayılır. */
 export function korumaGucu(w: World, c: number): number {
-  let g = 0; GEMI[AKTIF.donem].forEach((s, k) => { g += gemiSay(w, c, k) * s.koruma; });
-  g = mulDiv(g, S - w.C.c.gHasar[c]!, S).q;
-  return w.C.c.donGorev[c] === 4 ? g * 2 : Math.floor(g / 2);
+  let g = 0;
+  for (const f of ulkeFilolari(w, c)) { const k = filoGucu(w, f, 'koruma'); g += w.FL.c.gorev[f] === 4 && !filoYolda(w, f) ? k * 2 : Math.floor(k / 2); }
+  return g;
 }
-/** Hava gücü (×10 birim): tür katsayısı × uçak × (1 − hasar) × yakıt. */
+/** Kanadın gücü (×10 birim): tür katsayısı × uçak × (1 − hasar) × yakıt × üs verimi (üs kapasitesi aşılırsa düşer). */
+export function kanatGucu(w: World, k: number, alan: 'hava' | 'destek' | 'bomba'): number {
+  const K = w.KN.c;
+  let g = 0;
+  HAVA[AKTIF.donem].forEach((h, t) => { g += K[KU[t]!][k]! * h[alan]; });
+  if (g <= 0) return 0;
+  g = mulDiv(g, S - K.hasar[k]!, S).q;
+  g = mulDiv(g, yakitCarpan(w, K.ulke[k]!), S).q;
+  const u = usDoluluk(w, K.us[k]!);
+  if (u.kapasite > 0 && u.ucak > u.kapasite) g = mulDiv(g, u.kapasite, u.ucak).q;
+  return g;
+}
+/** Hava gücü: ülkenin bütün kanatları (gösterim ve karar için). */
 export function havaGucu(w: World, c: number, alan: 'hava' | 'destek' | 'bomba'): number {
-  let g = 0; HAVA[AKTIF.donem].forEach((h, k) => { g += ucakSay(w, c, k) * h[alan]; });
-  g = mulDiv(g, S - w.C.c.hHasar[c]!, S).q;
-  return mulDiv(g, yakitCarpan(w, c), S).q;
+  let g = 0;
+  for (const k of ulkeKanatlari(w, c)) g += kanatGucu(w, k, alan);
+  return g;
 }
 
-/** Bir savaş tarafının deniz hâkimiyeti gücü: hâkimiyet/abluka görevindekiler tam, limandakiler (mevcut filo) %40. */
+/** Bir savaş tarafının deniz hâkimiyeti gücü: denizdeki (hâkimiyet/abluka) filolar tam, limandaki ve yoldakiler %40. */
 function tarafDeniz(w: World, uyeler: number[]): number {
   let h = 0;
-  for (const c of uyeler) { const g = denizGucu(w, c); h += w.C.c.donGorev[c] === 1 || w.C.c.donGorev[c] === 2 ? g : Math.floor((g * 2) / 5); }
+  for (const c of uyeler) for (const f of ulkeFilolari(w, c)) { const g = filoGucu(w, f); h += filoDenizde(w, f) ? g : Math.floor((g * 2) / 5); }
   return h;
 }
 
-/** Gemi kaybı uygular (hat gemisi, kruvazör, muhrip; oranla). */
-function gemiKayip(w: World, c: number, f: number, siniflar: number[], tohum: number, hasarPay = 2): number {
+/** Gemi kaybı: ülkenin seçilen filolarına oranla uygulanır (hat gemisi, kruvazör, muhrip…). Kaybedilen gemi sayısını döndürür. */
+function gemiKayip(w: World, c: number, f: number, siniflar: number[], tohum: number, hasarPay: number, sec: (filo: number) => boolean): number {
   let top = 0;
-  for (const k of siniflar) {
-    const n = gemiSay(w, c, k);
-    if (n <= 0) continue;
-    let kay = mulDiv(n, f, S).q;
-    // kesir: olasılıkla bir gemi daha
-    const art = mulDiv(n, f, S).rem;
-    if (art > 0 && uniformInt(rng(w.tohum, w.gun, 31, c, k, AMAC.combatRoll, tohum, 0), S) < art) kay++;
-    kay = Math.min(n, kay);
-    w.C.c[GK[k]!][c] = n - kay;
-    top += kay;
+  for (const fl of ulkeFilolari(w, c)) {
+    if (!sec(fl)) continue;
+    for (const k of siniflar) {
+      const n = w.FL.c[FG[k]!][fl]!;
+      if (n <= 0) continue;
+      let kay = mulDiv(n, f, S).q;
+      // kesir: olasılıkla bir gemi daha
+      const art = mulDiv(n, f, S).rem;
+      if (art > 0 && uniformInt(rng(w.tohum, w.gun, 31, c, k, AMAC.combatRoll, tohum, fl), S) < art) kay++;
+      kay = Math.min(n, kay);
+      w.FL.c[FG[k]!][fl] = n - kay;
+      top += kay;
+    }
+    w.FL.c.hasar[fl] = Math.min(600_000, w.FL.c.hasar[fl]! + Math.floor(f / hasarPay));
   }
-  w.C.c.gHasar[c] = Math.min(600_000, w.C.c.gHasar[c]! + Math.floor(f / hasarPay));
+  kuvvetEsitle(w, c);
   return top;
 }
 
@@ -97,16 +126,18 @@ export function denizHaftasi(w: World): void {
     if (!A1.length || !A2.length) continue;
     const H1 = tarafDeniz(w, A1), H2 = tarafDeniz(w, A2);
     // filo muharebesi: bir taraf hâkimiyet ararken karşı tarafın filosu denizdeyse (hâkimiyet ya da abluka) haftada %8 olasılık
-    const denizde = (c: number): boolean => (C.donGorev[c] === 1 || C.donGorev[c] === 2) && denizGucu(w, c) > 0;
-    const arar1 = A1.some((c) => C.donGorev[c] === 1 && denizGucu(w, c) > 0), arar2 = A2.some((c) => C.donGorev[c] === 1 && denizGucu(w, c) > 0);
+    const denizde = (c: number): boolean => ulkeFilolari(w, c).some((f) => filoDenizde(w, f));
+    const arar = (c: number): boolean => ulkeFilolari(w, c).some((f) => w.FL.c.gorev[f] === 1 && filoDenizde(w, f));
+    const arar1 = A1.some(arar), arar2 = A2.some(arar);
     const acik1 = A1.some(denizde), acik2 = A2.some(denizde);
     // zayıf filonun bilerek denize çıkması (baskın: Dogger Bank, Jutland) çatışmayı büyük olasılıkla doğurur
     const ihtimal = Math.max(arar1 && acik2 ? (H1 < H2 ? 40 : 8) : 0, arar2 && acik1 ? (H2 < H1 ? 40 : 8) : 0);
     if (ihtimal > 0 && uniformInt(rng(w.tohum, w.gun, 30, s, 0, AMAC.combatRoll, 0, 0), 100) < ihtimal) {
       const f1 = clamp(mulDiv(40_000, H2, Math.max(1, H1)).q, 10_000, 150_000), f2 = clamp(mulDiv(40_000, H1, Math.max(1, H2)).q, 10_000, 150_000);
       let k1 = 0, k2 = 0;
-      for (const c of A1) if (denizde(c)) k1 += gemiKayip(w, c, f1, [0, 1, 2], s);
-      for (const c of A2) if (denizde(c)) k2 += gemiKayip(w, c, f2, [0, 1, 2], s + 1000);
+      // yalnız denizdeki filolar çarpışır; limandaki ve yoldaki filo kayıp vermez
+      for (const c of A1) if (denizde(c)) k1 += gemiKayip(w, c, f1, [0, 1, 2], s, 2, (fl) => filoDenizde(w, fl));
+      for (const c of A2) if (denizde(c)) k2 += gemiKayip(w, c, f2, [0, 1, 2], s + 1000, 2, (fl) => filoDenizde(w, fl));
       // anlatıda her tarafın en büyük denizde olan donanması
       const enBuyuk = (A: number[]) => { let b = A[0]!, g = -1; for (const c of A) if (denizde(c) && denizGucu(w, c) > g) { g = denizGucu(w, c); b = c; } return b; };
       const l1 = w.pkg.ulkeler[enBuyuk(A1)]!.kisa, l2 = w.pkg.ulkeler[enBuyuk(A2)]!.kisa;
@@ -117,37 +148,43 @@ export function denizHaftasi(w: World): void {
     // abluka: üstün taraf abluka görevindeyse karşı tarafın ticareti ve gelirleri boğulur
     for (const [Ust, Alt, Hu, Ha] of [[A1, A2, H1, H2], [A2, A1, H2, H1]] as const) {
       if (Hu * 4 <= Ha * 5) continue;
-      let ab = 0; for (const c of Ust) if (C.donGorev[c] === 2) ab += denizGucu(w, c);
+      let ab = 0; for (const c of Ust) for (const f of ulkeFilolari(w, c)) if (w.FL.c.gorev[f] === 2 && filoDenizde(w, f)) ab += filoGucu(w, f);
       if (ab <= 0) continue;
       const v = Math.min(600_000, mulDiv(600_000, ab, ab + Ha + 1).q);
       for (const b of Alt) yeniAbluka[b] = Math.max(yeniAbluka[b]!, v);
     }
     // ticaret akını: akıncılar karşı tarafın deniz ticaretini vurur, eskortlar akıncıları avlar
     for (const [Sald, Hedef] of [[A1, A2], [A2, A1]] as const) {
-      let ra = 0; for (const c of Sald) if (C.donGorev[c] === 3) ra += akinGucu(w, c);
+      let ra = 0; for (const c of Sald) ra += akinGucu(w, c);
       if (ra <= 0) continue;
       let es = 0; for (const b of Hedef) es += korumaGucu(w, b);
       const kayip = Math.min(400_000, mulDiv(400_000, ra, ra + es + 1).q);
       for (const b of Hedef) {
         yeniAkin[b] = Math.max(yeniAkin[b]!, kayip);
-        const n4 = gemiSay(w, b, 4);
-        if (n4 > 0) C.gs4[b] = n4 - Math.min(n4, mulDiv(n4, Math.floor(kayip / 10), S).q);
+        // nakliye kaybı filo filo düşülür
+        for (const f of ulkeFilolari(w, b)) { const n4 = w.FL.c.g4[f]!; if (n4 > 0) w.FL.c.g4[f] = n4 - Math.min(n4, mulDiv(n4, Math.floor(kayip / 10), S).q); }
+        kuvvetEsitle(w, b);
       }
       const fa = clamp(mulDiv(6_000, es, ra + 1).q, 2_000, 40_000); // akıncı kaybı: haftada en çok %4
       // akıncı kayıpları dağınık: filonun geneline daha az hasar
-      for (const c of Sald) if (C.donGorev[c] === 3) gemiKayip(w, c, fa, [3, 1], s + 2000, 5);
+      for (const c of Sald) gemiKayip(w, c, fa, [3, 1], s + 2000, 5, (fl) => w.FL.c.gorev[fl] === 3 && !filoYolda(w, fl));
     }
   }
   denizUstunlukGuncelle(w);
   for (let c = 0; c < w.nC; c++) {
     C.abluka[c] = Math.max(yeniAbluka[c]!, Math.floor(C.abluka[c]! / 2));
     C.akinKayip[c] = Math.max(yeniAkin[c]!, Math.floor(C.akinKayip[c]! / 2));
-    // onarım: limanda hızlı, denizde yavaş
-    const h = C.gHasar[c]!;
-    if (h > 0) C.gHasar[c] = Math.max(0, h - (C.donGorev[c] === 0 ? 60_000 : 15_000));
-    const hh = C.hHasar[c]!;
-    if (hh > 0) C.hHasar[c] = Math.max(0, hh - (C.havaGorev[c] === 0 ? 80_000 : 25_000));
   }
+  // onarım: ana limanında demirli filo hızlı, denizdeki yavaş; üsteki kanat hızlı, görevdeki yavaş
+  for (const f of w.FL.rows()) {
+    const h = w.FL.c.hasar[f]!;
+    if (h > 0) w.FL.c.hasar[f] = Math.max(0, h - (w.FL.c.gorev[f] === 0 && w.FL.c.konum[f] === w.FL.c.us[f] && !filoYolda(w, f) ? 60_000 : 15_000));
+  }
+  for (const k of w.KN.rows()) {
+    const h = w.KN.c.hasar[k]!;
+    if (h > 0) w.KN.c.hasar[k] = Math.max(0, h - (w.KN.c.gorev[k] === 0 ? 80_000 : 25_000));
+  }
+  for (let c = 0; c < w.nC; c++) kuvvetEsitle(w, c);
 }
 
 /**
@@ -174,12 +211,6 @@ export function denizUstunlukGuncelle(w: World): void {
   if (degisti) w.rotaEpoch++;
 }
 
-/** Hava gücünün etkilediği bölgeler: hedef bölge ve komşuları. */
-function havaKapsar(w: World, c: number, r: number): boolean {
-  const h = w.C.c.havaBolge[c]!;
-  return h >= 0 && (h === r || w.komsuluk[h]!.includes(r));
-}
-
 /**
  * Hava üstünlüğü (S, −S…S): c'nin tarafı ile düşmanlarının r üzerindeki avcı güçlerinin dengesi. Üstünlük ve yakın destek
  * görevindeki filolar sayılır; günde bir kez ülke çiftleri için önbelleğe alınır.
@@ -193,11 +224,13 @@ export function havaUstunluk(w: World, c: number, r: number): number {
   const v0 = o.m.get(key);
   if (v0 !== undefined) return v0;
   let biz = 0, onlar = 0;
-  for (let d = 0; d < w.nC; d++) {
-    const g = w.C.c.havaGorev[d]!;
-    if ((g !== 1 && g !== 2) || !havaKapsar(w, d, r)) continue;
-    const p = havaGucu(w, d, 'hava');
+  // her kanat yalnız kendi hedef bölgesinde (ve komşularında) sayılır: aynı kanat iki cephede çift sayılmaz
+  for (const k of w.KN.rows()) {
+    const g = w.KN.c.gorev[k]!;
+    if ((g !== 1 && g !== 2) || !kanatKapsar(w, k, r)) continue;
+    const p = kanatGucu(w, k, 'hava');
     if (p <= 0) continue;
+    const d = w.KN.c.ulke[k]!;
     if (d === c || esTaraf(w, c, d)) biz += p;
     else if (savasta(w, c, d)) onlar += p;
   }
@@ -212,47 +245,74 @@ function esTaraf(w: World, a: number, b: number): boolean {
 /** Yakın destek: c'nin destek görevindeki bombardıman gücünün r'deki muharebeye katkısı (S, en çok %25). */
 export function yakinDestek(w: World, c: number, r: number): number {
   let t = 0;
-  if (w.C.c.havaGorev[c] === 2 && havaKapsar(w, c, r)) t += Math.min(250_000, mulDiv(havaGucu(w, c, 'destek'), 1000, 1).q);
+  let destek = 0;
+  for (const k of ulkeKanatlari(w, c)) if (w.KN.c.gorev[k] === 2 && kanatKapsar(w, k, r)) destek += kanatGucu(w, k, 'destek');
+  if (destek > 0) t += Math.min(250_000, mulDiv(destek, 1000, 1).q);
   t += kiyiDestek(w, c, r);
   return Math.min(300_000, t);
 }
-/** Cepheye gönderilen donanmanın kıyı bombardımanı: hedef bölge ve komşularındaki muharebelere destek. */
+/** Kıyı bombardımanı: görevdeki bir filo yalnız bulunduğu kıyı bölgesindeki ve komşularındaki muharebelere destek verir. */
 export function kiyiDestek(w: World, c: number, r: number): number {
-  const b = w.C.c.donBolge[c]! - 1;
-  if (b < 0 || w.C.c.donGorev[c] === 0 || !(b === r || w.komsuluk[b]!.includes(r))) return 0;
-  const g = denizGucu(w, c);
+  let g = 0;
+  for (const f of ulkeFilolari(w, c)) {
+    if (w.FL.c.gorev[f] === 0 || filoYolda(w, f)) continue;
+    const b = w.FL.c.konum[f]!;
+    if (b === r || w.komsuluk[b]!.includes(r)) g += filoGucu(w, f);
+  }
   return g <= 0 ? 0 : Math.min(150_000, g * 300);
 }
 
-/** Haftalık hava harekâtı: hava muharebesi yıpranması ve stratejik bombardıman. */
+/** Haftalık hava harekâtı: kanat kanat hava muharebesi yıpranması ve stratejik bombardıman. */
 export function havaHaftasi(w: World): void {
   if (HAVA[AKTIF.donem].length === 0) return;
-  const C = w.C.c;
+  const C = w.C.c, K = w.KN.c;
   const aktif: number[] = [];
-  for (let c = 0; c < w.nC; c++) if (C.havaGorev[c]! > 0 && C.havaBolge[c]! >= 0 && !pasif(w, c)) aktif.push(c);
-  for (const c of aktif) {
-    let dusman = 0;
-    for (const d of aktif) if (d !== c && savasta(w, c, d) && (havaKapsar(w, d, C.havaBolge[c]!) || havaKapsar(w, c, C.havaBolge[d]!))) dusman += havaGucu(w, d, 'hava');
-    const biz = havaGucu(w, c, 'hava') + 1;
+  // menzil güvencesi: hedefi üssünün menzilinden çıkmış kanat üste kalır (katkı vermez)
+  for (const k of w.KN.rows()) if (K.gorev[k]! > 0 && (K.hedef[k]! < 0 || !kanatMenzilde(w, k, K.hedef[k]!))) { K.gorev[k] = 0; K.hedef[k] = -1; }
+  for (const k of w.KN.rows()) if (K.gorev[k]! > 0 && K.hedef[k]! >= 0 && !pasif(w, K.ulke[k]!)) aktif.push(k);
+  const etkilenen = new Set<number>();
+  // güçler hafta başındaki değerle alınır: sonuç kanat sırasına bağlı olmaz
+  const guc = new Map<number, number>();
+  for (const k of aktif) guc.set(k, kanatGucu(w, k, 'hava'));
+  for (const k of aktif) {
+    const c = K.ulke[k]!;
+    // aynı gökyüzünde çarpışanlar: hedefleri birbirini kapsayan kanatlar. Dost kanatlar birlikte sayılır
+    // (kanat sayısı kaybı çoğaltmaz); oran ülke düzeyindeki eski hesapla aynı ölçektedir.
+    let dusman = 0, biz = 1;
+    for (const d of aktif) {
+      if (d !== k && !kanatKapsar(w, d, K.hedef[k]!) && !kanatKapsar(w, k, K.hedef[d]!)) continue;
+      const cd = K.ulke[d]!;
+      if (cd === c || esTaraf(w, c, cd)) biz += guc.get(d)!;
+      else if (savasta(w, c, cd)) dusman += guc.get(d)!;
+    }
     if (dusman > 0) {
       const f = clamp(mulDiv(30_000, dusman, biz).q, 10_000, 150_000);
-      for (let k = 0; k < NHAVA; k++) { const n = ucakSay(w, c, k); if (n > 0) C[HK[k]!][c] = n - Math.min(n, Math.max(1, mulDiv(n, f, S).q)); }
-      C.hHasar[c] = Math.min(500_000, C.hHasar[c]! + Math.floor(f / 2));
+      for (let t = 0; t < NHAVA; t++) {
+        const n = K[KU[t]!][k]!;
+        if (n <= 0) continue;
+        // kesirli kayıp olasılıkla yuvarlanır: küçük kanat her hafta zorunlu bir uçak yitirmez
+        const { q, rem } = mulDiv(n, f, S);
+        const kay = q + (rem > 0 && uniformInt(rng(w.tohum, w.gun, 32, c, t, AMAC.combatRoll, 0, k), S) < rem ? 1 : 0);
+        K[KU[t]!][k] = n - Math.min(n, kay);
+      }
+      K.hasar[k] = Math.min(500_000, K.hasar[k]! + Math.floor(f / 2));
+      etkilenen.add(c);
     }
     // stratejik bombardıman: düşman bölgesinde sanayi hasarı ve huzursuzluk
-    const r = C.havaBolge[c]!;
-    const k = w.R.c.kontrolEden[r]!;
-    if (C.havaGorev[c] === 3 && k >= 0 && savasta(w, c, k)) {
-      const b = havaGucu(w, c, 'bomba');
+    const r = K.hedef[k]!;
+    const sahip = w.R.c.kontrolEden[r]!;
+    if (K.gorev[k] === 3 && sahip >= 0 && savasta(w, c, sahip)) {
+      const b = kanatGucu(w, k, 'bomba');
       const zarar = Math.min(150_000, mulDiv(b, 200, 1).q);
       w.R.c.hasar[r] = Math.min(700_000, w.R.c.hasar[r]! + zarar);
-      C.huzur[k] = Math.max(0, C.huzur[k]! - Math.min(1500, Math.floor(zarar / 100)));
-      C.yorgunluk[k] = Math.min(100_000, C.yorgunluk[k]! + Math.min(1000, Math.floor(zarar / 150)));
+      C.huzur[sahip] = Math.max(0, C.huzur[sahip]! - Math.min(1500, Math.floor(zarar / 100)));
+      C.yorgunluk[sahip] = Math.min(100_000, C.yorgunluk[sahip]! + Math.min(1000, Math.floor(zarar / 150)));
       // uçaksavar ve avcı savunması: bombardıman uçağı kaybı
-      const n1 = ucakSay(w, c, 1);
-      if (n1 > 0) C.h1[c] = n1 - Math.min(n1, Math.max(1, Math.floor(n1 / 40)));
+      const n1 = K.u1[k]!;
+      if (n1 > 0) { const kay = Math.floor(n1 / 40) + (uniformInt(rng(w.tohum, w.gun, 33, c, 1, AMAC.combatRoll, 0, k), 40) < n1 % 40 ? 1 : 0); K.u1[k] = n1 - Math.min(n1, kay); etkilenen.add(c); }
     }
   }
+  for (const c of [...etkilenen].sort((a, b) => a - b)) kuvvetEsitle(w, c);
 }
 
 /** Haftalık bakım bedeli (altın/gün): gemiler ve uçaklar, dönem fiyat ölçeğiyle. */

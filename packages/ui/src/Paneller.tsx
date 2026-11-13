@@ -5,6 +5,8 @@ import {
 } from './durum.ts';
 import { onizle, komutCalistir } from './eylem.ts';
 import { bolgeyeGit, KomutAlani } from './App.tsx';
+import { KomutanBolumu, MuharebeBolumu } from './Muharebe.tsx';
+import { FiloBolumu, KanatBolumu } from './Kuvvetler.tsx';
 import { hazirKomutlar } from './hazirKomutlar.ts';
 import { SablonSecici, KonuslanmaSecici, konuslanmaBolgesi, OrgBar, diploOdak } from './Cekmece.tsx';
 import { BirlikPulu, Simge } from './Simge.tsx';
@@ -197,6 +199,7 @@ function Ordu() {
           <button class="ana" disabled={hedef < 0} onClick={() => onizle({ tur: 'birlikKur', sablon: sab, adet, bolge: hedef })}>Önizle</button>
         </div>
       </section>
+      <KomutanBolumu />
       <section>
         <div class="bolum-bas"><h3>Birlikler · {b.length}</h3>{sec.size > 0 && <button class="kucuk-dugme" onClick={() => { seciliBirlik.value = new Set(); }}>Seçimi bırak ({sec.size})</button>}</div>
         {sec.size > 0 && <div class="dugmeler sar">
@@ -219,7 +222,7 @@ function Ordu() {
                     <li key={x.id} class={sec.has(x.id) ? 'secili' : ''}>
                       <button class="satir-dugme" aria-pressed={sec.has(x.id)} onClick={() => tikla(x.id)}>
                         <BirlikPulu simge={s.simge} renk={o.ulke.renk} boy={26} />
-                        <span class="bl-ad"><strong>{x.ad}</strong><span class="soluk kucuk">{x.egitim ? `eğitimde ${x.egitim} gün` : x.muharebe ? 'muharebede' : x.hedefAd ? `→ ${x.hedefAd}` : x.durus}</span>{x.neden && !x.egitim && <span class="kucuk kotu-yazi">{x.neden}</span>}</span>
+                        <span class="bl-ad"><strong>{x.ad}</strong><span class="soluk kucuk">{x.egitim ? `eğitimde ${x.egitim} gün` : x.muharebe ? 'muharebede' : x.hedefAd ? `→ ${x.hedefAd}` : x.durus}</span>{x.komutan && <span class="soluk kucuk">Komutan: {x.komutan}</span>}{x.neden && !x.egitim && <span class="kucuk kotu-yazi">{x.neden}</span>}</span>
                         <span class="sayi kucuk">{fmt(x.kisi)}<span class="soluk">/{kisalt(x.kisiHedef)}</span><br /><span class="soluk">ikmal {yuzde(Math.min(x.ikmalGida, x.ikmalMuh))}</span></span>
                         <OrgBar v={x.org / Math.max(1, x.orgMax)} />
                       </button>
@@ -232,6 +235,7 @@ function Ordu() {
         })}
         {!b.length && <p class="soluk">Ordunuz yok. Yukarıdan birlik kurun.</p>}
       </section>
+      <MuharebeBolumu />
     </div>
   );
 }
@@ -300,6 +304,11 @@ function Siyaset() {
         {s.zulum > 0 && <p class="kotu-yazi kucuk">Uluslararası suç kaydı: {puan(s.zulum)} — dünya sizi unutmuyor; görüşler ve ticaret bundan etkilenir.</p>}
       </section>
       <section>
+        <h3>Halklar · ülke geneli</h3>
+        <p class="soluk kucuk">{s.halklar.liste.length} topluluk, {fmt(s.halklar.toplam)} kişi. Paylar %0,001 hassasiyetle gösterilir; tarihî nüfus verisi tahmindir.</p>
+        <ul class="liste">{s.halklar.liste.map((h: any) => <li key={h.ad}><span>{h.ad} <span class="soluk kucuk">{h.bolge} bölge</span></span><span class="sayi kucuk">{fmt(h.kisi)} · %{(h.ppm / 10_000).toFixed(3).replace('.', ',')}</span></li>)}</ul>
+      </section>
+      <section>
         <h3>Demografi · halklar</h3>
         <p class="soluk kucuk">Azınlığı bulunan bölgeleriniz. Asimilasyon ve iskân yavaş ve görece barışçıdır; sürgün ve soykırım insanlığa karşı suçtur: kalıcı uluslararası kayıt, savaş gerekçesi, ambargo ve direniş getirir.</p>
         {s.bolgeler.length === 0 && <p class="soluk">Kayda değer azınlık yok.</p>}
@@ -353,8 +362,9 @@ function Kuvvet() {
         {k.kiyilar.length === 0 && <p class="soluk kucuk">Tersaneniz yok: kıyı bölgesinde “Tersane” inşa edin (bölge çekmecesi → İnşa).</p>}
         <p class="soluk kucuk">Cepheye gönderim: {k.donBolgeAd ? `donanma ${k.donBolgeAd} cephesinde (kıyı bombardımanı)` : 'donanma cephede değil'}</p>
         <div class="cipler sar">{k.cepheler.filter((x: any) => x.kiyi).map((x: any) => <button key={x.r} class={`cip ${k.donBolge === x.r ? 'acik' : ''}`} onClick={() => onizle({ tur: 'donanmaGonder', bolge: x.r })}>⚓ {x.ad}</button>)}</div>
-        <SecimSatiri ad="Görev" secenek={k.denizGorevler} deger={k.donGorev} sec={(i) => onizle({ tur: 'donanmaGorev', gorev: i })} />
+        <SecimSatiri ad="Bütün filolara görev" secenek={k.denizGorevler} deger={k.donGorev} sec={(i) => onizle({ tur: 'donanmaGorev', gorev: i })} />
       </section>
+      <FiloBolumu k={k} />
       {k.havaVar ? (
         <section>
           <h3>Hava kuvvetleri</h3>
@@ -371,8 +381,10 @@ function Kuvvet() {
             </select></div>
           <div class="cipler sar">{k.havaGorevler.map((g: string, i: number) => <button key={g} class={`cip ${k.havaGorev === i ? 'acik' : ''}`} disabled={i > 0 && hedef < 0} onClick={() => onizle({ tur: 'havaGorev', gorev: i, bolge: i === 0 ? -1 : hedef })}>{g}</button>)}</div>
           {k.cepheler.length === 0 && <p class="soluk kucuk">Etkin cephe yok: hava gücü yalnız savaşılan cephelere, hava üssü menzili içinde gönderilebilir.</p>}
+          <p class="soluk kucuk">Yukarıdaki görev bütün kanatlara verilir; hedef, üssünün menzili dışında kalan kanatlar üste bekler.</p>
         </section>
       ) : <section><h3>Hava kuvvetleri</h3><p class="soluk">Bu çağda hava kuvveti yok.</p></section>}
+      {k.havaVar && <KanatBolumu k={k} />}
       {k.siparis.length > 0 && <section><h3>Siparişler</h3><ul class="liste">{k.siparis.map((x: any, i: number) => <li key={i}><span>{x.adet} {x.ad}{x.gemi ? ` · ${x.bolge}` : ''}</span><OrgBar v={x.yuzde / 100} /></li>)}</ul></section>}
       {(pet.ihtiyac > 0 || pet.uretim > 0) && (
         <section>
@@ -441,7 +453,7 @@ function Ekonomi() {
       </section>
       <section>
         <h3>Şehirler ve madenler</h3>
-        <p class="soluk kucuk">Ortalama şehir düzeyi {String(e.kent.ort).replace('.', ',')} · en büyük {e.kent.enBuyuk} · maden ocağı {e.kent.maden}. Şehirler nüfus, altyapı ve huzurla kendiliğinden büyür; "Şehir imarı" büyümeyi hızlandırır. Her düzey fabrika ve hizmet geliri getirir.</p>
+        <p class="soluk kucuk">Ortalama şehir düzeyi {String(e.kent.ort).replace('.', ',')} · en büyük {e.kent.enBuyuk} · maden ocağı {e.kent.maden}. Şehirler nüfus, altyapı ve huzurla kendiliğinden büyür; "Şehir imarı" büyümeyi hızlandırır. Her düzey 4 yapı yuvası açar (fabrika, üs, tersane, maden, valilik); demiryolu, sulama, altyapı ve imar yuva tüketmez. Fabrikalar ayrıca inşa edilir.</p>
         {e.sehirler.length > 0 && <ul class="liste">{e.sehirler.map((x: any) => <li key={x.r}><button class="bag" onClick={() => { bolgeyeGit(x.r); cekmece.value = { tur: 'bolge', r: x.r }; }}>{x.ad}</button><span class="soluk kucuk">düzey {x.kent} · {x.fabrika} fabrika</span></li>)}</ul>}
         {(e.petrolIht > 0 || e.petrolDun > 0) && <p class="kucuk">Petrol: üretim {(e.petrolDun / 1000).toFixed(1)} · ihtiyaç {(e.petrolIht / 1000).toFixed(1)} birim/gün · stok {fmt(Math.floor(e.petrol / 1000))}</p>}
       </section>
@@ -541,6 +553,7 @@ function Diplomasi() {
                       {u.gerekceBizim && <span> · Gerekçemiz {u.gerekceBizim}</span>}
                     </p>
                     <p class="soluk kucuk">Niyet işaretleri: {u.tehditBilesen.filter((b: any) => b.deger > 0).map((b: any) => b.ad.toLocaleLowerCase('tr')).join(', ') || 'yok'} · hazine {u.hazine} · ordu ≈ {Math.round(u.gucAlt / 1000)}–{Math.round(u.gucUst / 1000)} güç{u.savastaMi.length ? ` · savaşta: ${u.savastaMi.join(', ')}` : ''}{u.digerAnlasmalar.length ? ` · ${u.digerAnlasmalar.slice(0, 4).join(', ')}` : ''}</p>
+                    {u.rapor?.length > 0 && <p class="kucuk">İstihbarat raporu <span class="soluk">({u.rapor[0].gozlem} · {u.rapor[0].yas} gün önce · güven %{Math.round(u.rapor[0].guven / 10_000)})</span>: {u.rapor.map((x: any) => `${x.konu.toLocaleLowerCase('tr')} ${x.k >= 3 ? `%${Math.round(x.alt / 1000)}–${Math.round(x.ust / 1000)}` : `${kisalt(x.alt)}–${kisalt(x.ust)}`}`).join(' · ')}. <span class="soluk">Aralıktır; kesin değer bilinmez ve rapor eskidikçe güncelliğini yitirir.</span></p>}
                     <DipEylem u={u} P={P} />
                   </div>
                 )}
@@ -560,6 +573,7 @@ function DipEylem({ u, P }: { u: any; P: number }) {
   const [baris, setBaris] = useState<number[] | null>(null);
   const [mod, setMod] = useState(1); // 1 tavizli barış, 15 toprak satın alma, 16 ültimatom
   const [bedel, setBedel] = useState(100_000);
+  const [ant, setAnt] = useState({ tazminat: 0, taksitYil: 5, ateskesYil: 5, garanti: 0 });
   const izin = (esik: number) => u.gorusBize >= esik;
   const d = ozet.value.donem;
   return (
@@ -567,6 +581,7 @@ function DipEylem({ u, P }: { u: any; P: number }) {
       <div class="dugmeler sar">
         {u.savasta ? <>
           <button onClick={() => onizle({ tur: 'baris', kime: u.id, barisTur: 0, bolgeler: [] })}>Beyaz barış</button>
+          <button onClick={() => { setMod(18); setBaris([]); }}>Antlaşma (çok maddeli)…</button>
           <button onClick={() => { setMod(1); setBaris((h?.bolgeler ?? []).map((b, i) => ({ b, i })).filter(({ b }) => b.s === u.id && b.k === P).map(({ i }) => i)); }}>Toprak iste…</button>
           <button onClick={() => onizle({ tur: 'baris', kime: u.id, barisTur: 2, bolgeler: (h?.bolgeler ?? []).map((b, i) => ({ b, i })).filter(({ b }) => b.s === u.id && b.k === P).map(({ i }) => i) })}>Teslim iste</button>
           <button onClick={() => onizle({ tur: 'baris', kime: u.id, barisTur: 3, bolgeler: [] })}>Tam ilhak</button>
@@ -594,12 +609,18 @@ function DipEylem({ u, P }: { u: any; P: number }) {
       </div>
       {baris && (
         <div class="baris-sec">
-          <p class="kucuk">{mod === 1 ? `İstenecek bölgeler (taviz bütçesi ${u.tavizButcesi} puan):` : mod === 15 ? 'Satın alınacak bölgeler:' : 'Ültimatomla istenecek bölgeler (ret = savaş gerekçesi):'}</p>
+          <p class="kucuk">{mod === 1 ? `İstenecek bölgeler (taviz bütçesi ${u.tavizButcesi} puan):` : mod === 18 ? `Antlaşma maddeleri — toprak (taviz bütçesi ${u.tavizButcesi} puan; tazminat bütçenin en çok yarısını tüketir):` : mod === 15 ? 'Satın alınacak bölgeler:' : 'Ültimatomla istenecek bölgeler (ret = savaş gerekçesi):'}</p>
           <div class="cipler sar">{(h?.bolgeler ?? []).map((b, i) => ({ b, i })).filter(({ b }) => b.s === u.id).map(({ b, i }) => (
             <button class={`cip ${baris.includes(i) ? 'acik' : ''} ${b.k === P ? '' : 'soluk'}`} aria-pressed={baris.includes(i)} onClick={() => setBaris(baris.includes(i) ? baris.filter((x) => x !== i) : [...baris, i])}>{pkg.bolgeler[i]!.ad}</button>
           ))}</div>
           {mod === 15 && <div class="satir-ayar"><span>Bedel <strong>{kisalt(bedel)}</strong> altın</span><span class="dugmeler"><button onClick={() => setBedel(Math.max(10_000, Math.round(bedel / 2)))}>÷2</button><button onClick={() => setBedel(bedel * 2)}>×2</button></span></div>}
-          <div class="dugmeler"><button onClick={() => setBaris(null)}>Vazgeç</button><button class="ana" disabled={!baris.length && mod !== 1} onClick={() => { void onizle(mod === 1 ? { tur: 'baris', kime: u.id, barisTur: 1, bolgeler: baris } : mod === 15 ? { tur: 'teklif', kime: u.id, tip: 15, bolgeler: baris, bedel } : { tur: 'teklif', kime: u.id, tip: 16, bolgeler: baris }); setBaris(null); }}>Önizle</button></div>
+          {mod === 18 && <>
+            <div class="satir-ayar"><span>Tazminat <strong>{ant.tazminat ? kisalt(ant.tazminat) : 'yok'}</strong>{ant.tazminat ? ' altın' : ''}</span><span class="dugmeler"><button onClick={() => setAnt({ ...ant, tazminat: 0 })}>Yok</button><button onClick={() => setAnt({ ...ant, tazminat: Math.max(100_000, Math.round(ant.tazminat / 2)) })}>÷2</button><button onClick={() => setAnt({ ...ant, tazminat: ant.tazminat ? ant.tazminat * 2 : 1_000_000 })}>{ant.tazminat ? '×2' : 'Ekle'}</button></span></div>
+            {ant.tazminat > 0 && <div class="satir-ayar"><span>Vade</span><Adim deger={ant.taksitYil} birim="yıl" azalt={() => setAnt({ ...ant, taksitYil: Math.max(1, ant.taksitYil - 1) })} artir={() => setAnt({ ...ant, taksitYil: Math.min(10, ant.taksitYil + 1) })} /></div>}
+            <div class="satir-ayar"><span>Ateşkes</span><Adim deger={ant.ateskesYil} birim="yıl" azalt={() => setAnt({ ...ant, ateskesYil: Math.max(1, ant.ateskesYil - 1) })} artir={() => setAnt({ ...ant, ateskesYil: Math.min(10, ant.ateskesYil + 1) })} /></div>
+            <label class="satir-ayar"><span>Bağımsızlık garantisi ver <span class="soluk kucuk">(kabulü kolaylaştırır)</span></span><input type="checkbox" checked={!!ant.garanti} onChange={(e) => setAnt({ ...ant, garanti: (e.target as HTMLInputElement).checked ? 1 : 0 })} /></label>
+          </>}
+          <div class="dugmeler"><button onClick={() => setBaris(null)}>Vazgeç</button><button class="ana" disabled={mod === 18 ? !baris.length && !ant.tazminat && !ant.garanti : !baris.length && mod !== 1} onClick={() => { void onizle(mod === 18 ? { tur: 'antlasma', kime: u.id, bolgeler: baris, ...ant } : mod === 1 ? { tur: 'baris', kime: u.id, barisTur: 1, bolgeler: baris } : mod === 15 ? { tur: 'teklif', kime: u.id, tip: 15, bolgeler: baris, bedel } : { tur: 'teklif', kime: u.id, tip: 16, bolgeler: baris }); setBaris(null); }}>Önizle</button></div>
         </div>
       )}
     </>

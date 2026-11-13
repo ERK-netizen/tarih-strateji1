@@ -3,7 +3,7 @@ import {
   type World, tarihMetni, ortak, ekonomi, siyaset, nufus, diplomasi, olaylar, bolgeGozlem, istihbaratDuzeyi, aralik, hazineKademe,
   ARAZI, ASKERLIK, EKONOMI, ISGAL, YONETIM, KISILIK, TUTUM, TEKNOLOJI, NTEK, EKIPMAN, AILE_EKIP, TABUR, SABLON, MAL, PROJE, URUN_MUH, A, ANLASMA_TUR, K,
   hc, ST, YB, kara, arastirmaYuvalari, AKTIF, DONEMLER, sablonIhtiyac, TEK_DAL, BAKAN, BAKAN_AD, MOD_TUR, REJIM_AD,
-  gelisim, us, deniz, toplum, kademe, KADEME_MAX, GEMI, HAVA, DENIZ_GOREV, HAVA_GOREV, PARTI, SECIMLI, EKO_MODEL, TARIM_ODAK, DONEM_FIYAT, NKIMLIK, MALI, mulDiv,
+  gelisim, us, deniz, toplum, komutan, kuvvet, tarih, raporlar, ISTIHBARAT_KONU, type MuharebeKaydi, kademe, KADEME_MAX, GEMI, HAVA, DENIZ_GOREV, HAVA_GOREV, PARTI, SECIMLI, EKO_MODEL, TARIM_ODAK, DONEM_FIYAT, NKIMLIK, MALI, mulDiv,
 } from '@ts/engine';
 import { KOL_E, KOL_T } from '@ts/engine';
 
@@ -165,7 +165,7 @@ export function bolge(w: World, r: number) {
     birlikler, yabanci, projeler, vergi: k === P ? R.vergiDun[r]! : null, baskent: w.pkg.ulkeler.findIndex((u) => u.baskent === r),
     sahipAd: w.pkg.ulkeler[R.sahip[r]!]!.ad, kontrolAd: w.pkg.ulkeler[k]!.ad, sahipRenk: w.pkg.ulkeler[R.sahip[r]!]!.renk, kontrolRenk: w.pkg.ulkeler[k]!.renk, isyan: R.isyan[r]!, cephe: w.gun - R.sonMuharebe[r]! <= 7,
     kis: ortak.kisDuzey(w, r), camur: ortak.camurDuzey(w, r),
-    kent: R.kent[r]!, maden: R.maden[r]!, kiyi: !!b.kiyi, petrol: b.petrol ? { miktar: b.petrol[0], yil: b.petrol[1] } : null, demPol: R.demPol[r]!,
+    kent: R.kent[r]!, yuva: R.sahip[r] === P ? gelisim.yapiYuvasi(w, r) : null, maden: R.maden[r]!, kiyi: !!b.kiyi, petrol: b.petrol ? { miktar: b.petrol[0], yil: b.petrol[1] } : null, demPol: R.demPol[r]!,
     komsu: b.komsu,
     insaYuva: (() => { const y = gelisim.insaYuvasi(w, b.eyalet); return { yuva: y.yuva, dolu: gelisim.insaSurenSayi(w, b.eyalet, (t) => !!PROJE[t]?.ozel), bilesen: y.bilesen.filter((x) => x.deger > 0) }; })(),
     // tahkimat: kendi bölgesi kesin, yabancı bölge keşif/istihbarat varsa görünür
@@ -192,6 +192,7 @@ export function birlikler(w: World) {
       kisi: UU.kisi![u]!, kisiHedef: s.kisiHedef, org: UU.org![u]!, orgMax: s.orgMax, YS: s.YS, SV: s.SV, YR: s.YR, dolu: s.dolu, genislik: s.genislik, hiz: s.hiz,
       deneyim: UU.deneyim![u]!, ikmalGida: ik.gida, ikmalMuh: ik.muh, muharebe: UU.muharebe![u]!, egitim: UU.egitimBitis![u]! > w.gun ? UU.egitimBitis![u]! - w.gun : 0,
       aile, taburlar, savasGun: UU.savasGun![u]!, neden: yavasNeden(w, u, s, ik),
+      komutan: (() => { const k = komutan.birlikKomutani(w, u); return k >= 0 ? komutan.komutanAdi(w, k) : null; })(),
     };
   });
 }
@@ -248,7 +249,7 @@ export function diplomasiG(w: World) {
       gorusBize: w.gorus[c * w.nC + P]!, gorusumuz: w.gorus[P * w.nC + c]!, tutumumuz: TUTUM[w.tutum[P * w.nC + c]!], tutumlari: TUTUM[w.tutum[c * w.nC + P]!],
       anlasmalar: anl, digerAnlasmalar: kendiAnl, savasta: ortak.savasta(w, P, c),
       gerekceBize: diplomasi.gerekceSurecte(w, c, P) >= 0, gerekceBizim: diplomasi.gerekceSurecte(w, P, c) >= 0 ? (diplomasi.gerekceVar(w, P, c) ? 'hazır' : 'hazırlanıyor') : null,
-      tehdit: t.puan, tehditBilesen: t.bilesen, hazine: hazineKademe(w, c), gucAlt, gucUst, istihbarat: istihbaratDuzeyi(w, P, c),
+      tehdit: t.puan, tehditBilesen: t.bilesen, rapor: raporlar(w, P, c).map((s) => ({ konu: ISTIHBARAT_KONU[w.IR.c.konu[s]!], k: w.IR.c.konu[s]!, alt: w.IR.c.alt[s]!, ust: w.IR.c.ust[s]!, guven: w.IR.c.guven[s]!, gozlem: tarihMetni(w.IR.c.gozlem[s]!), yas: w.gun - w.IR.c.gozlem[s]! })), hazine: hazineKademe(w, c), gucAlt, gucUst, istihbarat: istihbaratDuzeyi(w, P, c),
       guvenilir: w.C.c.guvenilir[c]!, un: w.C.c.un[c]!, savastaMi: ortak.dusmanlar(w, c).map((d) => w.pkg.ulkeler[d]!.kisa),
       skor: ortak.savasta(w, P, c) ? diplomasi.savasSkoru(w, P, c) : null, isteklilikleri: ortak.savasta(w, P, c) ? diplomasi.istekliligi(w, c, P) : null,
       tavizButcesi: ortak.savasta(w, P, c) ? diplomasi.tavizButcesi(w, c, P) : null,
@@ -348,6 +349,26 @@ export function kuvvetG(w: World) {
     cepheler: us.cepheler(w, P).map((r) => ({ r, ad: w.pkg.bolgeler[r]!.ad, bizim: w.R.c.kontrolEden[r] === P, menzilde: us.usMesafesi(w, P, r) <= us.havaMenzili(), kiyi: us.kiyidaMi(w, r) })),
     ucakSayisi: us.ucakToplam(w, P), ucakKapasite: us.ucakKapasitesi(w, P), havaMenzil: us.havaMenzili(),
     donBolge: C.donBolge[P]! - 1, donBolgeAd: C.donBolge[P]! > 0 ? w.pkg.bolgeler[C.donBolge[P]! - 1]!.ad : null,
+    // şema 10: bağımsız filolar ve hava kanatları
+    filolar: kuvvet.ulkeFilolari(w, P).map((f) => {
+      const F = w.FL.c, yolda = kuvvet.filoYolda(w, f);
+      return {
+        id: w.FL.id(f), ad: kuvvet.filoAdi(w, f), us: F.us[f]!, usAd: w.pkg.bolgeler[F.us[f]!]!.ad, konum: F.konum[f]!, konumAd: w.pkg.bolgeler[F.konum[f]!]!.ad,
+        hedef: yolda ? F.hedef[f]! : -1, hedefAd: yolda ? w.pkg.bolgeler[F.hedef[f]!]!.ad : null, kalan: yolda ? F.varis[f]! - w.gun : 0,
+        gorev: F.gorev[f]!, gemi: kuvvet.FG.map((g) => F[g][f]!), toplam: kuvvet.filoGemi(w, f), guc: deniz.filoGucu(w, f), hasar: F.hasar[f]!,
+      };
+    }),
+    kanatlar: kuvvet.ulkeKanatlari(w, P).map((k) => {
+      const K = w.KN.c, u = kuvvet.usDoluluk(w, K.us[k]!);
+      return {
+        id: w.KN.id(k), ad: kuvvet.kanatAdi(w, k), us: K.us[k]!, usAd: w.pkg.bolgeler[K.us[k]!]!.ad, usUcak: u.ucak, usKapasite: u.kapasite,
+        gorev: K.gorev[k]!, hedef: K.hedef[k]!, hedefAd: K.hedef[k]! >= 0 ? w.pkg.bolgeler[K.hedef[k]!]!.ad : null,
+        ucak: kuvvet.KU.map((t) => K[t][k]!), toplam: kuvvet.kanatUcak(w, k), hava: deniz.kanatGucu(w, k, 'hava'), hasar: K.hasar[k]!,
+        menzilde: us.cepheler(w, P).filter((r) => kuvvet.kanatMenzilde(w, k, r)),
+      };
+    }),
+    limanlarim: kuvvet.limanlar(w, P).slice(0, 12).map((r) => ({ r, ad: w.pkg.bolgeler[r]!.ad })),
+    denizMenzil: kuvvet.denizMenzili(), filoAzami: kuvvet.FILO_AZAMI, kanatAzami: kuvvet.KANAT_AZAMI,
     uslerim: w.pkg.bolgeler.map((b, r) => ({ r, ad: b.ad, us: w.R.c.havaUs[r]!, ters: w.R.c.tersane[r]!, sahip: w.R.c.sahip[r] === P })).filter((x) => x.sahip && (x.us > 0 || x.ters > 0)).map(({ sahip: _s, ...x }) => x),
   };
 }
@@ -376,7 +397,29 @@ export function siyasetG(w: World) {
     iktidar: C.iktidar[P]!, secim: C.secim[P]! > 0 ? tarihMetni(C.secim[P]!) : null, secimGun: C.secim[P]! > 0 ? C.secim[P]! - w.gun : null, secimli: SECIMLI.has(C.rejim[P]!),
     gecis: C.gecis[P]! > w.gun ? C.gecis[P]! - w.gun : 0, nufusPol: C.nufusPol[P]!, zulum: C.zulum[P]!, pg: C.pg[P]!, mesru: C.mesru[P]!, huzur: C.huzur[P]!,
     bolgeler: bolgeler.slice(0, 40),
+    halklar: halklar(w, P),
   };
+}
+
+/**
+ * Ülke geneli halk dökümü (v1.6 PR-06): bölgelerdeki kimlik hücreleri (kültür · inanç) toplanır; en küçük topluluk da
+ * ayrı satırdır. pay: milyonda (ppm) — arayüz %0,001 hassasiyetle gösterir. Toplam, ülke nüfusuna eşittir (V16-T21, T22).
+ */
+export function halklar(w: World, c: number): { toplam: number; liste: { ad: string; kisi: number; ppm: number; bolge: number }[] } {
+  const m = new Map<string, { kisi: number; bolge: number }>();
+  let toplam = 0;
+  for (let r = 0; r < w.nR; r++) {
+    if (w.R.c.sahip[r] !== c) continue;
+    for (let k = 0; k < NKIMLIK; k++) {
+      const n = w.kim[r * NKIMLIK + k]!;
+      if (n <= 0) continue;
+      const ad = toplum.kimlikAdi(w, r, k);
+      const x = m.get(ad) ?? m.set(ad, { kisi: 0, bolge: 0 }).get(ad)!;
+      x.kisi += n; x.bolge++; toplam += n;
+    }
+  }
+  const liste = [...m.entries()].map(([ad, x]) => ({ ad, kisi: x.kisi, ppm: mulDiv(x.kisi, 1_000_000, Math.max(1, toplam)).q, bolge: x.bolge })).sort((a, b) => b.kisi - a.kisi || (a.ad < b.ad ? -1 : 1));
+  return { toplam, liste };
 }
 
 /** Bölüm 22: devlet istatistikleri (kendi ülkesi kesin, yabancılar sisli). */
@@ -425,6 +468,58 @@ const fmtR = (a: { alt: number; ust: number }) => (a.alt === a.ust ? fmt(a.alt) 
 export function kronik(w: World, hepsi: boolean) {
   const P = w.oyuncu;
   return w.anlati.filter((a) => hepsi || a.onem >= 1 || a.ulke === P).slice(-250).map((a) => ({ gun: a.gun, tarih: tarihMetni(a.gun), metin: a.metin, tur: a.tur, ulke: a.ulke, onem: a.onem }));
+}
+
+/** Komutanlar: oyuncunun görevdeki kadrosu (etkin nitelikler, yük, daimî emir) ve ayrılanlar. */
+export function komutanG(w: World) {
+  const P = w.oyuncu, K = w.KM.c, UU = U(w);
+  const yuk = komutan.komutanYuk(w), yil = tarih(w.gun).y;
+  const yer = new Map<number, Map<number, number>>();
+  let komutansiz = 0;
+  for (const u of w.U.rows()) {
+    if (UU.ulke![u] !== P) continue;
+    const k = komutan.birlikKomutani(w, u);
+    if (k < 0) { komutansiz++; continue; }
+    const m = yer.get(k) ?? yer.set(k, new Map()).get(k)!;
+    m.set(UU.bolge![u]!, (m.get(UU.bolge![u]!) ?? 0) + 1);
+  }
+  const satir = (k: number) => ({
+    id: w.KM.id(k), ad: komutan.komutanAdi(w, k), tarihi: K.kaynak[k] === 0, yas: yil - K.dogum[k]!, ayrilis: K.bitis[k]!,
+    saldiri: komutan.etkinNitelik(K.saldiri[k]!, K.deneyim[k]!), savunma: komutan.etkinNitelik(K.savunma[k]!, K.deneyim[k]!), lojistik: komutan.etkinNitelik(K.lojistik[k]!, K.deneyim[k]!),
+    deneyim: Math.floor(K.deneyim[k]! / 1000), kapasite: K.kapasite[k]!, yuk: yuk[k] ?? 0, emir: K.emir[k]!, ikmalEsik: K.ikmalEsik[k]!, orgEsik: K.orgEsik[k]!, egitim: K.egitim[k]!,
+    bolgeler: [...(yer.get(k) ?? new Map<number, number>()).entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0]).slice(0, 3).map(([r, n]) => ({ r, ad: w.pkg.bolgeler[r]!.ad, n })),
+  });
+  const ayrilan: string[] = [];
+  for (const k of w.KM.rows()) if (K.ulke[k] === P && K.durum[k] !== 0) ayrilan.push(komutan.komutanAdi(w, k));
+  return {
+    emirler: [...komutan.KOMUTAN_EMIR], liste: komutan.ulkeKomutanlari(w, P).map(satir), ayrilan: ayrilan.slice(-8), komutansiz, kadro: komutan.komutanKadro(w, P),
+    egitim: { azami: komutan.EGITIM_AZAMI, pg: komutan.EGITIM_PG / 1000, altin: komutan.EGITIM_ALTIN, artis: komutan.EGITIM_ARTIS },
+  };
+}
+
+/** Muharebeler: motorun P9 kayıtları bölge ve ardışık günlere göre gruplanır. Görüntüleyici bunları oynatır; hesap yapmaz. */
+export function muharebeG(w: World) {
+  const P = w.oyuncu;
+  const grup: { bolge: number; gunler: MuharebeKaydi[] }[] = [];
+  const acik = new Map<number, number>();
+  for (const m of w.muharebeler) {
+    if (w.mod !== 2 && m.saldiran !== P && m.savunan !== P) continue;
+    const i = acik.get(m.bolge);
+    const g = i !== undefined ? grup[i]! : undefined;
+    if (g && m.gun - g.gunler.at(-1)!.gun <= 2 && g.gunler.at(-1)!.saldiran === m.saldiran && g.gunler.at(-1)!.sonuc === 0) g.gunler.push(m);
+    else { acik.set(m.bolge, grup.length); grup.push({ bolge: m.bolge, gunler: [m] }); }
+  }
+  return grup.slice(-24).reverse().map((g) => {
+    const ilk = g.gunler[0]!, son = g.gunler.at(-1)!;
+    const kayip = (taraf: number) => { const gor = new Map<number, [number, number]>(); for (const d of g.gunler) for (const b of d.birlikler) if (b.taraf === taraf) { const x = gor.get(b.id); gor.set(b.id, [x ? x[0] : b.kisiOnce, b.kisiSonra]); } let n = 0; for (const [a, b] of gor.values()) n += a - b; return n; };
+    return {
+      bolge: g.bolge, bolgeAd: w.pkg.bolgeler[g.bolge]!.ad, bas: tarihMetni(ilk.gun), son: tarihMetni(son.gun), gunSayi: g.gunler.length, suruyor: son.sonuc === 0 && w.gun - son.gun <= 1,
+      saldiran: ilk.saldiran, savunan: ilk.savunan, saldiranAd: w.pkg.ulkeler[ilk.saldiran]!.kisa, savunanAd: w.pkg.ulkeler[ilk.savunan]!.kisa,
+      saldiranRenk: w.pkg.ulkeler[ilk.saldiran]!.renk, savunanRenk: w.pkg.ulkeler[ilk.savunan]!.renk,
+      biz: ilk.saldiran === P ? 0 : ilk.savunan === P ? 1 : -1, sonuc: son.sonuc, kayipSaldiran: kayip(0), kayipSavunan: kayip(1),
+      gunler: g.gunler.map((d) => ({ tarih: tarihMetni(d.gun), savCarpan: d.savCarpan, baski: d.baski, yon: d.yon, hava: d.hava, sonuc: d.sonuc, birlikler: d.birlikler })),
+    };
+  });
 }
 
 export function sabitler() {

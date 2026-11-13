@@ -8,11 +8,12 @@ import { S, mulDiv, clamp } from './num/index.ts';
 import { uc, savasta, savastaMi, gorus, anlasmaVar, birlikAdi, rotaTip, bildir, anlat, ulkeBirlikleri, iddiaVar, efendi } from './systems/ortak.ts';
 import { askerlikAktar, insanGucu, terhis } from './systems/nufus.ts';
 import { US_MAX, kiyidaMi } from './systems/us.ts';
-import { insaYuvasi, insaSurenSayi, birlikSiniri } from './systems/gelisim.ts';
+import { insaYuvasi, insaSurenSayi, birlikSiniri, yapiYuvasi, YUVALI_PROJE, YUVA_DUZEY } from './systems/gelisim.ts';
 import { tekMaliyetHesapla, krediLimiti, ulkeGidaStok, malStok, arastirmaHizi, acikYuva } from './systems/ekonomi.ts';
 import { KADEME_MAX } from './katalogEk.ts';
 import { tarih } from './calendar/index.ts';
 import { TK, TK_AD, ESIK, teklifEkle, anlasmaKur, anlasmaBoz, gerekceBaslat, gerekceSurecte, gerekceVar, savasIlan, savasaKatil, barisKabul, barisUygula, gorusDegis, teklifBolgeleri, ekipmanFiyat, BARIS_TUR, bolgeDegeri, kuklaKur } from './systems/diplomasi.ts';
+import { antlasmaUygula, antlasmaAc } from './systems/diplomasi.ts';
 import { EK_EMIRLER, EK_ALAN } from './emirEk.ts';
 import { olaySecimUygula, olayTanim } from './systems/olaylar.ts';
 import { tahminiGun } from './systems/kara.ts';
@@ -255,9 +256,12 @@ export function onizle(w: World, e: Emir): Kart {
       if (P.kod === 'maden' && w.R.c.maden[r]! >= 5) return red('İnşa', 'Maden işletmesi en üst düzeyde (5).');
       if (P.kod === 'maden' && !w.pkg.bolgeler[r]!.celik && !w.pkg.bolgeler[r]!.komur && !w.pkg.bolgeler[r]!.petrol) return red('İnşa', `${bAd(w, r)} bölgesinde maden ya da petrol yatağı yok.`);
       if (P.kod === 'demiryolu' && w.R.c.demiryolu[r]! >= 3) return red('İnşa', 'Demiryolu en üst düzeyde.');
+      // v1.6 T40: şehir düzeyi × 4 yapı yuvası; ağ/imar yatırımları yuva tüketmez
+      const yy = YUVALI_PROJE.has(P.kod) ? yapiYuvasi(w, r) : null;
+      if (yy && yy.bos <= 0) return red('İnşa', `${bAd(w, r)} yapı yuvaları dolu (${yy.kullanilan + yy.insada}/${yy.kapasite}). Şehir imarıyla düzeyi artırın.`);
       const indirim = insaIndirim(w, c, P.kod);
       const nakit = mulDiv(P.nakit, indirim, S).q;
-      return { gecerli: true, baslik: `${P.ad}: ${bAd(w, r)}`, kapsam: `${fmt(insaSP(w, c, P.sp) / 1000)} SP + ${fmt(nakit)} altın, kademeli`, bugun: ['Peşin ödeme yok; günlük ilerlemeyle harcanır'], tahmin: [`Referans süre ${P.gun} gün; gerçek süre sivil sanayi kapasitesine bağlı`], iptal: 'Harcanan iade edilmez' };
+      return { gecerli: true, baslik: `${P.ad}: ${bAd(w, r)}`, kapsam: `${fmt(insaSP(w, c, P.sp) / 1000)} SP + ${fmt(nakit)} altın, kademeli`, bugun: ['Peşin ödeme yok; günlük ilerlemeyle harcanır', yy ? `Yapı yuvası: ${yy.kullanilan + yy.insada + 1}/${yy.kapasite} kullanılacak` : 'Yapı yuvası tüketmez (ağ/imar yatırımı)'], tahmin: [`Referans süre ${P.gun} gün; gerçek süre sivil sanayi kapasitesine bağlı`, ...(P.kod === 'kent' ? [`Tamamlanınca düzey ${w.R.c.kent[r]! + 1}: ${YUVA_DUZEY} yeni yapı yuvası (fabrika ayrıca inşa edilir)`] : [])], iptal: 'Harcanan iade edilmez' };
     }
     case 'satinAl': case 'sat': {
       const m = clamp(n(e.mal), 0, MAL.length - 1);
@@ -512,10 +516,12 @@ export function uygula(w: World, e: Emir): { ok: boolean; neden?: string } {
 function sandboxUygula(w: World, e: Emir): void {
   w.mod = 1; // kalıcı etiket
   const c = e.hedefUlke !== undefined ? n(e.hedefUlke) : e.ulke;
-  const m = n(e.miktar);
+  // Sandbox da kanonik sayı sözleşmesine uyar (V16-T60): Infinity/NaN `n` ile sıfırlanır, miktar ±10¹² ile,
+  // hazine 4×10¹⁵ ile sınırlanır; "sınırsız bütçe" güvenli tamsayı aralığında büyük bir bakiyedir.
+  const m = clamp(n(e.miktar), -1_000_000_000_000, 1_000_000_000_000);
   const C = w.C.c;
   const alan = String(e.alan);
-  if (alan === 'hazine') C.hazine[c] = Math.max(0, C.hazine[c]! + m);
+  if (alan === 'hazine') C.hazine[c] = clamp(C.hazine[c]! + m, 0, 4_000_000_000_000_000);
   else if (alan === 'pg') C.pg[c] = clamp(C.pg[c]! + m * 1000, 0, 500_000);
   else if (alan === 'gida') { const e2 = w.pkg.bolgeler[w.pkg.ulkeler[c]!.baskent]!.eyalet; w.E.c.gida[e2] = Math.max(0, w.E.c.gida[e2]! + m * 1000); }
   else if (alan === 'muhimmat') C.muhimmat[c] = Math.max(0, C.muhimmat[c]! + m * 1000);
@@ -571,6 +577,14 @@ export function teklifSonuc(w: World, s: number, kabul: boolean): void {
   else if (tur === TK.cagri) {
     const sv = T.p1[s]!;
     if (w.SV.alive[sv]) savasaKatil(w, sv, b, T.p2[s]! === 1 ? 1 : 0);
+  } else if (tur === TK.antlasma) {
+    // koşullar teklif beklerken değiştiyse hiçbir madde uygulanmaz (atomik); taraflara bildirilir
+    if (!antlasmaUygula(w, a, b, antlasmaAc(T.p1[s]!, T.p2[s]!, teklifBolgeleri(w, s)))) {
+      anlat(w, `${adA}–${adB} antlaşması geçersiz kaldı: maddelerden biri artık uygulanamıyor.`, 'diplomasi', a, 1);
+      if (a === w.oyuncu) bildir(w, 'teklif', `${adB} ile antlaşma geçersiz kaldı`, a, false);
+      w.TK.release(s);
+      return;
+    }
   } else if (tur === TK.baris) {
     // teslim önerisinde öneren kaybeden taraftır
     if (T.p1[s] === 5) barisUygula(w, b, a, 2, teklifBolgeleri(w, s));

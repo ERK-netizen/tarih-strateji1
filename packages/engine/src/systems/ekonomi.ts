@@ -6,6 +6,7 @@ import { ST, YB, NHUCRE, K, EKONOMI, YONETIM, ISGAL, EKIPMAN, MUHIMMAT, TEKNOLOJ
 import { MT, NYUVA } from '../state/world.ts';
 import { KADEME_MAX, EKO_MODEL, TARIM_ODAK, PETROL_KULLANIM } from '../katalogEk.ts';
 import { kuvvetBakimi, gemiSay, ucakSay } from './deniz.ts';
+import { gemiTeslim, ucakTeslim } from './kuvvet.ts';
 import { GEMI, HAVA } from '../katalogEk.ts';
 import { S, mulDiv, mulRatio, clamp, largestRemainder, sqrtRatio, approach } from '../num/index.ts';
 import { rng, AMAC, uniformInt } from '../rng/index.ts';
@@ -379,12 +380,11 @@ function projeTamamla(w: World, s: number): void {
   else if (kod === 'havaus') R.havaUs[r] = Math.min(US_MAX, R.havaUs[r]! + 1);
   else if (kod === 'tersane') R.tersane[r] = Math.min(3, R.tersane[r]! + 1);
   else if (kod === 'kent') {
-    // şehir büyüdükçe fabrikalar da çoğalır: her düzey bir sivil, çift düzeyler bir askerî fabrika
-    R.kent[r] = Math.min(10, R.kent[r]! + 1); R.sivilF[r] = R.sivilF[r]! + 1;
-    if (R.kent[r]! % 2 === 0) R.askeriF[r] = R.askeriF[r]! + 1;
+    // v1.6 (K-45): şehir düzeyi yalnız yapı kapasitesini (+4 yuva) artırır; bedelsiz fabrika yoktur (T21)
+    R.kent[r] = Math.min(10, R.kent[r]! + 1);
   } else if (kod === 'maden') R.maden[r] = Math.min(5, R.maden[r]! + 1);
-  else if (kod === 'gemi') { const k = P.alt[s]!; const C = w.C.c as unknown as Record<string, Float64Array>; C[`gs${k}`]![c] = C[`gs${k}`]![c]! + P.adet[s]!; }
-  else if (kod === 'ucak') { const k = P.alt[s]!; const C = w.C.c as unknown as Record<string, Float64Array>; C[`h${k}`]![c] = C[`h${k}`]![c]! + P.adet[s]!; }
+  else if (kod === 'gemi') gemiTeslim(w, c, r, P.alt[s]!, P.adet[s]!);
+  else if (kod === 'ucak') ucakTeslim(w, c, P.alt[s]!, P.adet[s]!);
   if (kod === 'gemi' || kod === 'ucak') {
     const ad = kod === 'gemi' ? GEMI[AKTIF.donem][P.alt[s]!]?.ad ?? 'gemi' : HAVA[AKTIF.donem][P.alt[s]!]?.ad ?? 'uçak';
     const m = kod === 'gemi' ? `${w.pkg.bolgeler[r]!.ad} tersanesinde ${P.adet[s]} ${trKucuk(ad)} denize indirildi.` : `${P.adet[s]} ${trKucuk(ad)} hizmete girdi.`;
@@ -414,16 +414,22 @@ export function tekMaliyetHesapla(w: World, c: number, t: number): number {
   const ileri = Math.floor(Math.max(0, -dyS) / olcek);
   const geri = Math.floor(Math.max(0, dyS) / olcek);
   let paylasan = 0;
-  for (let d = 0; d < w.nC; d++) if (d !== c && w.tekBitti[d * NTEK + t]! >= L && anlasmaIttifak(w, c, d)) paylasan++;
+  // müttefikler anlaşma tablosundan bir kez toplanır (ülke × anlaşma taraması yerine); aynı müttefik bir kez sayılır
+  const AN = w.AN.c;
+  let gorulen: number[] | null = null;
+  for (const s of w.AN.rows()) {
+    if (AN.tur[s] !== 4) continue;
+    const d = AN.a[s] === c ? AN.b[s]! : AN.b[s] === c ? AN.a[s]! : -1;
+    if (d < 0 || d === c || w.tekBitti[d * NTEK + t]! < L) continue;
+    if (gorulen?.includes(d)) continue;
+    (gorulen ??= []).push(d);
+    paylasan++;
+  }
   const pay = S + mulDiv(50_000, ileri, S).q; // çağın önündeki her yıl +%5 (K-38)
   const payda = S + Math.min(600_000, mulDiv(200_000, geri, S).q) + Math.min(300_000, 100_000 * paylasan);
   // kademe bedeli (L+1)(L+2)/6: 1, 2, 3⅓, 5, 7, 9⅓ … 30⅓ (K-38)
   const taban = mulDiv(T.maliyet, (L + 1) * (L + 2), 6).q;
   return mulDiv(taban, pay, payda).q;
-}
-function anlasmaIttifak(w: World, a: number, b: number): boolean {
-  for (const s of w.AN.rows()) if (w.AN.c.tur[s] === 4 && ((w.AN.c.a[s] === a && w.AN.c.b[s] === b) || (w.AN.c.a[s] === b && w.AN.c.b[s] === a))) return true;
-  return false;
 }
 
 /**
@@ -495,8 +501,8 @@ export function idariVerim(w: World, c: number, r: number): number {
   return clamp(taban + mulDiv(w.C.c.egitim[c]!, S, 400_000).q + mulDiv(w.R.c.altyapi[r]!, S, 40).q, 100_000, S);
 }
 
-/** Bölge katma değeri (altın/gün). */
-export function katmaDeger(w: World, r: number): number {
+/** Bölge katma değeri (altın/gün). `ambargolu`: çağıran önceden saydıysa (günlük maliye) anlaşma tablosu yeniden taranmaz. */
+export function katmaDeger(w: World, r: number, ambargolu?: boolean): number {
   const R = w.R.c;
   // tarım katma değeri oynak dünya fiyatını değil yerel değeri izler: taban fiyat ağırlıklı (çeyrek pay piyasadan)
   const p0 = MAL[MALI.gida]!.p0;
@@ -510,15 +516,15 @@ export function katmaDeger(w: World, r: number): number {
     const C = w.C.c;
     hv += Math.min(2 * S, tekKat(w, kc, 'ticaret1', 100_000)) + EKO_MODEL[C.model[kc]!]!.hizmet + TARIM_ODAK[C.tarimOdak[kc]!]!.ticaret - mulDiv(C.tarife[kc]!, 6, 10).q;
     hv -= Math.floor((C.abluka[kc]! + C.akinKayip[kc]!) / 3);
-    if (anlasmaSayisi(w, kc, 8) > 0) hv -= 50_000; // ambargo altında
+    if (ambargolu ?? anlasmaSayisi(w, kc, 8) > 0) hv -= 50_000; // ambargo altında
   }
   const hizmet = mulRatio(mulDiv(R.isHizmet[r]!, K.hizmetVerim, 1000).q, Math.max(300_000, hv)).q;
   return Math.max(0, agri + sanayi + hizmet);
 }
 
 export interface VergiDetay { taban: number; oran: number; idari: number; huzur: number; erisim: number; kapasite: number; vergi: number }
-export function bolgeVergi(w: World, c: number, r: number, asim?: number): VergiDetay {
-  const taban = katmaDeger(w, r);
+export function bolgeVergi(w: World, c: number, r: number, asim?: number, tabanHazir?: number): VergiDetay {
+  const taban = tabanHazir ?? katmaDeger(w, r);
   const oran = w.C.c.vergi[c]!;
   const idari = idariVerim(w, c, r);
   const huzur = 500_000 + mulDiv(w.C.c.huzur[c]!, S, 200_000).q;
@@ -589,7 +595,10 @@ function anlasmaSayisi(w: World, c: number, tur: number): number {
 
 export function maliyeGunu(w: World): void {
   const C = w.C.c, R = w.R.c;
-  for (let r = 0; r < w.nR; r++) { R.vergiDun[r] = 0; R.vaDun[r] = katmaDeger(w, r); }
+  // ambargo altındaki ülkeler bir kez sayılır (bölge başına anlaşma taraması 813 bölgede günün en pahalı işiydi)
+  const amb = new Uint8Array(w.nC);
+  for (const s of w.AN.list()) if (w.AN.c.tur[s] === 8) amb[w.AN.c.b[s]!] = 1;
+  for (let r = 0; r < w.nR; r++) { R.vergiDun[r] = 0; const kc = R.kontrolEden[r]!; R.vaDun[r] = katmaDeger(w, r, kc >= 0 && amb[kc] === 1); }
   const grup: number[][] = Array.from({ length: w.nC }, () => []);
   for (let r = 0; r < w.nR; r++) grup[R.kontrolEden[r]!]!.push(r);
   const asim = kapasiteAsimiHepsi(w);
@@ -599,7 +608,7 @@ export function maliyeGunu(w: World): void {
   for (let c = 0; c < w.nC; c++) {
     let gelir = 0;
     for (const r of grup[c]!) {
-      const v = bolgeVergi(w, c, r, asim[c]).vergi;
+      const v = bolgeVergi(w, c, r, asim[c], R.vaDun[r]!).vergi;
       R.vergiDun[r] = v; gelir += v;
     }
     // tazminat gelir/gider anlaşmaları

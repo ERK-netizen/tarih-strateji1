@@ -1,6 +1,6 @@
 // Simülasyon Worker'ının çekirdeği: tek yazar. Mesaj döngüsünden bağımsızdır (Node testlerinde de çalışır).
 import {
-  type World, type Paket, senaryoBaslat, gunIlerle, onizle, kuyrugaAl, serilestir, coz, acikla, tarihMetni, ayEkle, dunyaHash, anlatiHash, kayitPaketi,
+  type World, type Paket, senaryoBaslat, gunIlerle, onizle, uygula, kuyrugaAl, serilestir, coz, acikla, tarihMetni, ayEkle, dunyaHash, anlatiHash, kayitPaketi,
   type Emir, SEMA_SURUM,
 } from '@ts/engine';
 import { ayristir, emirMetni, type Sonuc } from '@ts/command';
@@ -11,6 +11,19 @@ import { danis } from './danisman.ts';
 import { dogrula, mesaj, type Mesaj, type AdvanceP } from '@ts/protocol';
 
 const SESSIZE_ALINAMAZ = new Set(['savas', 'baskent', 'teslim', 'temerrut', 'gida', 'olay', 'gerekce', 'baris']);
+// v1.6 P0: idari emirler onay anında uygulanır (gün ilerlemez); günlük üretim, yolculuk ve
+// ekonomik kapanış sonraki gün işler. Kaynak/zaman bağlayan emirler (birlik kurma, alım-satım,
+// borç, terhis) P2 kuyruğunda kalır.
+const ANLIK_EMIR = new Set([
+  'vergi', 'butce', 'harcama', 'askerlik', 'ekonomi', 'karne', 'isgalPol', 'tutum',
+  'teklif', 'teklifYanit', 'baris', 'olaySec', 'gerekce', 'savasIlan',
+  'arastir', 'insa', 'gemiInsa', 'ucakUret', 'uretim',
+  'hareket', 'saldir', 'dur', 'durus', 'otoCephe', 'otoTakviye', 'bakan',
+  'havaGorev', 'donanmaGorev', 'donanmaCephe', 'taburEkle', 'taburCikar',
+  'rejim', 'partiDestek', 'secimErken', 'sandbox', 'kaliciGida',
+  'komutanAta', 'komutanEmir', 'komutanEgit', 'komutanOto', 'antlasma',
+  'filoGorev', 'filoUs', 'filoAktar', 'kanatGorev', 'kanatUs', 'kanatAktar', 'donanmaGonder',
+]);
 
 export class Sunucu {
   w: World | null = null;
@@ -28,11 +41,15 @@ export class Sunucu {
     const d = dogrula(ham);
     if (!d.ok) { this.yanit((ham as { id?: number })?.id ?? -1, 'error', { kod: 'protokol', ayrinti: d.neden, oneri: 'Uygulamayı yeniden başlatın.' }); return; }
     const m = d.m;
+    if (this.calisiyor && !['stop', 'query', 'explain', 'preview'].includes(m.t)) {
+      this.yanit(m.id, 'error', { kod: 'mesgul', ayrinti: 'Simülasyon ilerliyor; önce Durdur.' });
+      return;
+    }
     try {
       switch (m.t) {
         case 'init': return this.init(m);
         case 'preview': return this.yanit(m.id, 'previewCard', this.kart(m.p as Emir));
-        case 'submit': return this.submit(m);
+        case 'submit': return void (await this.submit(m));
         case 'command': return this.komut(m);
         case 'advance': return void (await this.advance(m));
         case 'stop': this.durdurIstek = true; return;
@@ -44,7 +61,7 @@ export class Sunucu {
         case 'saves': return this.yanit(m.id, 'saveList', await this.kayit.yuvalar());
         case 'deleteSave': await this.kayit.sil(String(m.p)); return this.yanit(m.id, 'saveList', await this.kayit.yuvalar());
         case 'exportSave': { const b = this.paketle(); return this.yanit(m.id, 'fileReady', { ad: `tarih-strateji-${this.dunya().gun}.tsk`, bayt: b.buffer }, [b.buffer]); }
-        case 'sandbox': return this.submit({ ...m, p: { ...(m.p as object), tur: 'sandbox' } });
+        case 'sandbox': return void (await this.submit({ ...m, p: { ...(m.p as object), tur: 'sandbox' } }));
         case 'switch': { const p = m.p as { oyuncu: number; mod: number }; const w = this.dunya(); w.oyuncu = p.oyuncu; w.mod = p.mod; this.son = serilestir(w); return this.yanit(m.id, 'ready', this.hazir()); }
       }
     } catch (e) {
@@ -70,22 +87,50 @@ export class Sunucu {
   kart(e: Emir) {
     const w = this.dunya();
     const k = onizle(w, { ...e, ulke: w.oyuncu });
-    return { ...k, esdeger: emirMetni({ ...e, ulke: w.oyuncu }, katalogKur(w)) };
+    return { ...k, surum: w.surum, esdeger: emirMetni({ ...e, ulke: w.oyuncu }, katalogKur(w)) };
   }
 
-  private submit(m: Mesaj) {
+  /** Son işlenen emirlerin sonuçları (idempotency anahtarı → yanıt): çift dokunuş ikinci kez uygulanmaz (V16-T03). */
+  private idem = new Map<string, unknown>();
+  private async submit(m: Mesaj): Promise<void> {
     const w = this.dunya();
-    const p = m.p as { emirler?: Emir[]; beklenenSurum?: number } & Emir;
+    const p = m.p as { emirler?: Emir[]; beklenenSurum?: number; idem?: string } & Emir;
+    const anahtar = typeof p.idem === 'string' && p.idem.length > 0 ? p.idem : null;
+    if (anahtar && this.idem.has(anahtar)) { this.yanit(m.id, 'orderResult', { ...(this.idem.get(anahtar) as object), yinelenen: true }); return; }
+    if (p.beklenenSurum !== undefined &&
+        (!Number.isSafeInteger(p.beklenenSurum) || p.beklenenSurum !== w.surum)) {
+      this.yanit(m.id, 'orderResult', { kabul: false, neden: 'Dünya sürümü değişti. Yeniden önizleyin.', kod: 'surum', surum: w.surum });
+      return;
+    }
     const emirler: Emir[] = p.emirler ?? [p as Emir];
-    if (w.mod === 2) return this.yanit(m.id, 'orderResult', { kabul: false, neden: 'Gözlemci modunda emir verilemez.' });
+    if (w.mod === 2) { this.yanit(m.id, 'orderResult', { kabul: false, neden: 'Gözlemci modunda emir verilemez.' }); return; }
+    let anlik = 0, kuyruk = 0;
     const sonuc = emirler.map((e) => {
-      const em = { ...e, ulke: w.oyuncu };
+      const em = { ...e, ulke: w.oyuncu } as Emir & { idem?: unknown; beklenenSurum?: unknown; emirler?: unknown };
+      delete em.idem; delete em.beklenenSurum; delete em.emirler;
       const k = onizle(w, em);
       if (!k.gecerli) return { kabul: false, neden: k.neden, baslik: k.baslik };
+      if (ANLIK_EMIR.has(em.tur)) {
+        const r = uygula(w, em);
+        if (!r.ok) return { kabul: false, neden: r.neden, baslik: k.baslik };
+        anlik++;
+        return { kabul: true, aninda: true, baslik: k.baslik, esdeger: emirMetni(em, katalogKur(w)) };
+      }
       kuyrugaAl(w, em);
-      return { kabul: true, baslik: k.baslik, esdeger: emirMetni(em, katalogKur(w)) };
+      kuyruk++;
+      return { kabul: true, aninda: false, baslik: k.baslik, esdeger: emirMetni(em, katalogKur(w)) };
     });
-    this.yanit(m.id, 'orderResult', { sonuc, kuyruk: w.kuyruk.length });
+    // Kabul edilen her emir (anlık ya da kuyruklu) dünya sürümünü ilerletir ve kalıcı kayda yazılır.
+    // "kabul" ile "kalıcı kaydedildi" ayrı bildirilir (V16-T68): kayıt yazılamazsa emir yine geçerlidir ama kayit=false döner.
+    let kayit: boolean | null = null;
+    if (anlik + kuyruk > 0) {
+      w.surum += 1;
+      this.son = serilestir(w);
+      kayit = await this.otoKaydet();
+    }
+    const yanit = { sonuc, kuyruk: w.kuyruk.length, anlik, surum: w.surum, kayit };
+    if (anahtar) { this.idem.set(anahtar, yanit); if (this.idem.size > 64) this.idem.delete(this.idem.keys().next().value as string); }
+    this.yanit(m.id, 'orderResult', yanit);
   }
 
   private komut(m: Mesaj) {
@@ -116,6 +161,8 @@ export class Sunucu {
       case 'istatistik': v = G.istatistik(w, p.kapsam ?? w.oyuncu); break;
       case 'kronik': v = G.kronik(w, !!p.hepsi); break;
       case 'danisman': v = danis(w, 'oneri'); break;
+      case 'komutan': v = G.komutanG(w); break;
+      case 'muharebe': v = G.muharebeG(w); break;
       default: v = null;
     }
     this.yanit(m.id, 'view', { gorunum: p.gorunum, veri: v });
@@ -181,7 +228,7 @@ export class Sunucu {
   paketle(): Uint8Array {
     const w = this.dunya();
     const sim = serilestir(w);
-    const ek = new TextEncoder().encode(JSON.stringify({ anlati: w.anlati, tarihce: w.tarihce, anlatiHash: anlatiHash(w) }));
+    const ek = new TextEncoder().encode(JSON.stringify({ anlati: w.anlati, tarihce: w.tarihce, muharebeler: w.muharebeler, anlatiHash: anlatiHash(w) }));
     const out = new Uint8Array(8 + sim.length + ek.length);
     const dv = new DataView(out.buffer);
     dv.setUint32(0, 0x43534b54, true); dv.setUint32(4, sim.length, true);
@@ -197,7 +244,7 @@ export class Sunucu {
     if (!k) throw new Error('Geçersiz kayıt dosyası');
     if (!this.pkg || this.pkg.kimlik !== k.kimlik) throw Object.assign(new Error('paket'), { paket: k.kimlik });
     const w = coz(sim, this.pkg);
-    try { const ek = JSON.parse(new TextDecoder().decode(b.subarray(8 + n))); w.anlati = ek.anlati ?? []; w.tarihce = ek.tarihce ?? []; } catch { /* anlatı yok */ }
+    try { const ek = JSON.parse(new TextDecoder().decode(b.subarray(8 + n))); w.anlati = ek.anlati ?? []; w.tarihce = ek.tarihce ?? []; w.muharebeler = ek.muharebeler ?? []; } catch { /* anlatı yok */ }
     return w;
   }
 
@@ -206,14 +253,17 @@ export class Sunucu {
     const w = this.dunya();
     return `oto-${w.pkg.kimlik}-${w.mod === 2 ? 'gozlem' : w.pkg.ulkeler[w.oyuncu]!.kod.toLowerCase()}`;
   }
-  async otoKaydet(): Promise<void> {
+  /** Otomatik kayıt; yazılabildiyse true. */
+  async otoKaydet(): Promise<boolean> {
     try {
       await this.kaydet(-1, this.otoYuva());
       // en çok altı otomatik sefer yuvası tutulur (en eskiler silinir)
       const oto = (await this.kayit.yuvalar()).filter((b) => b.yuva.startsWith('oto-'));
       for (const b of oto.slice(6)) await this.kayit.sil(b.yuva);
+      return true;
     } catch (e) {
       this.yanit(-1, 'error', { kod: 'kayit', ayrinti: `Otomatik kayıt yazılamadı: ${String((e as Error)?.message ?? e)}`, oneri: 'Depolama dolu olabilir; Kayıt panelinden eski kayıtları silin ya da dosyaya aktarın.' });
+      return false;
     }
   }
 

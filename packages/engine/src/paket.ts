@@ -90,4 +90,6 @@ export interface Paket {
   birlikler: PaketBirlik[];
   harita: { gen: number; yuk: number; deniz: number[][]; cizgiler: { a: number; b: number; p: number[] }[]; denizAdlari: { ad: string; x: number; y: number }[]; gercek?: boolean };
   uyarilar: string[];
+  /** Harita göçü: eski paket sürümü, her bölgenin eski haritadaki atası ve atanın aynı adlı devamı (tohum) olup olmadığı. */
+  goc?: { surum: string; ata: number[]; tohum: number[] };
 }

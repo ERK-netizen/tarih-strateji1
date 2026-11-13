@@ -27,7 +27,7 @@ export const S1939: SenaryoTanim = {
     { k: 'FIN', ad: 'Finlandiya Cumhuriyeti', kisa: 'Finlandiya', sifat: 'Fin', renk: '#e0e0e8', y: 2, ks: 1, lider: 'Kyösti Kallio (Mareşal C. G. E. Mannerheim)', bas: 'Helsinki', guc: 3, eko: 5, askerlik: 3, t: 'FI' },
     { k: 'EST', ad: 'Estonya Cumhuriyeti', kisa: 'Estonya', sifat: 'Estonyalı', renk: '#5a7fa0', y: 4, ks: 1, lider: 'Konstantin Päts', bas: 'Tallinn', guc: 1, eko: 4, t: 'EE' },
     { k: 'LAT', ad: 'Letonya Cumhuriyeti', kisa: 'Letonya', sifat: 'Leton', renk: '#8a4a5a', y: 4, ks: 1, lider: 'Kārlis Ulmanis', bas: 'Riga', guc: 1, eko: 4, t: 'LV' },
-    { k: 'LIT', ad: 'Litvanya Cumhuriyeti', kisa: 'Litvanya', sifat: 'Litvan', renk: '#9a9a4a', y: 4, ks: 1, lider: 'Antanas Smetona', bas: 'Vilnius', guc: 1, eko: 3, t: 'LT' },
+    { k: 'LIT', ad: 'Litvanya Cumhuriyeti', kisa: 'Litvanya', sifat: 'Litvan', renk: '#9a9a4a', y: 4, ks: 1, lider: 'Antanas Smetona', bas: 'Kaunas', guc: 1, eko: 3, t: 'LT' },
     { k: 'ITA', ad: 'İtalya Krallığı', kisa: 'İtalya', sifat: 'İtalyan', renk: '#6e9a63', y: 3, yAd: 'Faşist rejim', ks: 0, lider: 'III. Vittorio Emanuele (Duçe Benito Mussolini)', bas: 'Roma', guc: 7, eko: 5, askerlik: 2,
       t: 'IT LY ER ET AL', b: ['Mogadişu'] },
     { k: 'SPA', ad: 'İspanya Devleti', kisa: 'İspanya', sifat: 'İspanyol', renk: '#c89c3a', y: 4, yAd: 'Frankocu diktatörlük', ks: 1, lider: 'Francisco Franco', bas: 'Madrid', guc: 4, eko: 3, askerlik: 2, t: 'ES EH GQ' },
@@ -88,9 +88,9 @@ export const S1939: SenaryoTanim = {
   adlar: {
     'Anchorage': 'Alaska', 
     'St. Petersburg': 'Leningrad', 'Volgograd': 'Stalingrad', 'Yekaterinburg': 'Sverdlovsk', 'Nijni Novgorod': 'Gorki', 'Dnipro': 'Dnipropetrovsk', 'Donetsk': 'Stalino', 'Bishkek': 'Frunze',
-    'Dushanbe': 'Stalinabad', 'Almaty': 'Alma-Ata', 'Astana': 'Akmolinsk', 'Orenburg': 'Çkalov', 'Khmelnytskyi': 'Proskurov', 'Ashgabat': 'Aşkabat', 'Vilnius': 'Kaunas', 'Kaliningrad': 'Königsberg',
-    'Szczecin': 'Stettin', 'Gdańsk': 'Pomorze (Gdynia)', 'Lviv': 'Lwów', 'Brno': 'Brünn', 'Prag': 'Prag', 'Tel Aviv': 'Kudüs', 'Gaza': 'Gazze', 'Amman': 'Amman', 'Kuzey Kıbrıs': 'Girne',
-    'Abu Dabi': 'Trucial Kıyısı', 'Nay Pyi Taw': 'Mandalay', 'Islamabad': 'Ravalpindi', 'Yeni Delhi': 'Yeni Delhi', 'Ulan Bator': 'Ulan Bator', 'Kinshasa': 'Léopoldville', 'Harare': 'Salisbury',
+    'Dushanbe': 'Stalinabad', 'Almaty': 'Alma-Ata', 'Astana': 'Akmolinsk', 'Orenburg': 'Çkalov', 'Khmelnytskyi': 'Proskurov', 'Ashgabat': 'Aşkabat', 'Vilnius': 'Wilno', 'Kaliningrad': 'Königsberg',
+    'Szczecin': 'Stettin', 'Gdańsk': 'Pomorze (Gdynia)', 'Lviv': 'Lwów', 'Brno': 'Brünn', 'Prag': 'Prag', 'Tel Aviv': 'Yafa', 'Gaza': 'Gazze', 'Amman': 'Amman', 'Kuzey Kıbrıs': 'Girne',
+    'Abu Dabi': 'Trucial Kıyısı', 'Nay Pyi Taw': 'Pyinmana', 'Islamabad': 'Ravalpindi', 'Yeni Delhi': 'Yeni Delhi', 'Ulan Bator': 'Ulan Bator', 'Kinshasa': 'Léopoldville', 'Harare': 'Salisbury',
     'Lusaka': 'Lusaka', 'Maputo': 'Lourenço Marques', 'Gitega': 'Usumbura', 'Windhoek': 'Windhoek', 'Abuja': 'Lagos', 'Nouakchott': 'Saint-Louis', 'Yamoussoukro': 'Abidjan', 'Kampala': 'Entebbe',
     'Cakarta': 'Batavia', 'Brasília': 'Rio de Janeiro', 'Taipei': 'Taihoku', 'Seul': 'Keijō', 'Pyongyang': 'Heijō', 'Yuzhno-Sakhalinsk': 'Toyohara', 'Shenyang': 'Mukden', 'Harbin': 'Harbin',
     'Yanji': 'Hsinking', 'Belmopan': 'Belize', 'Chittagong': 'Çitagong', 'Dodoma': 'Dodoma', 'Ouagadougou': 'Vagadugu', 'Kişinev': 'Kişinev', 'Kırım': 'Kırım',
@@ -114,14 +114,16 @@ export const S1939: SenaryoTanim = {
     ['gorus', 'TUR', 'GBR', 68], ['gorus', 'TUR', 'SOV', 45], ['gorus', 'TUR', 'ITA', 30], ['gorus', 'SPA', 'GER', 70], ['gorus', 'SPA', 'ITA', 72], ['gorus', 'SOV', 'GBR', 35], ['gorus', 'FIN', 'SWE', 80],
   ],
   iddia: { 'Cluj-Napoca': ['HUN'], 'Kişinev': ['SOV'], 'Lviv': ['SOV'], 'Białystok': ['SOV'], 'Gdańsk': ['GER'], 'Poznań': ['GER'], 'Nice': ['ITA'], 'Tunus': ['ITA'], 'Üsküp': ['BUL'] },
+  // harita v2: 1939 sınırlarının inceltilmesi (Breslau, Doğu Prusya, Memel; Wilno ve Kresy; Bukovina; Kassa; Viipuri; Kwantung)
+  ek: { GER: ['Wrocław', 'Olsztyn', 'Klaipėda'], POL: ['Vilnius', 'Brest-Litovsk', 'Hrodna', 'Baranovichi', 'Rivne'], LIT: ['Kaunas', 'Šiauliai'], ROM: ['Chernivtsi'], HUN: ['Košice'], FIN: ['Vyborg'], JAP: ['Port Arthur'] },
   isgal: { 'Pekin': 'JAP', 'Nankin': 'JAP', 'Şandong': 'JAP', 'Guangzhou': 'JAP', 'Hainan': 'JAP', 'Xinyang': 'JAP', 'Ordos': 'JAP', 'Wenzhou': 'JAP' },
   kaynak: ['Köln', 'Leipzig', 'Lille', 'Strasbourg', 'Birmingham', 'Leeds', 'Glasgow', 'Sunderland', 'Brüksel', 'Donetsk', 'Dnipro', 'Yekaterinburg', 'Krakov', 'Brno', 'Prag',
     'Chicago', 'Washington', 'Fukuoka', 'Shenyang', 'Şandong', 'Novosibirsk', 'Asturias', 'Hannover', 'Torino', 'Kalküta', 'Orenburg', 'Harkov', 'Osaka', 'Boston', 'Liverpool'],
   olaylar: [
     { kod: 'gleiwitz', tarih: '1939-09-01', ulke: 'GER', baslik: 'Weiss Harekâtı', metin: 'SS birlikleri Gleiwitz radyo istasyonuna sahte bir "Polonya saldırısı" düzenledi. Şafakta Schleswig-Holstein zırhlısı Westerplatte\'yi bombaladı; 1,5 milyon asker Polonya sınırını geçti.',
       sec: [
-        { ad: 'Yıldırım savaşını sürdür', etki: 'Savaşa destek +5.', yz: 90, e: [['destek', 'GER', 5]] },
-        { ad: 'Batıya barış sinyali ver', etki: 'Britanya ve Fransa ile gerginlik biraz azalır.', yz: 10, e: [['gorus', 'GBR', 'GER', 5], ['gorus', 'FRA', 'GER', 5]] },
+        { ad: 'Yıldırım savaşını sürdür', etki: 'Savaşa destek +5; zırhlı ve hava-kara iş birliği 75 gün boyunca taarruzu %40 güçlendirir.', yz: 90, e: [['destek', 'GER', 5], ['etki', 'GER', 'saldiri', 40, 75]] },
+        { ad: 'Batıya barış sinyali ver', etki: 'Britanya ve Fransa ile gerginlik biraz azalır.', yz: 1, e: [['gorus', 'GBR', 'GER', 5], ['gorus', 'FRA', 'GER', 5]] },
       ] },
     { kod: 'ingiliz', tarih: '1939-09-03', ulke: 'GBR', kosul: { savasta: ['GER', 'POL'] }, baslik: 'Ültimatomun Sonu', metin: 'Almanya\'ya verilen ültimatomun süresi sabah 11.00\'de doldu. Chamberlain radyoda konuşacak: "Bu ülke Almanya ile savaştadır."',
       sec: [

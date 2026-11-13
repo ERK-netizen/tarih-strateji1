@@ -27,3 +27,5 @@ export { DONEMLER, TEK_DAL, TEK_KOD, type DonemKod, type Donem } from './donem.t
 export * from './katalogEk.ts';
 export * as gelisim from './systems/gelisim.ts';
 export * as us from './systems/us.ts';
+export * as komutan from './systems/komutan.ts';
+export * as kuvvet from './systems/kuvvet.ts';

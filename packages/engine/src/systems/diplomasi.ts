@@ -8,8 +8,8 @@ import { esirIade, terhis } from './nufus.ts';
 import { insanGucu } from './nufus.ts';
 import { trEkK, trKucuk } from '../tr.ts';
 
-export const TK = { ticaret: 0, saldirmazlik: 1, gecis: 2, garanti: 3, ittifak: 4, baris: 10, cagri: 11, ekipman: 14, devir: 15, ultimatom: 16, kuklaOl: 17 } as const;
-export const TK_AD: Record<number, string> = { 0: 'Ticaret anlaşması', 1: 'Saldırmazlık paktı', 2: 'Askerî geçiş hakkı', 3: 'Bağımsızlık garantisi', 4: 'İttifak', 10: 'Barış', 11: 'Savaşa katılım çağrısı', 14: 'Ekipman satışı', 15: 'Toprak devri', 16: 'Ültimatom', 17: 'Himaye (kukla) antlaşması' };
+export const TK = { ticaret: 0, saldirmazlik: 1, gecis: 2, garanti: 3, ittifak: 4, baris: 10, cagri: 11, ekipman: 14, devir: 15, ultimatom: 16, kuklaOl: 17, antlasma: 18 } as const;
+export const TK_AD: Record<number, string> = { 0: 'Ticaret anlaşması', 1: 'Saldırmazlık paktı', 2: 'Askerî geçiş hakkı', 3: 'Bağımsızlık garantisi', 4: 'İttifak', 10: 'Barış', 11: 'Savaşa katılım çağrısı', 14: 'Ekipman satışı', 15: 'Toprak devri', 16: 'Ültimatom', 17: 'Himaye (kukla) antlaşması', 18: 'Çok maddeli barış antlaşması' };
 export const ESIK: Record<number, number> = { 0: 20_000, 1: 40_000, 2: 60_000, 3: 60_000, 4: 80_000, 14: 60_000, 15: 30_000, 17: 50_000 };
 /** 0 beyaz, 1 tavizli, 2 teslim (işgal edilenlerin ilhakı + tazminat), 3 tam ilhak, 4 kukla devlet, 5 teslim önerisi (öneren teslim olur). */
 export const BARIS_TUR = ['Beyaz barış', 'Tavizli barış', 'Teslim', 'Tam ilhak', 'Kukla devlet', 'Teslim önerisi'] as const;
@@ -293,6 +293,66 @@ export function barisKabul(w: World, kabulEden: number, oneren: number, tur: num
   if (W < 250_000) return { kabul: false, neden: `İsteklilik %${Math.floor(W / 10_000)}; tavizli barış için %25 gerekiyor.` };
   if (istek > butce) return { kabul: false, neden: `İstenen değer ${istek}, kabul edilebilir taviz bütçesi ${butce}.` };
   return { kabul: true, neden: 'Tavizli barış kabul edildi.' };
+}
+
+// ---------- Çok maddeli barış antlaşması (v1.6, PR-13) ----------
+/** Antlaşma maddeleri: toprak devri, taksitli tazminat, ateşkes süresi, bağımsızlık garantisi. Hepsi birlikte geçerlidir ya da hiçbiri. */
+export interface AntlasmaMadde { bolgeler: number[]; tazminat: number; taksitYil: number; ateskesYil: number; garanti: number }
+/** Teklif satırına sığdırma: p1 = tazminat toplamı, p2 = taksit yılı + 100 × ateşkes yılı + 10.000 × garanti. */
+export const antlasmaPaket = (m: AntlasmaMadde): number => m.taksitYil + m.ateskesYil * 100 + (m.garanti ? 10_000 : 0);
+export const antlasmaAc = (p1: number, p2: number, bolgeler: number[]): AntlasmaMadde => ({ bolgeler, tazminat: p1, taksitYil: p2 % 100, ateskesYil: Math.floor(p2 / 100) % 100, garanti: Math.floor(p2 / 10_000) % 10 });
+/** Tazminat tavanı: ödeyenin taksit dönemindeki gelirinin %10'u. */
+export function tazminatTavani(w: World, odeyen: number, yil: number): number {
+  return mulDiv(Math.max(1, w.C.c.g1[odeyen]!) * 12 * Math.max(1, yil), 100_000, S).q;
+}
+/** Yapısal doğrulama: tek geçersiz madde bütün taslağı düşürür (atomiklik; V16-T48). Geçerliyse null. */
+export function antlasmaHatasi(w: World, oneren: number, muhatap: number, m: AntlasmaMadde): string | null {
+  if (muhatap < 0 || muhatap >= w.nC || muhatap === oneren || !savasta(w, oneren, muhatap)) return 'Antlaşma yalnız savaştığınız bir devlete önerilir.';
+  if (!m.bolgeler.length && m.tazminat <= 0 && !m.garanti) return 'En az bir madde gerekir (toprak, tazminat ya da garanti).';
+  const bas = w.pkg.ulkeler[muhatap]!.baskent;
+  const gor = new Set<number>();
+  for (const r of m.bolgeler) {
+    if (!Number.isSafeInteger(r) || r < 0 || r >= w.nR) return 'Toprak maddesi: bölge bulunamadı.';
+    if (gor.has(r)) return `Toprak maddesi: ${w.pkg.bolgeler[r]!.ad} iki kez yazılmış.`;
+    gor.add(r);
+    if (w.R.c.sahip[r] !== muhatap) return `Toprak maddesi: ${w.pkg.bolgeler[r]!.ad} ${w.pkg.ulkeler[muhatap]!.kisa} toprağı değil (yalnız hukukî sahibi devredebilir).`;
+    if (r === bas) return `Toprak maddesi: başkent ${w.pkg.bolgeler[r]!.ad} yalnız tam ilhakla el değiştirir.`;
+  }
+  if (!Number.isSafeInteger(m.tazminat) || m.tazminat < 0 || m.tazminat > 10_000_000_000_000) return 'Tazminat maddesi: tutar geçersiz.';
+  if (m.tazminat > 0 && (m.taksitYil < 1 || m.taksitYil > 10)) return 'Tazminat maddesi: vade 1–10 yıl olmalı.';
+  if (m.ateskesYil < 1 || m.ateskesYil > 10) return 'Ateşkes maddesi: süre 1–10 yıl olmalı.';
+  return null;
+}
+/** Muhatabın yanıtı: tavizli barışın koşulları + toprak ve tazminatın birlikte taviz bütçesine sığması. */
+export function antlasmaKabul(w: World, kabulEden: number, oneren: number, m: AntlasmaMadde): { kabul: boolean; neden: string } {
+  const hata = antlasmaHatasi(w, oneren, kabulEden, m);
+  if (hata) return { kabul: false, neden: hata };
+  const taban = barisKabul(w, kabulEden, oneren, 1, []);
+  if (!taban.kabul) return taban;
+  const butce = tavizButcesi(w, kabulEden, oneren);
+  const tavan = tazminatTavani(w, kabulEden, m.taksitYil);
+  if (m.tazminat > tavan) return { kabul: false, neden: `Tazminat ödenebilir sınırı aşıyor (en çok ${tavan} altın: ${m.taksitYil} yıllık gelirin %10'u).` };
+  const toprak = m.bolgeler.reduce((s, r) => s + bolgeDegeri(w, r), 0);
+  // tazminat, tavanına oranla taviz bütçesinin en çok yarısını tüketir; garanti bütçeyi %10 genişletir
+  const para = m.tazminat > 0 ? mulDiv(butce, mulDiv(m.tazminat, S, tavan).q, 2 * S).q : 0;
+  const sinir = butce + (m.garanti ? Math.floor(butce / 10) : 0);
+  if (toprak + para > sinir) return { kabul: false, neden: `İstenen değer ${toprak + para} (toprak ${toprak} + tazminat ${para}), kabul edilebilir taviz ${sinir}.` };
+  return { kabul: true, neden: 'Antlaşma kabul edildi.' };
+}
+/** Bütün maddeler bir kez ve birlikte uygulanır; önce yeniden doğrulanır (koşullar değiştiyse hiçbir madde işlemez). */
+export function antlasmaUygula(w: World, kazanan: number, kaybeden: number, m: AntlasmaMadde): boolean {
+  if (antlasmaHatasi(w, kazanan, kaybeden, m)) return false;
+  barisUygula(w, kazanan, kaybeden, 1, m.bolgeler);
+  // ateşkes süresi maddeden gelir
+  for (const s of w.AN.rows()) {
+    const AN = w.AN.c;
+    if (AN.tur[s] === A.ateskes && ((AN.a[s] === kazanan && AN.b[s] === kaybeden) || (AN.a[s] === kaybeden && AN.b[s] === kazanan))) AN.bitis[s] = w.gun + m.ateskesYil * 365;
+  }
+  if (m.tazminat > 0) anlasmaKur(w, A.tazminat, kaybeden, kazanan, w.gun + m.taksitYil * 365, Math.max(1, Math.floor(m.tazminat / (m.taksitYil * 365))));
+  if (m.garanti) anlasmaKur(w, A.garanti, kazanan, kaybeden);
+  const ad = w.pkg.ulkeler[kazanan]!.kisa, ad2 = w.pkg.ulkeler[kaybeden]!.kisa;
+  anlat(w, `Antlaşma: ${ad}–${ad2}. ${m.bolgeler.length ? `${m.bolgeler.length} bölge devredildi; ` : ''}${m.tazminat > 0 ? `${m.taksitYil} yılda ${m.tazminat} altın tazminat; ` : ''}${m.ateskesYil} yıl ateşkes${m.garanti ? '; bağımsızlık garantisi' : ''}.`, 'baris', kazanan, 3);
+  return true;
 }
 
 /** Devletin büyüklüğü: sahip olduğu bölgelerin toplam değeri (kukla ilişkisinde efendi en az kukla kadar büyük olmalı). */

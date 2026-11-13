@@ -12,7 +12,24 @@ Android için çevrimdışı, yapay zekâsız, komut öncelikli büyük strateji
 | İkinci Dünya Savaşı | 1 Eylül 1939 | 68 | Almanya–Polonya ve Japonya–Çin savaşları; Hitler, Chamberlain, Stalin, Roosevelt, Mussolini, İnönü |
 | Modern Dünya | 1 Ocak 2026 | 179 | Rusya–Ukrayna ve Sudan savaşları, NATO; 2026 başındaki devlet ve hükümet başkanları |
 
-Harita Natural Earth sınırları ve GeoNames şehirleriyle derlenir (463 bölge, 179 ülke); her senaryo bölge adlarını, sahiplerini, liderleri, kültürleri, orduları ve tarihî olay zincirini kendi döneminden alır. Birlik, ekipman, teknoloji ve tesis adları dönemle değişir (ör. 750'de Piyade Ordusu ve mancınık, 2026'da mekanize tugay ve roket taburu).
+Harita Natural Earth sınırları ve GeoNames şehirleriyle derlenir (**813 bölge**, 179 ülke; v1.6'da 463'ten genişletildi, eski bölgelerin tamamı korunur); her senaryo bölge adlarını, sahiplerini, liderleri, kültürleri, orduları ve tarihî olay zincirini kendi döneminden alır. Birlik, ekipman, teknoloji ve tesis adları dönemle değişir (ör. 750'de Piyade Ordusu ve mancınık, 2026'da mekanize tugay ve roket taburu).
+
+## v1.6'da gelenler
+
+| Alan | Yenilik |
+|---|---|
+| Harita | 463 → 813 bölge (+%76): Belçika, Ren, Alsas-Loren, Polonya, Baltık, Balkanlar, Boğazlar (Çanakkale, Gelibolu), Kafkasya (Kars, Batum), Süveyş, Kuzey Afrika ayrı bölgeler; 1914 ve 1939 sınırları inceltildi; eski kayıtlar yeni haritaya taşınır |
+| Anında emirler | Politika, araştırma, inşa, teklif yanıtı, olay kararı, görev ve komutan emirleri gün ilerletmeden uygulanır ve kaydedilir; sürüm kilidi ve çift dokunuş koruması |
+| Komutanlar | Tarihî (1914, 1939) ve kurgu komutanlar; birlik ataması, kapasite, taarruz/savunma/lojistik etkisi, deneyim, kurmay eğitimi; “ikmal %70 altındaysa taarruz etme” gibi daimî emirler |
+| Muharebe ekranı | Ordu panelindeki muharebe listesinden açılan dikey ekran; motorun günlük sonuçlarını birlik kartları ve çubuklarla oynatır, “neden” özetini gösterir |
+| Donanma ve hava | Bağımsız filolar ve hava kanatları: her filo tek bölgede ve tek görevde, yoldayken etkisiz; menzil ana limandan, seyir süresi mesafeye göre; her kanat tek üste ve tek hedefte, menzil kendi üssünden, üs kapasitesi aşılırsa verim düşer; filo/kanat bölme, birleştirme, ana liman ve üs değiştirme. Komutla da verilir: “2. Filo: Dover açıklarında abluka görevine geçsin” |
+| Şehirler | Şehir düzeyi × 4 yapı yuvası; demiryolu, sulama, altyapı ve imar yuva tüketmez; bedelsiz fabrika yok |
+| Diplomasi | Çok maddeli barış antlaşması: toprak + taksitli tazminat + ateşkes süresi + garanti, tek atomik teklif |
+| İstihbarat | Casusluk kesin değer yerine gözlem tarihli tahmin aralığı ve güvenilirlik verir; rapor eskir |
+| Demografi | Ülke geneli halk dökümü (%0,001 hassasiyet); iskân için hedefte aynı kültür şartı kalktı |
+| Yapay zekâ | Çok cepheli savaşta ezici üstünlük kurulan düşmana ağırlık verir, sessiz cepheleri inceltir |
+
+Ayrıntı, kabul matrisi (70 madde) ve henüz yapılmayanlar: [`docs/v16/README.md`](docs/v16/README.md).
 
 ## Oyunda ne var
 
@@ -26,7 +43,7 @@ Harita Natural Earth sınırları ve GeoNames şehirleriyle derlenir (463 bölge
 | Nüfus | Bölge başına 4 yaş × 8 statü (O, S, Y, E, A, W, P, R), kimlik dağılımı (≤ 7 hücre), kohort giriş/çıkış, askerlik yasaları, yaralı/esir, köken eyalet muhasebesi |
 | Tarım ve gıda | Alan × verim × işçi × sulama × hasat (normalleştirilmiş beklenti 1,000000) × savaş; eyalet havuzları, kıtlık ek ölümü, karne |
 | Ekonomi | Katma değer, vergi (idari verim × huzur × kontrol erişimi × kapasite), ödeme sırası, borç/temerrüt, bütçe kalemleri, dünya pazarı (haftalık, √ fiyat kuralı) |
-| Sanayi | Sivil/askerî fabrika, tüketim malı, proje inşası, üretim hatları (verim eğrisi, WIP, çelik/kömür girdisi), fiziksel mühimmat |
+| Sanayi | Sivil/askerî fabrika, tüketim malı, proje inşası, üretim hatları (verim eğrisi, WIP, çelik/kömür girdisi), fiziksel mühimmat; şehir düzeyi × 4 yapı yuvası (demiryolu, sulama, altyapı ve imar yuva tüketmez; şehir imarı bedelsiz fabrika vermez) |
 | Lojistik | Ortak kenar kapasitesi, sınıf öncelikli tek rota tahsisi, transit, varışta el koyma, tahsis önbelleği |
 | Kara muharebesi | Çekirdek mod: saldırı/savunma/kırılma/organizasyon, arazi genişliği, anahtarlı r ∈ [0,85; 1,15], eşzamanlı kayıp, geri çekilme, teslim, kış yıpranması |
 | Kontrol ve işgal | Yönetim mesafesinden kontrol; işgal itaati (yumuşak/dengeli/sert), taban erişim, direniş ve sabotaj, kültürel bütünleşme |
@@ -54,6 +71,15 @@ npm run build:tek   # tek dosyalık oynanabilir HTML → dist-tek/index.html
 
 `dist-tek/index.html` dosyası bir web sunucusundan (https veya http://localhost) açılmalıdır; `file://` altında tarayıcılar Worker'ı başlatmaz.
 
+## APK indirme
+
+| Sürüm | Bağlantı |
+|---|---|
+| Önizleme (çalışma dalının en son derlemesi) | [tarih-strateji-onizleme.apk](https://github.com/ERK-netizen/tarih-strateji1/releases/download/onizleme/tarih-strateji-onizleme.apk) · [zip](https://github.com/ERK-netizen/tarih-strateji1/releases/download/onizleme/tarih-strateji-onizleme.zip) · [sürüm sayfası](https://github.com/ERK-netizen/tarih-strateji1/releases/tag/onizleme) |
+| Son sürüm (ana dal) | [tarih-strateji.apk](https://github.com/ERK-netizen/tarih-strateji1/releases/download/son-surum/tarih-strateji.apk) · [sürüm sayfası](https://github.com/ERK-netizen/tarih-strateji1/releases/tag/son-surum) |
+
+Bağlantıyı telefonun tarayıcısında (Chrome) açın. Tarayıcı “bu dosya zararlı olabilir” diye sorarsa “Yine de indir”i seçin; APK inmezse zip bağlantısını kullanıp içindeki APK'yı çıkarın. Kurulumda “bilinmeyen kaynaklardan yükleme”ye izin verin.
+
 ## APK üretimi
 
 Bu çalışma ortamında Google Maven ve Android SDK erişimi kapalı olduğundan APK burada derlenmedi. Android projesi hazırdır (`apps/android/android`). Üç yol:
@@ -72,12 +98,13 @@ npm ci && npm run android:apk
 # çıktı: apps/android/android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-APK yatay kilitlidir, **INTERNET ve RECORD_AUDIO izni yoktur** (manifestte `tools:node="remove"` ile kütüphane birleştirmelerinden de çıkarılır). Kayıt dosyası dışa aktarımı Android paylaşım sayfasını kullanır; ek depolama izni gerekmez.
+APK dikey (portre) çalışır; Android manifestindeki `sensorPortrait` ayarıyla uyumludur, **INTERNET ve RECORD_AUDIO izni yoktur** (manifestte `tools:node="remove"` ile kütüphane birleştirmelerinden de çıkarılır). Kayıt dosyası dışa aktarımı Android paylaşım sayfasını kullanır; ek depolama izni gerekmez.
 
 ## Nasıl oynanır
 
 - **Senaryo seçin**, sonra devleti seçin (öne çıkan kartlar, arama ya da haritaya dokunarak) ve başlayın.
 - **Zaman**: 1 gün · 1 hafta · 1 ay · *Olay* (önemli olayda veya en çok 3 ayda durur). *Durdur* bir sonraki gün sınırında işler.
+- **Anında emirler (v1.6)**: politika, araştırma, inşa, teklif ve yanıt, olay kararı, savaş/barış, hedef ve görev emirleri onaylandığı anda uygulanır ve otomatik kaydedilir; gün ilerletmek gerekmez. Üretim, yolculuk ve günlük ekonomi zaman ilerledikçe işler. Birlik kurma, alım-satım, borç ve terhis bir sonraki günün emir fazında işler.
 - **Harita**: bölgeye dokunun → sağda bölge çekmecesi açılır. Kendi birliklerimiz türlerine göre gruplanır; **− / +** ile kaç birlik göndereceğinizi seçin (en hazırlıklılar önce), sonra haritada hedef bölgeye dokunun → plan kartı → *Onayla*. Birlik puluna ikinci kez dokunmak o bölgedeki bütün birlikleri seçer.
 - **Birlik kurma**: Ordu panelinde tür ve adet seçin; *Konuşlanma* listesinden şehri seçin ya da *Haritadan seç* ile haritada şehre dokunun. Bölge çekmecesindeki *Burada birlik kur* aynı işi o şehir için yapar.
 - **Komut çubuğu** (birincil giriş). Örnekler:

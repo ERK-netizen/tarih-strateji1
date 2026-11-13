@@ -1,5 +1,6 @@
 // Bölüm 15: kara hareketi, çekirdek muharebe modu, kayıp, geri çekilme, kontrol devri.
-import type { World } from '../state/world.ts';
+import type { World, MuharebeKaydi, MuharebeBirlik } from '../state/world.ts';
+import { komutanYuk, komutanCarpan, komutanDeneyim, komutanAdi } from './komutan.ts';
 import { ck, hc } from '../state/world.ts';
 import { tekCarpan, kayipUygula } from './gelisim.ts';
 import { ARAZI, K, EKIPMAN, NEKIP, ST, YB, NTEK, tekIdx, tekVar, AKTIF } from '../catalog.ts';
@@ -193,13 +194,18 @@ export function muharebeGunu(w: World, list: Muharebe[]): void {
   const U = uc(w);
   const orgKayip = new Map<number, number>();
   const kayipOran = new Map<number, { oran: number; tutan: number }>();
+  // komutan etkisi birlik başına bir kez hesaplanır (yük: komutan başına birlik sayısı)
+  const yuk = komutanYuk(w);
+  const kmOnbellek = new Map<number, ReturnType<typeof komutanCarpan>>();
+  const km = (u: number) => { let x = kmOnbellek.get(u); if (x === undefined) { x = komutanCarpan(w, u, yuk); kmOnbellek.set(u, x); } return x; };
+  const kayitlar: MuharebeKaydi[] = [];
   for (const m of list) {
     const b = m.bolge;
     const arazi = ARAZI[w.pkg.bolgeler[b]!.arazi]!;
     w.R.c.sonMuharebe[b] = w.gun;
     const sGen = genislikSec(w, [...m.saldiran].sort((a, x) => a - x), arazi.genislik);
     const dGen = genislikSec(w, [...m.savunan].sort((a, x) => a - x), arazi.genislik);
-    const ikmal = (u: number) => 500_000 + mulDiv(500_000, birlikIkmal(w, u).oran, S).q;
+    const ikmal = (u: number) => Math.min(S, 500_000 + mulDiv(500_000, birlikIkmal(w, u).oran, S).q + (km(u)?.ikmal ?? 0));
     const r = (u: number, taraf: number) => combatR(rng(w.tohum, w.gun, 8, u, w.U.gen[u]!, AMAC.combatRoll, b, taraf));
     const camur = camurDuzey(w, b) >= 2 ? 800_000 : S;
     const ist = new Map<number, Istat>();
@@ -218,6 +224,8 @@ export function muharebeGunu(w: World, list: Muharebe[]): void {
       let v = mulRatio(s.YS, deneyimCarpan(U.deneyim![u]!)).q;
       v = mulRatio(v, ikmal(u)).q;
       v = mulRatio(v, tekCarpan(w, c).saldiri).q;
+      const kc = km(u);
+      if (kc) v = mulRatio(v, kc.saldiri).q;
       const atli = U.sablon![u] === 1 ? arazi.atli : S;
       v = mulRatio(v, atli).q; v = mulRatio(v, camur).q;
       v = mulRatio(v, S - sGen.ceza).q;
@@ -246,6 +254,8 @@ export function muharebeGunu(w: World, list: Muharebe[]): void {
       let k = mulRatio(s.SV, w.R.c.kontrolEden[b] === c ? savCarpan : arazi.savunma).q;
       k = mulRatio(k, ikmal(u)).q;
       k = mulRatio(k, tekCarpan(w, c).savunma).q;
+      const kc = km(u);
+      if (kc) k = mulRatio(k, kc.savunma).q;
       if (U.durus![u] === 1) k = mulRatio(k, 1_100_000).q;
       const md = modDeger(w, c, MT.savunma);
       if (md) k = mulRatio(k, Math.max(200_000, S + md)).q;
@@ -272,6 +282,17 @@ export function muharebeGunu(w: World, list: Muharebe[]): void {
       }
     };
     if (sav.length > 0 && sald.length > 0) { vur(sald, sav); vur(sav, sald); }
+    // muharebe kaydı (hash dışı): görüntüleyici yalnız bunu oynatır, ikinci bir hesap yapmaz
+    if (sav.length > 0 && sald.length > 0) {
+      const dc = U.ulke![dGen.aktif[0]!]!;
+      if (w.mod === 2 || sc === w.oyuncu || dc === w.oyuncu) {
+        const satir = (x: Taraf, taraf: 0 | 1): MuharebeBirlik => {
+          const kk = km(x.u);
+          return { id: w.U.id(x.u), ad: birlikAdi(w, x.u), ulke: U.ulke![x.u]!, taraf, sablon: U.sablon![x.u]!, komutan: kk ? komutanAdi(w, kk.k) : '', guc: x.v, savunma: x.k, orgOnce: U.org![x.u]!, orgSonra: U.org![x.u]!, orgMax: x.orgMax, kisiOnce: U.kisi![x.u]!, kisiSonra: U.kisi![x.u]! };
+        };
+        kayitlar.push({ gun: w.gun, bolge: b, saldiran: sc, savunan: dc, savCarpan, baski, yon: kaynak.size, hava: havaUstunluk(w, sc, b), birlikler: [...sald.map((x) => satir(x, 0)), ...sav.map((x) => satir(x, 1))], sonuc: 0 });
+      }
+    }
     // mühimmat ve deneyim
     for (const t of [...sald, ...sav]) {
       const u = t.u;
@@ -279,6 +300,7 @@ export function muharebeGunu(w: World, list: Muharebe[]): void {
       U.muhimmatS![u] = Math.max(0, U.muhimmatS![u]! - birlikMuhimmatGunU(w, u));
       U.deneyim![u] = Math.min(100_000, U.deneyim![u]! + 200);
       U.savasGun![u] = U.savasGun![u]! + 1;
+      komutanDeneyim(w, u);
     }
     for (const u of [...m.saldiran, ...m.savunan]) U.muharebe![u] = 1;
   }
@@ -298,7 +320,15 @@ export function muharebeGunu(w: World, list: Muharebe[]): void {
       U[KOL_E[k]!]![u] = e - kayip;
     }
   }
+  // kayıtlara kesinleşen sonuçlar yazılır
+  for (const kr of kayitlar) {
+    for (const x of kr.birlikler) { const u = w.U.resolve(x.id); if (u >= 0) { x.orgSonra = U.org![u]!; x.kisiSonra = U.kisi![u]!; } else { x.orgSonra = 0; x.kisiSonra = 0; } }
+    w.muharebeler.push(kr);
+  }
+  if (w.muharebeler.length > MUHAREBE_KAYIT_AZAMI) w.muharebeler.splice(0, w.muharebeler.length - MUHAREBE_KAYIT_AZAMI);
 }
+/** Saklanan muharebe kaydı tavanı (eskiler düşer). */
+export const MUHAREBE_KAYIT_AZAMI = 300;
 
 /** P10: geri çekilme, teslim, kontrol devri, tamamlamalar. */
 export function sonucGunu(w: World, list: Muharebe[]): void {
@@ -315,6 +345,10 @@ export function sonucGunu(w: World, list: Muharebe[]): void {
     const kalanSald = m.saldiran.filter((u) => w.U.alive[u] && U.org![u]! > mulDiv(birlikIstat(w, u).orgMax, 100_000, S).q);
     for (const u of m.saldiran) if (w.U.alive[u] && !kalanSald.includes(u)) { U.hedef![u] = -1; U.sonraki![u] = -1; }
     const hala = w.U.list().filter((u) => U.bolge![u] === b && m.saldiran.some((a) => w.U.alive[a] && savasta(w, U.ulke![a]!, U.ulke![u]!)));
+    // muharebe kaydının sonucu: 1 bölge alındı, 2 saldırı püskürtüldü (yoksa sürüyor)
+    for (let i = w.muharebeler.length - 1; i >= 0 && w.muharebeler[i]!.gun === w.gun; i--) {
+      if (w.muharebeler[i]!.bolge === b) { w.muharebeler[i]!.sonuc = hala.length === 0 && kalanSald.length > 0 ? 1 : kalanSald.length === 0 ? 2 : 0; break; }
+    }
     if (hala.length === 0 && kalanSald.length > 0) {
       const kazanan = U.ulke![kalanSald[0]!]!;
       for (const u of kalanSald) { U.bolge![u] = b; U.ilerleme![u] = 0; U.sonraki![u] = -1; if (U.hedef![u] === b) U.hedef![u] = -1; }
