@@ -50,6 +50,7 @@ jobs:
           SURUM=$(node -p "require('./package.json').version")
           cp apps/android/android/app/build/outputs/apk/debug/app-debug.apk tarih-strateji-onizleme.apk
           gh release delete onizleme --yes --cleanup-tag || true
-          gh release create onizleme tarih-strateji-onizleme.apk --target "$GITHUB_SHA" --prerelease \
+          zip -j tarih-strateji-onizleme.zip tarih-strateji-onizleme.apk
+          gh release create onizleme tarih-strateji-onizleme.apk tarih-strateji-onizleme.zip --target "$GITHUB_SHA" --prerelease \
             --title "Tarih Strateji ${SURUM} — önizleme (${GITHUB_REF_NAME})" \
-            --notes "Henüz ana dala alınmamış çalışma dalının otomatik derlemesi · commit ${GITHUB_SHA::7}. Telefona kurulum: tarih-strateji-onizleme.apk dosyasını indirin, bilinmeyen kaynaklardan kuruluma izin verin."
+            --notes "Henüz ana dala alınmamış çalışma dalının otomatik derlemesi · commit ${GITHUB_SHA::7}. Telefona kurulum: tarih-strateji-onizleme.apk dosyasını indirin (inmezse zip dosyasını indirip APK'yı çıkarın), bilinmeyen kaynaklardan kuruluma izin verin."

@@ -71,6 +71,15 @@ npm run build:tek   # tek dosyalık oynanabilir HTML → dist-tek/index.html
 
 `dist-tek/index.html` dosyası bir web sunucusundan (https veya http://localhost) açılmalıdır; `file://` altında tarayıcılar Worker'ı başlatmaz.
 
+## APK indirme
+
+| Sürüm | Bağlantı |
+|---|---|
+| Önizleme (çalışma dalının en son derlemesi) | [tarih-strateji-onizleme.apk](https://github.com/ERK-netizen/tarih-strateji1/releases/download/onizleme/tarih-strateji-onizleme.apk) · [zip](https://github.com/ERK-netizen/tarih-strateji1/releases/download/onizleme/tarih-strateji-onizleme.zip) · [sürüm sayfası](https://github.com/ERK-netizen/tarih-strateji1/releases/tag/onizleme) |
+| Son sürüm (ana dal) | [tarih-strateji.apk](https://github.com/ERK-netizen/tarih-strateji1/releases/download/son-surum/tarih-strateji.apk) · [sürüm sayfası](https://github.com/ERK-netizen/tarih-strateji1/releases/tag/son-surum) |
+
+Bağlantıyı telefonun tarayıcısında (Chrome) açın. Tarayıcı “bu dosya zararlı olabilir” diye sorarsa “Yine de indir”i seçin; APK inmezse zip bağlantısını kullanıp içindeki APK'yı çıkarın. Kurulumda “bilinmeyen kaynaklardan yükleme”ye izin verin.
+
 ## APK üretimi
 
 Bu çalışma ortamında Google Maven ve Android SDK erişimi kapalı olduğundan APK burada derlenmedi. Android projesi hazırdır (`apps/android/android`). Üç yol:
