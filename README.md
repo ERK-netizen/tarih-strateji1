@@ -22,6 +22,7 @@ Harita Natural Earth sınırları ve GeoNames şehirleriyle derlenir (**813 böl
 | Anında emirler | Politika, araştırma, inşa, teklif yanıtı, olay kararı, görev ve komutan emirleri gün ilerletmeden uygulanır ve kaydedilir; sürüm kilidi ve çift dokunuş koruması |
 | Komutanlar | Tarihî (1914, 1939) ve kurgu komutanlar; birlik ataması, kapasite, taarruz/savunma/lojistik etkisi, deneyim, kurmay eğitimi; “ikmal %70 altındaysa taarruz etme” gibi daimî emirler |
 | Muharebe ekranı | Ordu panelindeki muharebe listesinden açılan dikey ekran; motorun günlük sonuçlarını birlik kartları ve çubuklarla oynatır, “neden” özetini gösterir |
+| Donanma ve hava | Bağımsız filolar ve hava kanatları: her filo tek bölgede ve tek görevde, yoldayken etkisiz; menzil ana limandan, seyir süresi mesafeye göre; her kanat tek üste ve tek hedefte, menzil kendi üssünden, üs kapasitesi aşılırsa verim düşer; filo/kanat bölme, birleştirme, ana liman ve üs değiştirme. Komutla da verilir: “2. Filo: Dover açıklarında abluka görevine geçsin” |
 | Şehirler | Şehir düzeyi × 4 yapı yuvası; demiryolu, sulama, altyapı ve imar yuva tüketmez; bedelsiz fabrika yok |
 | Diplomasi | Çok maddeli barış antlaşması: toprak + taksitli tazminat + ateşkes süresi + garanti, tek atomik teklif |
 | İstihbarat | Casusluk kesin değer yerine gözlem tarihli tahmin aralığı ve güvenilirlik verir; rapor eskir |

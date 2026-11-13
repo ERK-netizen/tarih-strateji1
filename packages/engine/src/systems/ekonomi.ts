@@ -414,16 +414,22 @@ export function tekMaliyetHesapla(w: World, c: number, t: number): number {
   const ileri = Math.floor(Math.max(0, -dyS) / olcek);
   const geri = Math.floor(Math.max(0, dyS) / olcek);
   let paylasan = 0;
-  for (let d = 0; d < w.nC; d++) if (d !== c && w.tekBitti[d * NTEK + t]! >= L && anlasmaIttifak(w, c, d)) paylasan++;
+  // müttefikler anlaşma tablosundan bir kez toplanır (ülke × anlaşma taraması yerine); aynı müttefik bir kez sayılır
+  const AN = w.AN.c;
+  let gorulen: number[] | null = null;
+  for (const s of w.AN.rows()) {
+    if (AN.tur[s] !== 4) continue;
+    const d = AN.a[s] === c ? AN.b[s]! : AN.b[s] === c ? AN.a[s]! : -1;
+    if (d < 0 || d === c || w.tekBitti[d * NTEK + t]! < L) continue;
+    if (gorulen?.includes(d)) continue;
+    (gorulen ??= []).push(d);
+    paylasan++;
+  }
   const pay = S + mulDiv(50_000, ileri, S).q; // çağın önündeki her yıl +%5 (K-38)
   const payda = S + Math.min(600_000, mulDiv(200_000, geri, S).q) + Math.min(300_000, 100_000 * paylasan);
   // kademe bedeli (L+1)(L+2)/6: 1, 2, 3⅓, 5, 7, 9⅓ … 30⅓ (K-38)
   const taban = mulDiv(T.maliyet, (L + 1) * (L + 2), 6).q;
   return mulDiv(taban, pay, payda).q;
-}
-function anlasmaIttifak(w: World, a: number, b: number): boolean {
-  for (const s of w.AN.rows()) if (w.AN.c.tur[s] === 4 && ((w.AN.c.a[s] === a && w.AN.c.b[s] === b) || (w.AN.c.a[s] === b && w.AN.c.b[s] === a))) return true;
-  return false;
 }
 
 /**

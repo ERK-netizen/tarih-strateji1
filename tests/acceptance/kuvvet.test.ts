@@ -71,6 +71,7 @@ describe('PR-08 kuruluş: ülke toplamları filo ve kanatlara bölünür (ayna s
       expect(kuvvet.kuvvetDenetim(w), k).toBeNull();
       expect(w.FL.count(), k).toBeGreaterThan(0);
       if (k === 's750' || k === 's1600') expect(w.KN.count(), k).toBe(0); else expect(w.KN.count(), k).toBeGreaterThan(0);
+      for (const x of w.KN.rows()) { const d = kuvvet.usDoluluk(w, w.KN.c.us[x]!); expect(d.ucak, `${k} ${kuvvet.kanatAdi(w, x)}`).toBeLessThanOrEqual(d.kapasite); }
     }
   });
 });
@@ -227,6 +228,31 @@ describe('V16-T32 / T33 hava kanadı: tek görev, tek hedef; menzil dışı katk
       if (menzilde) gorevli++;
     }
     expect(gorevli).toBeGreaterThan(0);
+  });
+  test('hava muharebesi yıpranması: aynı gökyüzündeki dost kanatlar birlikte sayılır (kanat sayısı kaybı çoğaltmaz)', () => {
+    const { w, k, id, A } = kur();
+    const K = w.KN.c;
+    // ikinci Alman kanadı aynı üsten aynı hedefe; bir Fransız kanadı aynı hedefte
+    emir(w, { tur: 'kanatAktar', ulke: GER, kanat: id, hedefKanat: -1, tip: 0, adet: Math.floor(K.u0[k]! / 2) });
+    const k2 = kanatlar(w).find((x) => x !== k && K.us[x] === K.us[k] && K.u1[x] === 0)!;
+    expect(emir(w, { tur: 'kanatGorev', ulke: GER, kanat: id, gorev: 1, bolge: A }).ok).toBe(true);
+    expect(emir(w, { tur: 'kanatGorev', ulke: GER, kanat: w.KN.id(k2), gorev: 1, bolge: A }).ok).toBe(true);
+    const f = kanatlar(w, FRA)[0]!;
+    K.us[f] = A; K.gorev[f] = 1; K.hedef[f] = A;
+    const gk = deniz.kanatGucu(w, k, 'hava'), gk2 = deniz.kanatGucu(w, k2, 'hava'), gf = deniz.kanatGucu(w, f, 'hava');
+    expect(gk2).toBeGreaterThan(0);
+    const ucak0 = ucakTop(w, GER);
+    deniz.havaHaftasi(w);
+    // oran: düşman gücü / (iki dost kanadın toplam gücü + 1); haftalık kayıp %1–15 arasında
+    const oran = Math.min(150_000, Math.max(10_000, Math.floor((30_000 * gf) / (gk + gk2 + 1))));
+    expect(K.hasar[k]).toBe(Math.floor(oran / 2));
+    expect(K.hasar[k2]).toBe(Math.floor(oran / 2));
+    // kayıp beklenen değerin çevresinde: tür başına en çok bir uçak yuvarlama payı
+    const kayip = ucak0 - ucakTop(w, GER);
+    const beklenen = (ucak0 - kanatlar(w).filter((x) => x !== k && x !== k2).reduce((t, x) => t + kuvvet.kanatUcak(w, x), 0)) * oran / S;
+    expect(kayip).toBeGreaterThanOrEqual(Math.floor(beklenen) - 1);
+    expect(kayip).toBeLessThanOrEqual(Math.ceil(beklenen) + 4);
+    expect(kuvvet.kuvvetDenetim(w)).toBeNull();
   });
   test('üs kapasitesi aşılırsa kanadın gücü oranla düşer; uçak aktarımı toplamı korur', () => {
     const { w, k, id } = kur();

@@ -29,11 +29,11 @@ V16-T27,Aynı komutan bonusu hiyerarşide iki kez hesaplanmaz,PASS,komutan.test.
 V16-T28,Komutan emirleri ikmal/yorgunluk şartlarına uyar; gerekçeyle durabilir,PASS,komutan.test.ts
 V16-T29,"Gelişmiş eğitim/deneyim, maliyet ve üst sınırla kazanılır",PASS,komutan.test.ts
 V16-T30,Model ekipman eksikliğinde gerçek birlik ateş/hız/organizasyon etkilenir,PARTIAL,birlik ekipman doluluğu gücü etkiler (ortak.birlikIstat); adlı ekipman modeli stoku yok (PR-10)
-V16-T31,Aynı filo iki deniz bölgesinde eşzamanlı bulunamaz,NOT_IMPLEMENTED,bağımsız filo kimliği yok (PR-08); donanma ülke düzeyinde tek görevlidir
-V16-T32,Aynı uçak kanadı iki görevde çift sayılmaz,NOT_IMPLEMENTED,bağımsız hava kanadı yok (PR-08); ülke başına tek hava görevi olduğundan çift sayım yapısal olarak yok
-V16-T33,Hava menzili dışındaki görev saldırıya katkı vermez,PARTIAL,hava görevi üs menziliyle sınırlı (us.test.ts); kanat düzeyinde değil
-V16-T34,Deniz görevi liman/yakıt/seyahat süresi koşullarına uyar,NOT_IMPLEMENTED,PR-08
-V16-T35,Ortak harekât aynı nakliyeyi/ikmali iki kere tüketmez,NOT_IMPLEMENTED,PR-08/PR-09
+V16-T31,Aynı filo iki deniz bölgesinde eşzamanlı bulunamaz,PASS,"kuvvet.test.ts: filo tek konumlu; yoldayken çıktığı ve varacağı bölgede etkisiz; varınca yalnız orada ve komşularında; gemi tek filoya ait (FL tablosu, şema 10)"
+V16-T32,Aynı uçak kanadı iki görevde çift sayılmaz,PASS,"kuvvet.test.ts: kanat yalnız hedefinde ve komşularında sayılır; hedef değişince eski bölgeden çıkar; üstünlük görevindeki kanat yakın destek vermez; dost kanatlar yıpranmada birlikte sayılır"
+V16-T33,Hava menzili dışındaki görev saldırıya katkı vermez,PASS,"kuvvet.test.ts: menzil kanadın kendi üssünden; menzil dışı hedef reddedilir ve katkı vermez; genel hava emri menzil dışı kanatlara geçmez; haftalık menzil güvencesi"
+V16-T34,Deniz görevi liman/yakıt/seyahat süresi koşullarına uyar,PASS,"kuvvet.test.ts: hedef kıyıda ve ana liman menzilinde; petrolsüz filo açılamaz; seyir süresi sıçrama × çağ hızı; ana liman değişimi (filoUs); limanda hızlı onarım"
+V16-T35,Ortak harekât aynı nakliyeyi/ikmali iki kere tüketmez,PARTIAL,"nakliye gemisi tek filoya aittir ve toplam ayna sütunla denetlenir (kuvvet.test.ts); kara/deniz ortak taşıma bütçesi yok (PR-09)"
 V16-T36,Muharebe viewer açılıp kapatılması kayıp/ekipman stok toplamlarını değiştirmez,PASS,komutan.test.ts › V16-T36
 V16-T37,Aynı BattleEvent replay aynı görsel sıra ve aynı battle hash'i üretir,PASS,komutan.test.ts › V16-T37
 V16-T38,"1914 siper, 1939 manevra, 2026 modern ekipman etkileri dönem kurallarına uyar",PARTIAL,"dönem katalogları, tahkimat tavanı (K-28) ve 1939 yıldırım etkisi var; kapsayıcı test yok"
@@ -60,11 +60,11 @@ V16-T58,Dünya ve Devletim raporları bilgi görünürlüğüne ve tarihe göre 
 V16-T59,Dikey 360×800 Android görünümde komut/harita/çekmece/geri tuşu kullanılabilir,PARTIAL,"360×800 tarayıcı denemesi (Playwright, ekran görüntüleri); otomatik test ve geri tuşu denemesi yok"
 V16-T60,Sandbox normal ekonomiye Infinity/NaN sokmaz ve normal kayıttan ayrılır,PASS,v16b.test.ts
 V16-T61,"463→≥788 bölge göçü nüfus, stok, mülkiyet, komşuluk ve birlikleri korur",PASS,harita.test.ts (12 test)
-V16-T62,"Eski şema 5, 6 ve 7 kayıtları hedef şemaya belirlenimci göç eder",PASS,"sema7.test.ts, derinlik.test.ts (5→7), harita.test.ts (8→9 + harita göçü)"
+V16-T62,"Eski şema 5, 6 ve 7 kayıtları hedef şemaya belirlenimci göç eder",PASS,"sema7.test.ts, derinlik.test.ts (5→7), harita.test.ts (8→9 + harita göçü), kuvvet.test.ts (≤9→10: ülke toplamlarından filo/kanat, toplamlar korunur)"
 V16-T63,Save→Load→Replay ile kesintisiz koşu hash'leri eşleşir,PASS,v16b.test.ts
 V16-T64,Aynı seed+aynı emirler farklı önbellek ayarıyla aynı kanonik hash verir,PASS,v16b.test.ts
 V16-T65,750/1600 senaryolarında çağ dışı hava/modern ekipman otomatik oluşmaz,PASS,v16b.test.ts
-V16-T66,1914/1939/2026 gözlemci uzun koşularında negatif nüfus/kaynak ve çifte filo yoktur,PARTIAL,"beş senaryo 365 gün gözlemci koşusu bütünlük hatasız, kayıt-yükleme hash eşit; 5/10/25 yıl koşulmadı"
+V16-T66,1914/1939/2026 gözlemci uzun koşularında negatif nüfus/kaynak ve çifte filo yoktur,PARTIAL,"beş senaryo 365 gün gözlemci koşusu bütünlük hatasız (filo/kanat ayna denetimi dahil), kayıt-yükleme hash eşit; 5/10/25 yıl koşulmadı"
 V16-T67,Proje/komuta/replay kayıtları uygulama kapanıp açılınca kaybolmaz,PASS,"komutan.test.ts (şema 9 kayıt), muharebe kayıtları kayıt ekinde"
 V16-T68,İdari emir onaylanınca kullanıcıya “kabul” ve “kalıcı kaydedildi” doğru ayrılır,PASS,v16b.test.ts
 V16-T69,"Gerçek cihazda portre, güvenli alan ve giriş klavyesi taşma yapmaz",NOT_RUN,gerçek cihaz denemesi yapılmadı

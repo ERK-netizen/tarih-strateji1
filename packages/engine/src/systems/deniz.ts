@@ -271,14 +271,30 @@ export function havaHaftasi(w: World): void {
   for (const k of w.KN.rows()) if (K.gorev[k]! > 0 && (K.hedef[k]! < 0 || !kanatMenzilde(w, k, K.hedef[k]!))) { K.gorev[k] = 0; K.hedef[k] = -1; }
   for (const k of w.KN.rows()) if (K.gorev[k]! > 0 && K.hedef[k]! >= 0 && !pasif(w, K.ulke[k]!)) aktif.push(k);
   const etkilenen = new Set<number>();
+  // güçler hafta başındaki değerle alınır: sonuç kanat sırasına bağlı olmaz
+  const guc = new Map<number, number>();
+  for (const k of aktif) guc.set(k, kanatGucu(w, k, 'hava'));
   for (const k of aktif) {
     const c = K.ulke[k]!;
-    let dusman = 0;
-    for (const d of aktif) if (d !== k && savasta(w, c, K.ulke[d]!) && (kanatKapsar(w, d, K.hedef[k]!) || kanatKapsar(w, k, K.hedef[d]!))) dusman += kanatGucu(w, d, 'hava');
-    const biz = kanatGucu(w, k, 'hava') + 1;
+    // aynı gökyüzünde çarpışanlar: hedefleri birbirini kapsayan kanatlar. Dost kanatlar birlikte sayılır
+    // (kanat sayısı kaybı çoğaltmaz); oran ülke düzeyindeki eski hesapla aynı ölçektedir.
+    let dusman = 0, biz = 1;
+    for (const d of aktif) {
+      if (d !== k && !kanatKapsar(w, d, K.hedef[k]!) && !kanatKapsar(w, k, K.hedef[d]!)) continue;
+      const cd = K.ulke[d]!;
+      if (cd === c || esTaraf(w, c, cd)) biz += guc.get(d)!;
+      else if (savasta(w, c, cd)) dusman += guc.get(d)!;
+    }
     if (dusman > 0) {
       const f = clamp(mulDiv(30_000, dusman, biz).q, 10_000, 150_000);
-      for (let t = 0; t < NHAVA; t++) { const n = K[KU[t]!][k]!; if (n > 0) K[KU[t]!][k] = n - Math.min(n, Math.max(1, mulDiv(n, f, S).q)); }
+      for (let t = 0; t < NHAVA; t++) {
+        const n = K[KU[t]!][k]!;
+        if (n <= 0) continue;
+        // kesirli kayıp olasılıkla yuvarlanır: küçük kanat her hafta zorunlu bir uçak yitirmez
+        const { q, rem } = mulDiv(n, f, S);
+        const kay = q + (rem > 0 && uniformInt(rng(w.tohum, w.gun, 32, c, t, AMAC.combatRoll, 0, k), S) < rem ? 1 : 0);
+        K[KU[t]!][k] = n - Math.min(n, kay);
+      }
       K.hasar[k] = Math.min(500_000, K.hasar[k]! + Math.floor(f / 2));
       etkilenen.add(c);
     }
@@ -293,7 +309,7 @@ export function havaHaftasi(w: World): void {
       C.yorgunluk[sahip] = Math.min(100_000, C.yorgunluk[sahip]! + Math.min(1000, Math.floor(zarar / 150)));
       // uçaksavar ve avcı savunması: bombardıman uçağı kaybı
       const n1 = K.u1[k]!;
-      if (n1 > 0) { K.u1[k] = n1 - Math.min(n1, Math.max(1, Math.floor(n1 / 40))); etkilenen.add(c); }
+      if (n1 > 0) { const kay = Math.floor(n1 / 40) + (uniformInt(rng(w.tohum, w.gun, 33, c, 1, AMAC.combatRoll, 0, k), 40) < n1 % 40 ? 1 : 0); K.u1[k] = n1 - Math.min(n1, kay); etkilenen.add(c); }
     }
   }
   for (const c of [...etkilenen].sort((a, b) => a - b)) kuvvetEsitle(w, c);

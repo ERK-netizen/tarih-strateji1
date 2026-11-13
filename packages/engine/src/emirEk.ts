@@ -650,7 +650,7 @@ EK_EMIRLER.filoGorev = {
     const nereden = F.konum[f]!;
     const seyir = hedef === nereden && !filoYolda(w, f) ? 0 : Math.max(1, sicrama(w, nereden, hedef, 200) * (SEYIR_GUN[AKTIF.donem] ?? 2));
     return tamam(`${filoAdi(w, f)}: ${DENIZ_GOREV[g]}`, `${bAd(w, hedef)}${seyir ? ` · seyir ${seyir} gün` : ' · yerinde'}`,
-      [`${filoGemi(w, f)} gemi, güç ${fmt(filoGucu(w, f))}`, 'Emir bugün kayıtlıdır; filo varana dek hiçbir bölgede etkili değildir'],
+      [`${filoGemi(w, f)} gemi, güç ${fmt(filoGucu(w, f))}`, seyir ? 'Emir bugün kayıtlıdır; filo varana dek hiçbir bölgede etkili değildir' : 'Filo bulunduğu bölgede göreve bugün başlar'],
       [g === 0 ? 'Ana limanda onarım hızlanır' : 'Filo yalnız bulunduğu bölgede ve komşu kıyılarda etkilidir; aynı anda tek görev yürütür'], 'Yeni emirle değiştirilebilir');
   },
   uygula(w, e) {

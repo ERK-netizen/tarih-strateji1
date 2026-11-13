@@ -493,10 +493,27 @@ function kuvvetGorev(w: World, c: number): void {
   const U = uc(w);
   const say = new Map<number, number>();
   if (dus.length) {
-    for (const u of w.U.rows()) if (U.ulke![u] === c && U.muharebe![u]) say.set(U.bolge![u]!, (say.get(U.bolge![u]!) ?? 0) + 1);
-    if (say.size === 0) for (const u of w.U.rows()) if (U.ulke![u] === c && w.komsuluk[U.bolge![u]!]!.some((q) => dus.includes(w.R.c.kontrolEden[q]!))) say.set(U.bolge![u]!, (say.get(U.bolge![u]!) ?? 0) + 1);
+    const benim = ulkeBirimleri(w, c).filter((u) => U.egitimBitis![u]! <= w.gun);
+    // muharebedeki birlik iki, düşmana komşu bekleyen birlik bir puan: sessiz ama kalabalık taarruz cephesi de hava desteği alır
+    for (const u of benim) {
+      const b = U.bolge![u]!;
+      if (U.muharebe![u]) say.set(b, (say.get(b) ?? 0) + 2);
+      else if (w.komsuluk[b]!.some((q) => dus.includes(w.R.c.kontrolEden[q]!))) say.set(b, (say.get(b) ?? 0) + 1);
+    }
+    // kesin sonuç cephesi (K-48): ezici üstün olduğumuz düşmana bakan bölgeler dört kat ağırlıklı
+    if (dus.length > 1) {
+      let kesin = -1, zu = AGIRLIK_USTUNLUK;
+      for (const k of dus) {
+        let komsu = false;
+        for (const b of say.keys()) if (w.komsuluk[b]!.some((q) => w.R.c.kontrolEden[q] === k)) { komsu = true; break; }
+        if (!komsu) continue;
+        const u = ustunluk(w, c, k, benim);
+        if (u > zu) { zu = u; kesin = k; }
+      }
+      if (kesin >= 0) for (const [b, v] of say) if (w.komsuluk[b]!.some((q) => w.R.c.kontrolEden[q] === kesin)) say.set(b, v * 4);
+    }
   }
-  const cephe = [...say.entries()].sort((x, y) => y[1] - x[1] || x[0] - y[0]).slice(0, 6);
+  const cephe = [...say.entries()].sort((x, y) => y[1] - x[1] || x[0] - y[0]).slice(0, 8);
   // filolar: denizdeki (hâkimiyet/abluka) her filo, ana limanının menzilindeki en yakın kıyı cephesine gider (kıyı desteği)
   if (gorev === 1 || gorev === 2) {
     const kiyi = cephe.filter(([r]) => kiyidaMi(w, r));
@@ -743,16 +760,19 @@ function cepheYonet(w: World, c: number): void {
   const tehdit = new Map<number, number>();
   /** Sınır bölgesinin karşısındaki gözlenen düşman gücü (savunma için tutulması gereken güç hesabı). */
   const karsiGuc = new Map<number, number>();
+  const karsiUlke = new Map<number, Map<number, number>>(); // bölge → düşman ülke → karşıdaki gözlenen güç
   for (const { r, v: vs } of sinirlarHam) {
     let t = 0, kg = 0;
+    const ku = new Map<number, number>();
     for (const v of vs) {
       const k = R.kontrolEden[v]!;
       const dus = savasta(w, c, k);
       const o = gozlem.get(v);
-      if (o) for (const [u2, gg] of o) if (u2 === k || savasta(w, c, u2)) { t += gg; if (savasta(w, c, u2)) kg += gg; }
+      if (o) for (const [u2, gg] of o) if (u2 === k || savasta(w, c, u2)) { t += gg; if (savasta(w, c, u2)) { kg += gg; ku.set(u2, (ku.get(u2) ?? 0) + gg); } }
       t += dus ? 20_000 : 5000;
     }
     karsiGuc.set(r, kg);
+    karsiUlke.set(r, ku);
     // ana yurt ve başkent önce korunur; uzak sömürge sınırları daha az birlik çeker
     if (!w.pkg.bolgeler[r]!.anaYurt.includes(c)) t = Math.floor(t / 2);
     else if (w.pkg.ulkeler[c]!.baskent === r || w.komsuluk[w.pkg.ulkeler[c]!.baskent]!.includes(r)) t = Math.floor((t * 3) / 2);
@@ -763,7 +783,11 @@ function cepheYonet(w: World, c: number): void {
     return;
   }
   // kaynak bölgede kalması gereken güç: karşıdaki düşman gücünün %70'i, bölgenin savunma çarpanıyla bölünür
-  const tutGerek = (r: number) => mulDiv(mulDiv(karsiGuc.get(r) ?? 0, 700_000, S).q, S, Math.max(S, savunmaCarpan(w, r, 0))).q;
+  // ezici üstün olduğumuz düşmanın (ezilen) karşı taarruzu beklenmez: onun payı yarım sayılır; öteki düşmanlara karşı güç tam tutulur
+  const tutGerek = (r: number, ezilen = -1) => {
+    const kg = (karsiGuc.get(r) ?? 0) - (ezilen >= 0 ? Math.floor((karsiUlke.get(r)?.get(ezilen) ?? 0) / 2) : 0);
+    return mulDiv(mulDiv(kg, 700_000, S).q, S, Math.max(S, savunmaCarpan(w, r, 0))).q;
+  };
   // taarruz adayları (yalnız savaşta)
   const atanmis = new Set<number>();
   if (savas) {
@@ -812,7 +836,8 @@ function cepheYonet(w: World, c: number): void {
         const r = U.bolge![u]!;
         const s = birlikIstat(w, u);
         const kalan = (bolgeGuc.get(r) ?? 0) - s.YS - s.SV;
-        if (kalan < tutGerek(r)) continue;
+        // büyük kent yığınağı kuşatmayı kilitlemesin: ezilen düşmanın payı yarım sayılır (bkz. tutGerek)
+        if (kalan < tutGerek(r, ezici ? hk : -1)) continue;
         bolgeGuc.set(r, kalan);
         giden.push(u);
         if (a.oran >= 10 * S && giden.length >= 2) break;

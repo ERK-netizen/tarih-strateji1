@@ -13,7 +13,7 @@ export const KU = ['u0', 'u1', 'u2'] as const;
 const GK = ['gs0', 'gs1', 'gs2', 'gs3', 'gs4'] as const satisfies readonly UlkeK[];
 const HK = ['h0', 'h1', 'h2'] as const satisfies readonly UlkeK[];
 /** Ülke başına en çok filo ve kanat (bölme emriyle açılabilecek üst sınır). */
-export const FILO_AZAMI = 8, KANAT_AZAMI = 10;
+export const FILO_AZAMI = 8, KANAT_AZAMI = 12;
 /** Çağa göre deniz menzili (ana limandan bölge sıçraması) ve sıçrama başına seyir günü. */
 export const DENIZ_MENZIL: Record<string, number> = { orta: 3, barut: 5, buyuk: 7, ikinci: 9, modern: 14 };
 export const SEYIR_GUN: Record<string, number> = { orta: 4, barut: 3, buyuk: 2, ikinci: 2, modern: 1 };
