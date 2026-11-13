@@ -22,7 +22,7 @@ const ANLIK_EMIR = new Set([
   'havaGorev', 'donanmaGorev', 'donanmaCephe', 'taburEkle', 'taburCikar',
   'rejim', 'partiDestek', 'secimErken', 'sandbox', 'kaliciGida',
   'komutanAta', 'komutanEmir', 'komutanEgit', 'komutanOto', 'antlasma',
-  'filoGorev', 'filoAktar', 'kanatGorev', 'kanatUs', 'kanatAktar', 'donanmaGonder',
+  'filoGorev', 'filoUs', 'filoAktar', 'kanatGorev', 'kanatUs', 'kanatAktar', 'donanmaGonder',
 ]);
 
 export class Sunucu {

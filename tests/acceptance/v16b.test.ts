@@ -176,8 +176,10 @@ describe('V16-T58 iki rapor: Devletim ve Dünya Olayları ayrıdır', () => {
     for (const o of olaylar) { expect(typeof o.tarih).toBe('string'); expect(typeof o.benim).toBe('boolean'); }
     // Dünya sekmesi yalnız önemli (onem ≥ 2) yabancı olayları, Devletim oyuncunun olaylarını içerir
     for (const o of olaylar.filter((x) => !x.benim)) expect(o.onem).toBeGreaterThanOrEqual(2);
-    const benimKronik = w.anlati.filter((a) => a.ulke === w.oyuncu).length;
-    expect(benimKronik).toBeGreaterThan(0);
+    // oyuncunun kendi kroniği: ilk kayıt düşene dek (en çok bir yıl) ilerlenir
+    const benimKronik = () => w.anlati.filter((a) => a.ulke === w.oyuncu).length;
+    for (let i = 0; i < 12 && benimKronik() === 0; i++) await iste(200 + i, 'advance', { birim: 'ay', adet: 1, sessiz: [] });
+    expect(benimKronik()).toBeGreaterThan(0);
   });
 });
 

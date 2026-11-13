@@ -8,7 +8,7 @@ import { GEMI, HAVA, NGEMI, NHAVA, DONEM_FIYAT, PETROL_KULLANIM } from '../katal
 import { S, mulDiv, clamp } from '../num/index.ts';
 import { rng, uniformInt, AMAC } from '../rng/index.ts';
 import { savasta, tarafi, savasUyeleri, pasif, anlat, bildir, uc } from './ortak.ts';
-import { FG, KU, ulkeFilolari, ulkeKanatlari, filoYolda, kuvvetEsitle, kanatKapsar, usDoluluk } from './kuvvet.ts';
+import { FG, KU, ulkeFilolari, ulkeKanatlari, filoYolda, kuvvetEsitle, kanatKapsar, kanatMenzilde, usDoluluk } from './kuvvet.ts';
 
 const GK = ['gs0', 'gs1', 'gs2', 'gs3', 'gs4'] as const satisfies readonly UlkeK[];
 const HK = ['h0', 'h1', 'h2'] as const satisfies readonly UlkeK[];
@@ -267,6 +267,8 @@ export function havaHaftasi(w: World): void {
   if (HAVA[AKTIF.donem].length === 0) return;
   const C = w.C.c, K = w.KN.c;
   const aktif: number[] = [];
+  // menzil güvencesi: hedefi üssünün menzilinden çıkmış kanat üste kalır (katkı vermez)
+  for (const k of w.KN.rows()) if (K.gorev[k]! > 0 && (K.hedef[k]! < 0 || !kanatMenzilde(w, k, K.hedef[k]!))) { K.gorev[k] = 0; K.hedef[k] = -1; }
   for (const k of w.KN.rows()) if (K.gorev[k]! > 0 && K.hedef[k]! >= 0 && !pasif(w, K.ulke[k]!)) aktif.push(k);
   const etkilenen = new Set<number>();
   for (const k of aktif) {

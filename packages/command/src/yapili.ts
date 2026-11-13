@@ -35,6 +35,21 @@ export function adBul(toks: Token[], adlar: readonly string[], ek: readonly (str
   return best;
 }
 
+/** Adlar listesindeki her adın metindeki ilk geçtiği yeri bulur; metin sırasına göre ad dizinleri (aynı ad bir kez). */
+export function adlarBul(toks: Token[], adlar: readonly string[]): number[] {
+  const bulunan: { i: number; s: number }[] = [];
+  adlar.forEach((ad, i) => {
+    const ws = sozcukler(ad).map((t) => t.k).filter((x) => x.length > 0);
+    if (!ws.length) return;
+    for (let s = 0; s + ws.length <= toks.length; s++) {
+      let ok = true;
+      for (let j = 0; j < ws.length; j++) if (!uyar(toks[s + j]!.k, ws[j]!)) { ok = false; break; }
+      if (ok) { bulunan.push({ i, s }); break; }
+    }
+  });
+  return bulunan.sort((a, b) => a.s - b.s || a.i - b.i).map((x) => x.i);
+}
+
 export interface YVarlik { tur: string; id: number; hal: string; i0: number }
 export interface YBaglam { k: Katalog; toks: Token[]; v: YVarlik[]; sayilar: number[]; yuzde?: number; birlikler: () => number[] }
 
@@ -80,6 +95,46 @@ export function yapiliAyristir(c: YBaglam): Yorum | string | null {
       const ids = c.birlikler();
       if (!ids.length) return `${kom.ad} hangi birliklere atanacak? Birlikleri seçin ya da adlarını yazın.`;
       return yorum({ tur: 'komutanAta', ulke: P, komutan: kom.id, birlikler: ids }, `komutan ata: ${kom.ad}`, k);
+    }
+  }
+  // ---------- Filolar ve hava kanatları (şema 10) ----------
+  {
+    const fl = k.filolar ?? [], kn = k.kanatlar ?? [];
+    const fi = fl.length ? adlarBul(toks, fl.map((x) => x.ad)) : [], ki = kn.length ? adlarBul(toks, kn.map((x) => x.ad)) : [];
+    const aktar = has(/ (aktar|devret|devred)/);
+    // "limanı/limana" sözcüğü Lima bölgesiyle karışmasın: liman sözcüğüne denk gelen bölge eşleşmesi sayılmaz
+    const limanSoz = new Set(v.filter((x) => x.tur === 'bolge' && /^liman/.test(toks[x.i0]?.k ?? '')).map((x) => x.id));
+    const bolge = bolgeler.find((r) => !limanSoz.has(r));
+    if (fi.length && !has(/ (siparis|uret|insa)/)) {
+      const fo = fl[fi[0]!]!;
+      if (aktar || has(/ yeni filo/)) {
+        const s = k.gemiler ? adBul(toks, k.gemiler.map((g) => g.ad), k.gemiler.map((g) => g.kisa)) : -1;
+        if (s < 0) return `${fo.ad}: hangi gemi sınıfı aktarılacak? (ör. "${fo.ad}: 2 ${kucukIlk(k.gemiler?.[0]?.ad ?? 'gemi')} ile yeni filo kur")`;
+        return yorum({ tur: 'filoAktar', ulke: P, filo: fo.id, hedefFilo: fi.length > 1 ? fl[fi[1]!]!.id : -1, sinif: s, adet: Math.max(1, Math.floor(sayilar[0] ?? 1)) }, fi.length > 1 ? `gemi aktar: ${fo.ad} → ${fl[fi[1]!]!.ad}` : `yeni filo: ${fo.ad}`, k);
+      }
+      if (bolge !== undefined && has(/ (ana liman|us degis|ussu olsun)/)) return yorum({ tur: 'filoUs', ulke: P, filo: fo.id, bolge }, `${fo.ad}: ana liman ${k.bolgeler[bolge]?.ad ?? ''}`, k);
+      if (has(/ liman/) && !has(/ liman(i|ina|inda|indan) /)) return yorum({ tur: 'filoGorev', ulke: P, filo: fo.id, gorev: 0, bolge: -1 }, `${fo.ad}: limana`, k);
+      const g = k.denizGorev ? adBul(toks, k.denizGorev) : -1;
+      if (g > 0) return yorum({ tur: 'filoGorev', ulke: P, filo: fo.id, gorev: g, bolge: bolge ?? -1 }, `${fo.ad}: ${k.denizGorev![g]}`, k);
+      // "2. Filo Dover'a gitsin": görev değişmez; limandaki filo deniz hâkimiyetine çıkar
+      if (bolge !== undefined && has(/ (git|gonder|sevk|acil|yelken|konuslan)/)) return yorum({ tur: 'filoGorev', ulke: P, filo: fo.id, gorev: fo.gorev > 0 ? fo.gorev : 1, bolge }, `${fo.ad}: ${k.bolgeler[bolge]?.ad ?? ''}`, k, 0.85);
+      return `${fo.ad} için görev belirtilmedi (ör. "${fo.ad}: abluka görevine geçsin" ya da "${fo.ad}: limana dönsün").`;
+    }
+    if (ki.length && !has(/ (siparis|uret)/)) {
+      const ko = kn[ki[0]!]!;
+      const t = k.ucaklar ? adBul(toks, k.ucaklar.map((h) => h.ad), k.ucaklar.map((h) => h.kisa)) : -1;
+      if ((aktar && t >= 0) || has(/ yeni kanat/)) {
+        if (t < 0) return `${ko.ad}: hangi uçak türü aktarılacak?`;
+        return yorum({ tur: 'kanatAktar', ulke: P, kanat: ko.id, hedefKanat: ki.length > 1 ? kn[ki[1]!]!.id : -1, tip: t, adet: Math.max(1, Math.floor(sayilar[0] ?? 1)) }, ki.length > 1 ? `uçak aktar: ${ko.ad} → ${kn[ki[1]!]!.ad}` : `yeni kanat: ${ko.ad}`, k);
+      }
+      if (bolge !== undefined && (aktar || has(/ (tasin|konuslan|us degis|ussune gec)/))) return yorum({ tur: 'kanatUs', ulke: P, kanat: ko.id, bolge }, `${ko.ad}: üs ${k.bolgeler[bolge]?.ad ?? ''}`, k);
+      const g = k.havaGorev ? adBul(toks, k.havaGorev.slice(1)) + 1 : 0;
+      if (g > 0) {
+        if (bolge === undefined) return `${ko.ad}: hava görevi için hedef bölge belirtilmedi.`;
+        return yorum({ tur: 'kanatGorev', ulke: P, kanat: ko.id, gorev: g, bolge }, `${ko.ad}: ${k.havaGorev![g]}`, k);
+      }
+      if (has(/ (uss|uste|usse|us e)/)) return yorum({ tur: 'kanatGorev', ulke: P, kanat: ko.id, gorev: 0, bolge: -1 }, `${ko.ad}: üste`, k);
+      return `${ko.ad} için görev belirtilmedi (ör. "${ko.ad}: Kars üzerinde yakın destek görevine geçsin").`;
     }
   }
   // ---------- Donanma ----------
@@ -196,12 +251,24 @@ export function yapiliMetin(e: Emir, k: Katalog): string | null {
   };
   const bs = (r: unknown) => ((r as number[]) ?? []).map(b).join(', ');
   const kAd = (id: unknown) => k.komutanlar?.find((x) => x.id === Number(id))?.ad ?? '?';
+  const fAd = (id: unknown) => k.filolar?.find((x) => x.id === Number(id))?.ad ?? '?';
+  const nAd = (id: unknown) => k.kanatlar?.find((x) => x.id === Number(id))?.ad ?? '?';
   switch (e.tur) {
     case 'komutanAta': return Number(e.komutan) < 0 ? `${birl(e.birlikler)}: komutandan ayır` : `${birl(e.birlikler)}: komutan ${kAd(e.komutan)} olsun`;
     case 'komutanEmir': return `Komutan ${kAd(e.komutan)}: emir ${['serbest', 'savun', 'taarruz'][Number(e.emir)] ?? 'serbest'}${Number(e.ikmalEsik) > 0 ? `, ikmal ${yuzdeYaz(Number(e.ikmalEsik))} altında beklesin` : ''}${Number(e.orgEsik) > 0 ? `, organizasyon ${yuzdeYaz(Number(e.orgEsik))} altında beklesin` : ''}`;
     case 'komutanEgit': return `Komutan ${kAd(e.komutan)} kurmay eğitimi alsın`;
     case 'komutanOto': return 'Komutanları birliklere dağıt';
     case 'antlasma': return `${ekle(u(e.kime), 'yonelme')} antlaşma öner${((e.bolgeler as number[]) ?? []).length ? `: ${bs(e.bolgeler)}` : ''}${Number(e.tazminat) > 0 ? `; tazminat ${Number(e.tazminat)} altın ${Number(e.taksitYil)} yılda` : ''}; ateşkes ${Number(e.ateskesYil)} yıl${Number(e.garanti) ? '; garanti' : ''}`;
+    case 'filoGorev': {
+      const g = Number(e.gorev);
+      if (g === 0) return `${fAd(e.filo)}: limana dönsün`;
+      return `${fAd(e.filo)}: ${Number(e.bolge) >= 0 ? `${b(e.bolge)} açıklarında ` : ''}${kucukIlk(k.denizGorev?.[g] ?? '?')} görevine geçsin`;
+    }
+    case 'filoUs': return `${fAd(e.filo)}: ana limanı ${b(e.bolge)} olsun`;
+    case 'filoAktar': return Number(e.hedefFilo) < 0 ? `${fAd(e.filo)}: ${Number(e.adet)} ${kucukIlk(k.gemiler?.[Number(e.sinif)]?.ad ?? '?')} ile yeni filo kur` : `${fAd(e.filo)}: ${Number(e.adet)} ${kucukIlk(k.gemiler?.[Number(e.sinif)]?.ad ?? '?')} ${fAd(e.hedefFilo)} emrine aktar`;
+    case 'kanatGorev': return Number(e.gorev) === 0 ? `${nAd(e.kanat)}: üsse dönsün` : `${nAd(e.kanat)}: ${b(e.bolge)} üzerinde ${kucukIlk(k.havaGorev?.[Number(e.gorev)] ?? '?')} görevine geçsin`;
+    case 'kanatUs': return `${nAd(e.kanat)}: ${b(e.bolge)} üssüne taşınsın`;
+    case 'kanatAktar': return Number(e.hedefKanat) < 0 ? `${nAd(e.kanat)}: ${Number(e.adet)} ${kucukIlk(k.ucaklar?.[Number(e.tip)]?.ad ?? '?')} ile yeni kanat kur` : `${nAd(e.kanat)}: ${Number(e.adet)} ${kucukIlk(k.ucaklar?.[Number(e.tip)]?.ad ?? '?')} ${nAd(e.hedefKanat)} emrine aktar`;
     case 'gemiInsa': return `${b(e.bolge)} tersanesinde ${Number(e.adet)} ${kucukIlk(k.gemiler?.[Number(e.sinif)]?.ad ?? '?')} inşa et`;
     case 'ucakUret': return `${Number(e.adet)} filo ${kucukIlk(k.ucaklar?.[Number(e.tip)]?.ad ?? '?')} sipariş et`;
     case 'donanmaGonder': return `Donanma ${b(e.bolge)} cephesine gitsin`;

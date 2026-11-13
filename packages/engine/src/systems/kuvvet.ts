@@ -15,7 +15,7 @@ const HK = ['h0', 'h1', 'h2'] as const satisfies readonly UlkeK[];
 /** Ülke başına en çok filo ve kanat (bölme emriyle açılabilecek üst sınır). */
 export const FILO_AZAMI = 8, KANAT_AZAMI = 10;
 /** Çağa göre deniz menzili (ana limandan bölge sıçraması) ve sıçrama başına seyir günü. */
-export const DENIZ_MENZIL: Record<string, number> = { orta: 8, barut: 16, buyuk: 22, ikinci: 30, modern: 60 };
+export const DENIZ_MENZIL: Record<string, number> = { orta: 3, barut: 5, buyuk: 7, ikinci: 9, modern: 14 };
 export const SEYIR_GUN: Record<string, number> = { orta: 4, barut: 3, buyuk: 2, ikinci: 2, modern: 1 };
 export const denizMenzili = (): number => DENIZ_MENZIL[AKTIF.donem] ?? 16;
 
@@ -49,11 +49,13 @@ export function kuvvetEsitle(w: World, c: number): void {
   C.hHasar[c] = hn > 0 ? Math.floor(hh / hn) : 0;
 }
 
-/** c'nin deniz üssü olabilecek bölgeleri: sahip olup kontrol ettiği kıyı bölgeleri; tersaneliler önce. */
+/** Bölge c'nin ana yurdunda mı (sömürge ve işgal toprağı değil)? */
+export const anaMi = (w: World, c: number, r: number): boolean => w.pkg.bolgeler[r]!.anaYurt.includes(c);
+/** c'nin deniz üssü olabilecek bölgeleri: sahip olup kontrol ettiği kıyı bölgeleri; ana yurt, sonra tersaneliler önce. */
 export function limanlar(w: World, c: number): number[] {
   const R = w.R.c, l: number[] = [];
   for (let r = 0; r < w.nR; r++) if (R.sahip[r] === c && R.kontrolEden[r] === c && kiyidaMi(w, r)) l.push(r);
-  return l.sort((a, b) => R.tersane[b]! - R.tersane[a]! || R.kent[b]! - R.kent[a]! || a - b);
+  return l.sort((a, b) => Number(anaMi(w, c, b)) - Number(anaMi(w, c, a)) || R.tersane[b]! - R.tersane[a]! || R.kent[b]! - R.kent[a]! || a - b);
 }
 /** c'nin hava üsleri (düzeyi > 0, sahip ve kontrol); büyük üs önce. */
 export function usler(w: World, c: number): number[] {
@@ -84,14 +86,16 @@ function siraNo(w: World, c: number, filo: boolean): number {
   return en + 1;
 }
 export function filoKur(w: World, c: number, us: number, gemi: number[]): number {
+  const no = siraNo(w, c, true); // yeni satır ayrılmadan önce: boş satırın eski adı sayılmasın
   const f = w.FL.alloc(), F = w.FL.c;
-  F.ulke[f] = c; F.ad[f] = adEkle(w, `${siraNo(w, c, true)}. Filo`); F.us[f] = us; F.konum[f] = us; F.hedef[f] = -1; F.varis[f] = 0; F.gorev[f] = 0; F.hasar[f] = 0;
+  F.ulke[f] = c; F.ad[f] = adEkle(w, `${no}. Filo`); F.us[f] = us; F.konum[f] = us; F.hedef[f] = -1; F.varis[f] = 0; F.gorev[f] = 0; F.hasar[f] = 0;
   for (let k = 0; k < NGEMI; k++) F[FG[k]!][f] = gemi[k] ?? 0;
   return f;
 }
 export function kanatKur(w: World, c: number, us: number, ucak: number[]): number {
+  const no = siraNo(w, c, false);
   const k = w.KN.alloc(), K = w.KN.c;
-  K.ulke[k] = c; K.ad[k] = adEkle(w, `${siraNo(w, c, false)}. Hava Kanadı`); K.us[k] = us; K.gorev[k] = 0; K.hedef[k] = -1; K.hasar[k] = 0;
+  K.ulke[k] = c; K.ad[k] = adEkle(w, `${no}. Hava Kanadı`); K.us[k] = us; K.gorev[k] = 0; K.hedef[k] = -1; K.hasar[k] = 0;
   for (let t = 0; t < NHAVA; t++) K[KU[t]!][k] = ucak[t] ?? 0;
   return k;
 }
@@ -108,28 +112,53 @@ export function kuvvetKur(w: World, c: number): void {
   const gTop = gemi.reduce((s, x) => s + x, 0), uTop = ucak.reduce((s, x) => s + x, 0);
   const gh = C.gHasar[c]!, hh = C.hHasar[c]!;
   if (gTop > 0) {
-    let l = limanlar(w, c);
+    // ana donanma ana yurt limanlarında (ağırlık 3), deniz aşırı istasyonlar küçük (ağırlık 1); limanlar sırayla seçilir
+    const hepsi = limanlar(w, c);
+    const ic = hepsi.filter((r) => anaMi(w, c, r)), dis = hepsi.filter((r) => !anaMi(w, c, r));
+    let l: number[] = [];
+    for (let i = 0; i < Math.max(ic.length, dis.length); i++) { if (i < ic.length) l.push(ic[i]!); if (i < dis.length) l.push(dis[i]!); }
     if (!l.length) l = [w.pkg.ulkeler[c]!.baskent];
     const n = Math.max(1, Math.min(l.length, 4, 1 + Math.floor(gTop / 40)));
-    const pay = Array.from({ length: NGEMI }, (_, k) => largestRemainder(gemi[k]!, new Array<number>(n).fill(1)));
+    l = l.slice(0, n);
+    const agirlik = l.map((r) => (anaMi(w, c, r) ? 3 : 1));
+    const pay = Array.from({ length: NGEMI }, (_, k) => largestRemainder(gemi[k]!, agirlik));
     const hedef = C.donBolge[c]! - 1;
     for (let i = 0; i < n; i++) {
       const f = filoKur(w, c, l[i]!, pay.map((p) => p[i]!));
       w.FL.c.gorev[f] = C.donGorev[c]!; w.FL.c.hasar[f] = gh;
-      if (hedef >= 0 && w.FL.c.gorev[f]! > 0) w.FL.c.konum[f] = hedef;
+      // cephe yalnız ana limanın menzilindeyse filo oradadır; değilse görevini kendi limanından yürütür
+      if (hedef >= 0 && w.FL.c.gorev[f]! > 0 && sicrama(w, l[i]!, hedef, denizMenzili()) <= denizMenzili()) w.FL.c.konum[f] = hedef;
     }
   }
   if (uTop > 0) {
     let l = usler(w, c);
     if (!l.length) l = [w.pkg.ulkeler[c]!.baskent];
-    l = l.slice(0, KANAT_AZAMI - 2);
-    const agirlik = l.map((r) => Math.max(1, w.R.c.havaUs[r]!));
+    // ana yurt üsleri üç kat ağırlıklı: hava kuvvetinin çoğu metropolde, sömürge üslerinde küçük kanatlar
+    const ag = (r: number) => Math.max(1, w.R.c.havaUs[r]!) * (anaMi(w, c, r) ? 3 : 1);
+    l = [...l].sort((a, b) => ag(b) - ag(a) || a - b).slice(0, KANAT_AZAMI - 2);
+    // üs kapasitesi aşılmaz: ağırlıklı pay kapasiteyle sınırlanır, artan uçak yer kalan üslere dağıtılır
+    const tavan = l.map((r) => Math.max(0, w.R.c.havaUs[r]! * UCAK_KAPASITE - NHAVA));
+    const agirlik = new Array<number>(l.length).fill(0);
+    let kalan = uTop, acik = l.map((_, i) => i);
+    while (kalan > 0 && acik.length) {
+      const pay = largestRemainder(kalan, acik.map((i) => ag(l[i]!)));
+      const sonraki: number[] = [];
+      let verilen = 0;
+      acik.forEach((i, j) => { const v = Math.min(pay[j]!, tavan[i]! - agirlik[i]!); agirlik[i] = agirlik[i]! + v; verilen += v; if (agirlik[i]! < tavan[i]!) sonraki.push(i); });
+      kalan -= verilen; acik = sonraki;
+      if (verilen === 0) break;
+    }
+    // bütün üsler doluysa kalan uçak ağırlıkla paylaştırılır (verim düşer; oyuncu üs büyütmeli)
+    if (kalan > 0) largestRemainder(kalan, l.map(ag)).forEach((v, i) => { agirlik[i] = agirlik[i]! + v; });
     const pay = Array.from({ length: NHAVA }, (_, t) => largestRemainder(ucak[t]!, agirlik));
     for (let i = 0; i < l.length; i++) {
       const u = pay.map((p) => p[i]!);
       if (u.reduce((s, x) => s + x, 0) <= 0) continue;
       const k = kanatKur(w, c, l[i]!, u);
-      w.KN.c.gorev[k] = C.havaGorev[c]!; w.KN.c.hedef[k] = C.havaGorev[c]! > 0 ? C.havaBolge[c]! : -1; w.KN.c.hasar[k] = hh;
+      w.KN.c.hasar[k] = hh;
+      // ülke görevi yalnız hedefi kendi üssünün menzilinde olan kanatlara geçer
+      const g = C.havaGorev[c]!, h = C.havaBolge[c]!;
+      if (g > 0 && h >= 0 && h < w.nR && kanatMenzilde(w, k, h)) { w.KN.c.gorev[k] = g; w.KN.c.hedef[k] = h; }
     }
   }
   kuvvetEsitle(w, c);

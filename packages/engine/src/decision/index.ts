@@ -1,5 +1,5 @@
 import { PROJE } from '../catalog.ts';
-import { ucakToplam, ucakKapasitesi } from '../systems/us.ts';
+import { ucakToplam, ucakKapasitesi, kiyidaMi, havaMenzili } from '../systems/us.ts';
 // Bölüm 19: karar modülü. Yalnız gözlem görünümü, kamu bilgisi ve kendi verisini kullanır;
 // emirlerini oyuncuyla aynı doğrulama yolundan (orders.uygula) geçirir.
 import type { World } from '../state/world.ts';
@@ -14,7 +14,8 @@ import {
 } from '../systems/ortak.ts';
 import { insanGucu } from '../systems/nufus.ts';
 import { ulkeGidaStok, zorunluGider, krediLimiti, acikYuva } from '../systems/ekonomi.ts';
-import { denizGucu, akinGucu, korumaGucu, havaGucu, havaUstunluk } from '../systems/deniz.ts';
+import { denizGucu, akinGucu, korumaGucu, havaGucu, havaUstunluk, kanatGucu } from '../systems/deniz.ts';
+import { ulkeFilolari, ulkeKanatlari, filoGemi, kanatUcak, filoYolda, sicrama, denizMenzili, kanatMenzilde, usler, limanlar, usDoluluk } from '../systems/kuvvet.ts';
 import { HAVA } from '../katalogEk.ts';
 import { savunmaCarpan, topcuBaski } from '../systems/kara.ts';
 import { TK, ESIK, gerekceVar, gerekceSurecte, antlasmaKabul, antlasmaAc, barisKabul, savasSkoru, istekliligi, tavizButcesi, bolgeDegeri, teslimKosulu, teklifBolgeleri } from '../systems/diplomasi.ts';
@@ -488,20 +489,82 @@ function kuvvetGorev(w: World, c: number): void {
     if (C.gHasar[c]! > (gorev === 3 ? 400_000 : 250_000)) gorev = 0; // ağır hasarlı filo onarım için limana döner
   }
   if (C.donGorev[c] !== gorev) emir(w, c, 'donanmaGorev', { gorev });
-  // hava: en sıcak cephe bölgesinde üstünlük ya da yakın destek
-  if (HAVA[AKTIF.donem].length && havaGucu(w, c, 'hava') + havaGucu(w, c, 'destek') > 0) {
-    if (dus.length) {
-      const U = uc(w);
-      const say = new Map<number, number>();
-      for (const u of w.U.rows()) if (U.ulke![u] === c && U.muharebe![u]) say.set(U.bolge![u]!, (say.get(U.bolge![u]!) ?? 0) + 1);
-      // muharebe yoksa düşmana komşu en kalabalık cephe bölgesi
-      if (say.size === 0) for (const u of w.U.rows()) if (U.ulke![u] === c && w.komsuluk[U.bolge![u]!]!.some((q) => dus.includes(w.R.c.kontrolEden[q]!))) say.set(U.bolge![u]!, (say.get(U.bolge![u]!) ?? 0) + 1);
-      let r = -1, m = 0; for (const [b, v] of [...say.entries()].sort((x, y) => x[0] - y[0])) if (v > m) { m = v; r = b; }
-      if (r < 0) r = w.pkg.ulkeler[c]!.baskent;
-      // önce gökyüzü: üstünlük kurulmadan yakın destek boşa gider
-      const g = havaGucu(w, c, 'destek') > 0 && havaUstunluk(w, c, r) >= 300_000 ? 2 : 1;
-      if (C.havaGorev[c] !== g || C.havaBolge[c] !== r) emir(w, c, 'havaGorev', { gorev: g, bolge: r });
-    } else if (C.havaGorev[c] !== 0) emir(w, c, 'havaGorev', { gorev: 0, bolge: -1 });
+  // sıcak cepheler: muharebedeki birliklerimizin bölgeleri; yoksa düşmana komşu birlik bölgeleri (kalabalık olan önce)
+  const U = uc(w);
+  const say = new Map<number, number>();
+  if (dus.length) {
+    for (const u of w.U.rows()) if (U.ulke![u] === c && U.muharebe![u]) say.set(U.bolge![u]!, (say.get(U.bolge![u]!) ?? 0) + 1);
+    if (say.size === 0) for (const u of w.U.rows()) if (U.ulke![u] === c && w.komsuluk[U.bolge![u]!]!.some((q) => dus.includes(w.R.c.kontrolEden[q]!))) say.set(U.bolge![u]!, (say.get(U.bolge![u]!) ?? 0) + 1);
+  }
+  const cephe = [...say.entries()].sort((x, y) => y[1] - x[1] || x[0] - y[0]).slice(0, 6);
+  // filolar: denizdeki (hâkimiyet/abluka) her filo, ana limanının menzilindeki en yakın kıyı cephesine gider (kıyı desteği)
+  if (gorev === 1 || gorev === 2) {
+    const kiyi = cephe.filter(([r]) => kiyidaMi(w, r));
+    const tutulan = new Set<number>();
+    for (const f of ulkeFilolari(w, c)) {
+      const F = w.FL.c;
+      if (filoGemi(w, f) <= 0 || filoYolda(w, f)) continue;
+      const yer = F.konum[f]!;
+      // zaten bir cepheyi destekliyorsa yerinde kalır
+      const mevcut = kiyi.find(([r]) => r === yer || w.komsuluk[yer]!.includes(r));
+      if (mevcut) { tutulan.add(mevcut[0]); continue; }
+      let hedef = -1, en = 999;
+      for (const [r] of kiyi) {
+        if (tutulan.has(r) || sicrama(w, F.us[f]!, r, denizMenzili()) > denizMenzili()) continue;
+        const d = sicrama(w, yer, r, 40);
+        if (d < en) { en = d; hedef = r; }
+      }
+      if (hedef >= 0) { if (emir(w, c, 'filoGorev', { filo: w.FL.id(f), gorev, bolge: hedef })) tutulan.add(hedef); continue; }
+      // menzilde kıyı cephesi yok: en sıcak kıyı cephesini menziline alan en yakın kendi limanına bağlanır
+      if (kiyi.length) {
+        const ana = kiyi[0]![0];
+        let liman = -1, yakin = 999;
+        for (const q of limanlar(w, c)) {
+          if (q === F.us[f]) continue;
+          const d = sicrama(w, q, ana, denizMenzili());
+          if (d < yakin) { yakin = d; liman = q; }
+        }
+        if (liman >= 0 && yakin <= denizMenzili() && emir(w, c, 'filoUs', { filo: w.FL.id(f), bolge: liman })) continue;
+      }
+      // genel görev değişmişse (ör. yeni limana varan filo) filo ülke görevine döner
+      if (F.gorev[f] !== gorev) emir(w, c, 'filoGorev', { filo: w.FL.id(f), gorev, bolge: -1 });
+    }
+  }
+  // hava: her kanat kendi menzilindeki en sıcak cephede üstünlük ya da yakın destek; menzil dışındaysa cepheye yakın üsse geçer
+  if (HAVA[AKTIF.donem].length && ulkeKanatlari(w, c).length) {
+    const K = w.KN.c;
+    const yuk = new Map<number, number>();
+    for (const k of ulkeKanatlari(w, c)) {
+      if (kanatUcak(w, k) <= 0) continue;
+      const id = w.KN.id(k);
+      if (!cephe.length) { if (K.gorev[k] !== 0) emir(w, c, 'kanatGorev', { kanat: id, gorev: 0, bolge: -1 }); continue; }
+      let r = -1, puan = -1;
+      for (const [b, v] of cephe) {
+        if (!kanatMenzilde(w, k, b)) continue;
+        const p = Math.floor((v * 1000) / (1 + (yuk.get(b) ?? 0)));
+        if (p > puan) { puan = p; r = b; }
+      }
+      if (r >= 0) {
+        yuk.set(r, (yuk.get(r) ?? 0) + 1);
+        // önce gökyüzü: üstünlük kurulmadan yakın destek boşa gider
+        const g = kanatGucu(w, k, 'destek') > 0 && havaUstunluk(w, c, r) >= 300_000 ? 2 : 1;
+        if (K.gorev[k] !== g || K.hedef[k] !== r) emir(w, c, 'kanatGorev', { kanat: id, gorev: g, bolge: r });
+        continue;
+      }
+      // menzilde cephe yok: en sıcak cepheyi menziline alan, yeri olan en yakın kendi üssüne aktar
+      const ana = cephe[0]![0];
+      let us = -1, en = 999;
+      for (const q of usler(w, c)) {
+        if (q === K.us[k]) continue;
+        const d = sicrama(w, q, ana, havaMenzili());
+        if (d > havaMenzili() || d >= en) continue;
+        const dol = usDoluluk(w, q);
+        if (dol.ucak + kanatUcak(w, k) > dol.kapasite) continue;
+        en = d; us = q;
+      }
+      if (us >= 0) emir(w, c, 'kanatUs', { kanat: id, bolge: us });
+      else if (K.gorev[k] !== 0) emir(w, c, 'kanatGorev', { kanat: id, gorev: 0, bolge: -1 });
+    }
   }
 }
 

@@ -371,6 +371,35 @@ function doldur(mp: MPoly, id: number): void {
   }
 }
 bolgeler.forEach((b, i) => doldur(b.poligon, i));
+// Deniz: bölgesiz hücrelerin büyük bağlı bileşenleri (okyanus, iç denizler, büyük göller). Poligonlar arasındaki ince
+// boşluklar ve küçük göller deniz sayılmaz; yoksa iç bölgeler (Innsbruck, Berlin) kıyı görünür ve filo üssü olur.
+const DENIZ_ESIK = Number(process.env.DENIZ_ESIK ?? 200);
+const denizMi = new Uint8Array(RW * RH);
+{
+  const etiket = new Int32Array(RW * RH).fill(-1);
+  const boyut: number[] = [];
+  const yigin = new Int32Array(RW * RH);
+  for (let i0 = 0; i0 < RW * RH; i0++) {
+    if (izgara[i0]! >= 0 || etiket[i0]! >= 0) continue;
+    const id = boyut.length; let n = 0, ust = 0;
+    yigin[ust++] = i0; etiket[i0] = id;
+    while (ust > 0) {
+      const i = yigin[--ust]!; n++;
+      const x = i % RW, y = (i - x) / RW;
+      if (x > 0 && izgara[i - 1]! < 0 && etiket[i - 1]! < 0) { etiket[i - 1] = id; yigin[ust++] = i - 1; }
+      if (x + 1 < RW && izgara[i + 1]! < 0 && etiket[i + 1]! < 0) { etiket[i + 1] = id; yigin[ust++] = i + 1; }
+      if (y > 0 && izgara[i - RW]! < 0 && etiket[i - RW]! < 0) { etiket[i - RW] = id; yigin[ust++] = i - RW; }
+      if (y + 1 < RH && izgara[i + RW]! < 0 && etiket[i + RW]! < 0) { etiket[i + RW] = id; yigin[ust++] = i + RW; }
+    }
+    boyut.push(n);
+  }
+  for (let i = 0; i < RW * RH; i++) if (etiket[i]! >= 0 && boyut[etiket[i]!]! >= DENIZ_ESIK) denizMi[i] = 1;
+  if (process.env.HARITA_AYIKLA) {
+    const sirali = boyut.map((n, id) => ({ n, id })).sort((x, y) => y.n - x.n);
+    const dokunan = (id: number) => { const m = new Set<string>(); for (let i = 0; i < RW * RH && m.size < 4; i++) if (etiket[i] === id) for (const j of [i - 1, i + 1, i - RW, i + RW]) if (j >= 0 && j < RW * RH && izgara[j]! >= 0) m.add(bolgeler[izgara[j]!]!.ad); return [...m].join('/'); };
+    console.log('su bileşeni', boyut.length, sirali.slice(0, 60).map((x) => `${x.n}:${dokunan(x.id)}`).join(' | '));
+  }
+}
 const sinir = new Map<number, number>();
 const kiyiSay = new Int32Array(bolgeler.length);
 const pikselSay = new Int32Array(bolgeler.length);
@@ -382,12 +411,12 @@ for (let y = 0; y < RH; y++) for (let x = 0; x < RW; x++) {
     if (x + dx >= RW || y + dy >= RH) continue;
     const b = izgara[(y + dy) * RW + x + dx]!;
     if (b === a) continue;
-    if (b < 0) { kiyiSay[a]!++; continue; }
+    if (b < 0) { if (denizMi[(y + dy) * RW + x + dx]) kiyiSay[a]!++; continue; }
     const key = Math.min(a, b) * 4096 + Math.max(a, b);
     sinir.set(key, (sinir.get(key) ?? 0) + 1);
   }
-  if (x > 0 && izgara[y * RW + x - 1]! < 0) kiyiSay[a]!++;
-  if (y > 0 && izgara[(y - 1) * RW + x]! < 0) kiyiSay[a]!++;
+  if (x > 0 && denizMi[y * RW + x - 1]) kiyiSay[a]!++;
+  if (y > 0 && denizMi[(y - 1) * RW + x]) kiyiSay[a]!++;
 }
 bolgeler.forEach((b, i) => { b.kiyi = kiyiSay[i]! > 2; });
 
@@ -400,14 +429,20 @@ for (const [key, n] of sinir) {
 }
 
 // ---------- Deniz geçişleri ----------
+const LIMAN_KOORDINAT: Record<string, [number, number]> = {
+  Izmit: [29.92, 40.77], Izmir: [27.14, 38.42], Rhodes: [28.22, 36.43], Heraklion: [25.13, 35.34], Basra: [47.78, 30.51], 'Cádiz': [-6.29, 36.53],
+  'Hong Kong': [114.17, 22.32], Syracuse: [15.29, 37.08], Aarhus: [10.21, 56.16], Gothenburg: [11.97, 57.71],
+};
 function bolgeBul(sehir: string, ulke: string): number {
   const s = SEHIRLER.filter((c) => c.country === ulke && (c.name === sehir || c.altName.split(',').includes(sehir))).sort((a, b) => b.population - a.population)[0];
-  const lonlat: [number, number] | null = s ? s.loc.coordinates : null;
+  // şehir verisinde adı farklı yazılan limanlar: koordinat elle verilir (yoksa geçiş ülkenin ilk bölgesine, ör. Ankara'ya bağlanırdı)
+  const lonlat: [number, number] | null = s ? s.loc.coordinates : (LIMAN_KOORDINAT[sehir] ?? null);
   if (lonlat) {
     const [x, y] = proj(...lonlat);
     const r = izgara[Math.floor(y * R_ERKEN) * RW + Math.floor(x * R_ERKEN)]!;
     if (r >= 0 && bolgeler[r]!.iso === ulke) return r;
   }
+  if (!lonlat) throw new Error(`deniz geçişi: ${sehir} (${ulke}) bulunamadı; LIMAN_KOORDINAT'a ekleyin`);
   let best = -1, bd = Infinity;
   bolgeler.forEach((b, i) => {
     if (b.iso !== ulke) return;

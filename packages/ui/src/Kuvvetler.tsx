@@ -38,6 +38,11 @@ export function FiloBolumu({ k }: { k: any }) {
                     {kiyilar.map((x) => <option key={x.r} value={x.r}>{x.ad}</option>)}
                   </select></div>
                 <div class="cipler sar">{k.denizGorevler.map((g: string, i: number) => <button key={g} class={`cip ${f.gorev === i ? 'acik' : ''}`} aria-pressed={f.gorev === i} onClick={() => onizle({ tur: 'filoGorev', filo: f.id, gorev: i, bolge: i === 0 ? -1 : hedef })}>{g}</button>)}</div>
+                {k.limanlarim.length > 1 && <div class="satir-ayar"><label for={`fu${f.id}`}>Ana liman</label>
+                  <select id={`fu${f.id}`} value={f.us} onChange={(e) => onizle({ tur: 'filoUs', filo: f.id, bolge: Number((e.target as HTMLSelectElement).value) })}>
+                    {!k.limanlarim.some((l: any) => l.r === f.us) && <option value={f.us}>{f.usAd}</option>}
+                    {k.limanlarim.map((l: any) => <option key={l.r} value={l.r}>{l.ad}</option>)}
+                  </select></div>}
                 <div class="satir-ayar"><span class="soluk kucuk">Filoyu böl: seçilen sınıfın yarısı yeni filoya geçer</span>
                   <span class="dugmeler">{k.gemiler.filter((g: any) => f.gemi[g.k] >= 2).map((g: any) => <button key={g.k} class="kucuk-dugme" disabled={k.filolar.length >= k.filoAzami} onClick={() => onizle({ tur: 'filoAktar', filo: f.id, hedefFilo: -1, sinif: g.k, adet: Math.floor(f.gemi[g.k] / 2) })}>{g.ad}</button>)}</span></div>
                 {k.filolar.filter((x: any) => x.id !== f.id && x.konum === f.konum && !x.hedefAd && !f.hedefAd).map((x: any) => (

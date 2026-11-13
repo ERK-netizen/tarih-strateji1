@@ -120,6 +120,7 @@ export const EK_EMIRLER: Record<string, EkEmir> = {
       const g = n(e.gorev), r = g > 0 ? n(e.bolge) : -1;
       w.C.c.havaGorev[e.ulke] = g; w.C.c.havaBolge[e.ulke] = r;
       for (const k of ulkeKanatlari(w, e.ulke)) { const ok = g > 0 && kanatMenzilde(w, k, r); w.KN.c.gorev[k] = ok ? g : 0; w.KN.c.hedef[k] = ok ? r : -1; }
+      w.onbellek.delete('havaU');
     },
   },
   donanmaGonder: {
@@ -659,6 +660,19 @@ EK_EMIRLER.filoGorev = {
     if (hedef >= 0) filoYolaCikar(w, f, hedef);
   },
 };
+EK_EMIRLER.filoUs = {
+  onizle(w, e) {
+    const f = filoCoz(w, e), r = n(e.bolge, -1);
+    if (f < 0) return red('Filo', 'Filo bulunamadı.');
+    if (r < 0 || r >= w.nR || w.R.c.sahip[r] !== e.ulke || w.R.c.kontrolEden[r] !== e.ulke || !kiyiMi(w, r)) return red('Filo', 'Ana liman, sahip olup kontrol ettiğiniz bir kıyı bölgesi olmalı.');
+    const F = w.FL.c;
+    if (r === F.us[f]) return red('Filo', `${filoAdi(w, f)} zaten ${bAd(w, r)} limanına bağlı.`);
+    const seyir = r === F.konum[f] && !filoYolda(w, f) ? 0 : Math.max(1, sicrama(w, F.konum[f]!, r, 200) * (SEYIR_GUN[AKTIF.donem] ?? 2));
+    return tamam(`${filoAdi(w, f)} ana liman değiştirir: ${bAd(w, r)}`, seyir ? `intikal ${seyir} gün` : 'yerinde', ['Görev sıfırlanır; filo yeni limanında bekler', 'İntikal sırasında hiçbir bölgede etkili değildir'],
+      [`Menzil yeni limandan hesaplanır (${denizMenzili()} bölge)`], 'Yeni emirle değiştirilebilir');
+  },
+  uygula(w, e) { const f = filoCoz(w, e), r = n(e.bolge); w.FL.c.us[f] = r; w.FL.c.gorev[f] = 0; filoYolaCikar(w, f, r); },
+};
 EK_EMIRLER.filoAktar = {
   onizle(w, e) {
     const f = filoCoz(w, e), h = n(e.hedefFilo, -1) < 0 ? -1 : filoCoz(w, e, 'hedefFilo'), k = n(e.sinif, -1), adet = n(e.adet, 0);
@@ -698,7 +712,7 @@ EK_EMIRLER.kanatGorev = {
     return tamam(`${kanatAdi(w, k)}: ${HAVA_GOREV[g]}`, `${bAd(w, r)} · üs ${bAd(w, w.KN.c.us[k]!)} (${d} bölge)`, [`${kanatUcak(w, k)} uçak`, 'Kanat aynı anda tek görev ve tek hedefte sayılır'],
       [u.ucak > u.kapasite ? `Üs kapasitesi aşılmış (${u.ucak}/${u.kapasite}): verim %${Math.floor((u.kapasite * 100) / u.ucak)}` : 'Hedef bölge ve komşularında etkilidir'], 'Yeni emirle değiştirilebilir');
   },
-  uygula(w, e) { const k = kanatCoz(w, e), g = n(e.gorev); w.KN.c.gorev[k] = g; w.KN.c.hedef[k] = g > 0 ? n(e.bolge) : -1; },
+  uygula(w, e) { const k = kanatCoz(w, e), g = n(e.gorev); w.KN.c.gorev[k] = g; w.KN.c.hedef[k] = g > 0 ? n(e.bolge) : -1; w.onbellek.delete('havaU'); },
 };
 EK_EMIRLER.kanatUs = {
   onizle(w, e) {
@@ -710,7 +724,7 @@ EK_EMIRLER.kanatUs = {
     return tamam(`${kanatAdi(w, k)} üs değiştirir: ${bAd(w, r)}`, `${n2} uçak · üs ${u.ucak + n2}/${u.kapasite}`, ['Görev sıfırlanır; kanat yeni üste hazır bekler'],
       [u.ucak + n2 > u.kapasite ? 'Üs kapasitesi aşılacak: bu üsteki bütün kanatların verimi düşer' : 'Menzil yeni üsten hesaplanır'], 'Yeni emirle değiştirilebilir', u.ucak + n2 > u.kapasite ? { uyari: ['Üs kapasitesi aşılıyor.'] } : {});
   },
-  uygula(w, e) { const k = kanatCoz(w, e); w.KN.c.us[k] = n(e.bolge); w.KN.c.gorev[k] = 0; w.KN.c.hedef[k] = -1; },
+  uygula(w, e) { const k = kanatCoz(w, e); w.KN.c.us[k] = n(e.bolge); w.KN.c.gorev[k] = 0; w.KN.c.hedef[k] = -1; w.onbellek.delete('havaU'); },
 };
 EK_EMIRLER.kanatAktar = {
   onizle(w, e) {
@@ -732,6 +746,7 @@ EK_EMIRLER.kanatAktar = {
     K2[KU[t]!][k] = K2[KU[t]!][k]! - adet; K2[KU[t]!][h] = K2[KU[t]!][h]! + adet;
     if (kanatUcak(w, k) <= 0) w.KN.release(k);
     kuvvetEsitle(w, e.ulke);
+    w.onbellek.delete('havaU');
   },
 };
 void NGEMI; void NHAVA;
