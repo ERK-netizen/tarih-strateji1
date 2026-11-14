@@ -1,0 +1,140 @@
+{
+  "package": "Tarih_Strateji_v1.7_R2_Butunlesik_Gelistirme_Paketi",
+  "date": "2026-11-14",
+  "repo": "ERK-netizen/tarih-strateji1",
+  "source_branch": "ccr-949a01d1-3lmfyg",
+  "source_sha": "9f3694c9af1afae86aa16771bcc5ed458058ee05",
+  "status": "DESIGN_AND_REFERENCE_CODE_ONLY__NOT_APPLIED_TO_GAME",
+  "reference_code_tests": 13,
+  "reference_code_tests_passed": 13,
+  "game_tests_executed_this_turn": 0,
+  "country_count": 16,
+  "country_goals": 64,
+  "conditional_events": 36,
+  "original_acceptance_tests": 77,
+  "added_acceptance_tests": 77,
+  "acceptance_tests_total": 154,
+  "acceptance_tests_status": "NOT_RUN",
+  "entries": [
+    {
+      "path": "README.md",
+      "bytes": 3677,
+      "sha256": "5d2d04fc8c40cff56b4d4a3496a943ef40bc7d3c71736d77f510f8299fca3382"
+    },
+    {
+      "path": "kaynaklar/KAYNAKLAR_VE_KANIT_DUZEYI.md",
+      "bytes": 3789,
+      "sha256": "1362c429d9cd9618e0553463e54d588b77b6edc7bc40a94c4781d6353ee036aa"
+    },
+    {
+      "path": "kaynaklar/v161_v17_Repo_Analiz_Raporu.md",
+      "bytes": 20822,
+      "sha256": "6377c4cc91273c357c1c075fec78c1821cfac1af749228ec2ccffcad8e1a8b64"
+    },
+    {
+      "path": "kaynaklar/v17_Ilk_Taslak_Arsiv.md",
+      "bytes": 52816,
+      "sha256": "03b25af679f252e8fa8ec87f2a01cf1e1d491f015eadbad5e4b666b79a273eed"
+    },
+    {
+      "path": "referans_kod/strateji_ref.mjs",
+      "bytes": 6322,
+      "sha256": "c828bd7aee2a1542284d0fcdf43df80358697b3157143ef2f1af3eee0a7b4b93"
+    },
+    {
+      "path": "referans_kod/strateji_ref.test.mjs",
+      "bytes": 4078,
+      "sha256": "1c2c40c3fe9878b893da0a7d5f9617540b09a50f8a1ab05ef55b7e4013507a4c"
+    },
+    {
+      "path": "spec/00_ANA_SARTNAME.md",
+      "bytes": 15191,
+      "sha256": "6a705793073aa68c2adbfd0e78bf5a2c481ec6ef20214d925ebc33ccf7b1597d"
+    },
+    {
+      "path": "spec/01_KOD_UYUM_EKSIKLERI.csv",
+      "bytes": 6290,
+      "sha256": "8311bfde87bcd00b3b9f55f1ea947ab4dc4075502b0408407156d97d48168823"
+    },
+    {
+      "path": "spec/02_MIMARI_VERI_VE_FAZ_SOZLESMELERI.md",
+      "bytes": 17236,
+      "sha256": "2a25a771d5f9831b9d2f0460c7377cb995d9b2deea9ff6005281a3282d6d66d8"
+    },
+    {
+      "path": "spec/03_SISTEM_MEKNIKLERI.md",
+      "bytes": 19653,
+      "sha256": "baab7c5a93f045e73533768e26fb64b33ace0b732d8b7837098bf91c5280fcf2"
+    },
+    {
+      "path": "spec/04_1914_SENARYO_KURALLARI.md",
+      "bytes": 9506,
+      "sha256": "b8a8bc830d71f83887d2905441896446dd9485da543b53b63c71c7c023be51cb"
+    },
+    {
+      "path": "spec/05_PR_UYGULAMA_PLANLARI.md",
+      "bytes": 5746,
+      "sha256": "9ef15b26f3f6afba5a5ba0d71ea23cd70ae00c2216545faeb8159f40059be8dc"
+    },
+    {
+      "path": "spec/06_GOC_KALITE_PERFORMANS.md",
+      "bytes": 9967,
+      "sha256": "57aa09518dd6ba8e415ef58b9735dc01c1f968fd54acaaeea5e74bd32c9c7603"
+    },
+    {
+      "path": "spec/07_KARAR_KAYDI_R2.md",
+      "bytes": 3757,
+      "sha256": "afe9e0d90ff8aebe32d590a03d4c31cccd013ef8012bffa465ec51d54c7306ac"
+    },
+    {
+      "path": "spec/08_SISTEMLER_ARASI_ETKI_MATRISI.csv",
+      "bytes": 2582,
+      "sha256": "0362f000de10983411d4502fe4b169ecab727b8f1cff47e19b4c250891d82ce1"
+    },
+    {
+      "path": "spec/09_KODLAMA_AJANI_ANA_KOMUTU.md",
+      "bytes": 5812,
+      "sha256": "2d630cbcb863ef1edcccaeac324822af558b5d25fa2506bb667a6ae668de2a0e"
+    },
+    {
+      "path": "spec/TAM_ANA_BELGE.md",
+      "bytes": 87915,
+      "sha256": "29045f0ad2f4d914700434715313d0951bb18a55ce3900221a36c58b8c403073"
+    },
+    {
+      "path": "testler/kabul_matrisi_v17_R2.csv",
+      "bytes": 31178,
+      "sha256": "752c705c1c09e601ac2354920542b6aed3f9f48cb6108da716035f615f102f76"
+    },
+    {
+      "path": "veri/1914_isimli_ekipman_ve_ornek_receteler.json",
+      "bytes": 16607,
+      "sha256": "ba6e52f74c766cd5aeb68856ee4bfd7fa3d88224801880a4e8d3bb541eb10c7a"
+    },
+    {
+      "path": "veri/1914_kaynak_tesis_katalogu.json",
+      "bytes": 12282,
+      "sha256": "cdda7e9246e36f35d848700d5087156ee1fffbe21e2a61bb4f4d78b414a953b5"
+    },
+    {
+      "path": "veri/1914_olay_aglari.json",
+      "bytes": 80539,
+      "sha256": "d100f37b45734414886c87c4eb3628095519f6ffc0fafce490e87a7e26e9e1d6"
+    },
+    {
+      "path": "veri/1914_ulusal_hedefler.json",
+      "bytes": 154908,
+      "sha256": "5129015cc85c09504934755ac032515249564288169e6a4eb5317c99a8cdb36c"
+    },
+    {
+      "path": "veri/diplomasi_istihbarat_emir_katalogu.json",
+      "bytes": 5908,
+      "sha256": "58ec0ba579fe586d8a001f942b33bc15da0ca346d700af20ee39b70be13355aa"
+    },
+    {
+      "path": "veri/validate_design_data.py",
+      "bytes": 1854,
+      "sha256": "63c90145b0b5a8c1147de663e3eadb859e9b84a426f85b9cf422c4c55737d5d3"
+    }
+  ]
+}

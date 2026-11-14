@@ -1,0 +1,23 @@
+﻿Zincir_ID,Kaynak Sistem,Hedef Sistem,Paylaşılan Veri,Beklenen Etki,Doğrulama,İlgili Gereksinim
+C01,Ulusal hedef,Kabine,Bakanlık politikası ve bütçe,Hedef seçimi maliye politikasını etkiler,AI goal score and override,R07/G01
+C02,Kabine,Maden,Ar-Ge ve lisans,Maden ve sanayi yatırımı kabine bütçesi tüketir,Resource ledger,R03/R07
+C03,Maden,Fabrika,Fiziksel girdi,Çelik/enerji yoksa üretim yok,StockAccount balances,R03/R08/R10
+C04,Araştırma,Fabrika,Model/hat geçişi,Araştırma bitince model açılır ama stok artmaz,EquipmentModel/WIP,R04/R10
+C05,Fabrika,Şehir deposu,Ürün/stock ledger,Tamamlanan ürün bulunduğu yerde depolanır,account ledger,R08/R09/R10
+C06,Şehir deposu,Demiryolu,Transit kapasitesi,Şehir stoku birlik envanterine anlık eklenmez,shipment timing,R09/R11
+C07,Demiryolu,Birlik,İkmal günleri,Nakliye doluluğu ekipman teslimini geciktirir,transport reservation,R11/R12
+C08,Birlik,Muharebe,Fiilî envanter/organizasyon,Mühimmat açığı saldırı verimini düşürür,battle event,R05/R10
+C09,Muharebe,Siyaset,Kayıp/yorgunluk,Savaş yorgunluğu siyasi istikrarı etkiler,casualty record,R05/R07
+C10,Siyaset,Diplomasi,Kamu desteği,Yorgun hükümet barış maliyetini farklı değerlendirir,ai score,R01/R07
+C11,Diplomasi,İstihbarat,Gizli antlaşma,Yalnız yetkili rapor gizli protokol açar,visibilityMask,R01/R02
+C12,İstihbarat,Şehir,Hasar/onarım,Başarılı soyut sabotaj üretim geçici zarar verir,DamageEvent,R02/R09
+C13,Şehir,Cephe,İkmal darbeleri,Hasarlı ray cepheye giden ikmali geciktirir,routeEpoch,R05/R11
+C14,Bakan,Hükümet,Kişi sadakati,Hükümet düşerse bakan görevden gider,Appointment,R07
+C15,Gizli ittifak,Ülke hedefleri,Plan uyumu,Gizli taahhüt açığa çıkınca hedef yeniden değerlendirilir,StrategicPlan revision,G01/G04
+C16,Donanma,Ticaret,Abluka/konvoy,Abluka fiyat kadar fiziksel sevkiyat akışını etkiler,transit/market,R01/R13
+C17,Hava,Cephe,Menzil/yakıt,Menzil dışı hava gücü muharebe bonusu vermez,Wing capability,R05/R13
+C18,Çıkarma,Donanma,Nakliye ve kontrol,Nakliye kapasitesi yoksa çıkarma engellenir,port/transport,R12/R13
+C19,Olay,Ulusal hedef,Koşullu tetik,Farklı diplomatik tercih tarihî olayı kapatır,event guards,G01/G02
+C20,AI,Observe,Bilgi sınırı,Yabancı gizli değer AI için bilinmez,fog/observations,G04/R02
+C21,Worker,Göç,Anlık emir,Gün ilerlemeden onay kaydedilir,idempotency/version,R01/R07
+C22,Göç,Tüm mekanikler,Kayıt korunumu,Eski save yeni şemada fiziksel varlık ve kaynakları korur,serialization,Tüm R

@@ -8,6 +8,7 @@ import { HASAT_HAM, HASAT_P, NKIMLIK, BAYRAK } from '../../engine/src/catalog.ts
 import { DONEMLER, type DonemKod } from '../../engine/src/donem.ts';
 import type { Paket, PaketBolge, PaketUlke, PaketSenaryoOlay, PaketEylem } from '../../engine/src/paket.ts';
 import { ulkeNufus, DAGILIM_US, type Donem } from './veri/nufus.ts';
+import { v17Hedefler } from './v17olay.ts';
 import { MODERN, INANC_AD, kulturGrup, kulturTablosu } from './veri/kultur.ts';
 
 const kok = join(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -123,6 +124,8 @@ export interface SenaryoTanim {
   isgal?: Record<string, string>;
   iddia?: Record<string, string[]>;
   olaylar?: OlayTanim[];
+  /** v1.7: tasarım verisinden ulusal hedefler üretilsin mi */
+  v17Hedef?: boolean;
   oneCikan: string[];
   /** Ekonomik çağ çarpanı (fabrika) */
   sanayi: number;
@@ -517,7 +520,7 @@ export function derle(t: SenaryoTanim): { paket: Paket; ozet: string } {
     kenarlar: H.kenarlar.map((k) => ({ a: k.a, b: k.b, km: k.km, sinir: k.sinir, tur: k.tur || undefined })),
     gorus: G,
     anlasmalar, savaslar, birlikler,
-    olaylar, oneCikan: t.oneCikan.map((k) => K(k, 'öne çıkan')),
+    olaylar, hedefler: t.v17Hedef ? v17Hedefler((k) => K(k, 'v17 hedef')) : undefined, oneCikan: t.oneCikan.map((k) => K(k, 'öne çıkan')),
     harita: { gen: H.gen, yuk: H.yuk, deniz: [], cizgiler: [], denizAdlari: H.denizler, gercek: true },
     // harita v1 (463 bölge, paket 2.0.0) kayıtlarının göçü: her bölgenin v1 atası
     goc: { surum: '2.0.0', ata: H.bolgeler.map((b) => b.ata), tohum: H.bolgeler.map((b) => (b.eski ? 1 : 0)) },

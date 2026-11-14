@@ -1,0 +1,3141 @@
+{
+  "schema": "tarih-strateji.v17-r2.events-design-v1",
+  "scenario": "s1914",
+  "status": "DESIGN_ONLY_NOT_IMPLEMENTED",
+  "eventCount": 36,
+  "predicateDSL": "declarative; all-of with typed predicates; adapter required",
+  "events": [
+    {
+      "id": "E1914_001",
+      "eventKey": "saraybosna_krizi",
+      "country": "AUH",
+      "titleTr": "Saraybosna Krizi",
+      "dateWindow": {
+        "start": "1914-06-28",
+        "end": "1914-07-31"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "AUH"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:saraybosna_krizi"
+      ],
+      "options": [
+        {
+          "id": "saraybosna_krizi_C1",
+          "titleTr": "Sınırlı soruşturma ve diplomasi",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "saraybosna_krizi_C2",
+          "titleTr": "Sert diplomatik talepler",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "saraybosna_krizi_C3",
+          "titleTr": "Uluslararası konferans",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_002",
+      "eventKey": "sirbistan_yaniti",
+      "country": "SRB",
+      "titleTr": "Sirbistan Yaniti",
+      "dateWindow": {
+        "start": "1914-07-20",
+        "end": "1914-08-10"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "SRB"
+        },
+        {
+          "type": "flag_active",
+          "value": "saraybosna_krizi"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:sirbistan_yaniti"
+      ],
+      "options": [
+        {
+          "id": "sirbistan_yaniti_C1",
+          "titleTr": "Taleplerin çoğunu kabul et",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "sirbistan_yaniti_C2",
+          "titleTr": "Kısmi kabul ve arabuluculuk",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "sirbistan_yaniti_C3",
+          "titleTr": "Reddet ve seferberlik",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_003",
+      "eventKey": "avusturya_karar",
+      "country": "AUH",
+      "titleTr": "Avusturya Karar",
+      "dateWindow": {
+        "start": "1914-07-20",
+        "end": "1914-08-15"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "AUH"
+        },
+        {
+          "type": "flag_active",
+          "value": "saraybosna_krizi"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:avusturya_karar"
+      ],
+      "options": [
+        {
+          "id": "avusturya_karar_C1",
+          "titleTr": "Diplomatik çözüm",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "avusturya_karar_C2",
+          "titleTr": "Sınırlı askerî harekât",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "avusturya_karar_C3",
+          "titleTr": "Savaş ilanı",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_004",
+      "eventKey": "rusya_garanti",
+      "country": "RUS",
+      "titleTr": "Rusya Garanti",
+      "dateWindow": {
+        "start": "1914-07-20",
+        "end": "1914-08-20"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "RUS"
+        },
+        {
+          "type": "flag_active",
+          "value": "saraybosna_krizi"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:rusya_garanti"
+      ],
+      "options": [
+        {
+          "id": "rusya_garanti_C1",
+          "titleTr": "Diplomatik garanti",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "rusya_garanti_C2",
+          "titleTr": "Kısmi seferberlik",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "rusya_garanti_C3",
+          "titleTr": "Tam seferberlik",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_005",
+      "eventKey": "almanya_ittifak_krizi",
+      "country": "GER",
+      "titleTr": "Almanya Ittifak Krizi",
+      "dateWindow": {
+        "start": "1914-07-20",
+        "end": "1914-08-30"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "GER"
+        },
+        {
+          "type": "flag_active",
+          "value": "saraybosna_krizi"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:almanya_ittifak_krizi"
+      ],
+      "options": [
+        {
+          "id": "almanya_ittifak_krizi_C1",
+          "titleTr": "Arabuluculuk",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "almanya_ittifak_krizi_C2",
+          "titleTr": "Avusturya desteği",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "almanya_ittifak_krizi_C3",
+          "titleTr": "İki cephe için seferberlik",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_006",
+      "eventKey": "fransa_seferberlik",
+      "country": "FRA",
+      "titleTr": "Fransa Seferberlik",
+      "dateWindow": {
+        "start": "1914-07-20",
+        "end": "1914-09-01"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "FRA"
+        },
+        {
+          "type": "crisis_active",
+          "value": "europe_crisis"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:fransa_seferberlik"
+      ],
+      "options": [
+        {
+          "id": "fransa_seferberlik_C1",
+          "titleTr": "Sınır savunması",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "fransa_seferberlik_C2",
+          "titleTr": "Diplomatik baskı",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "fransa_seferberlik_C3",
+          "titleTr": "Topyekûn seferberlik",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_007",
+      "eventKey": "belcika_gecis",
+      "country": "GER",
+      "titleTr": "Belcika Gecis",
+      "dateWindow": {
+        "start": "1914-07-25",
+        "end": "1914-09-20"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "GER"
+        },
+        {
+          "type": "crisis_active",
+          "value": "europe_crisis"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:belcika_gecis"
+      ],
+      "options": [
+        {
+          "id": "belcika_gecis_C1",
+          "titleTr": "Belçika tarafsızlığını koru",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "belcika_gecis_C2",
+          "titleTr": "Geçiş izni iste",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "belcika_gecis_C3",
+          "titleTr": "Belçika üzerinden taarruz",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_008",
+      "eventKey": "belcika_guvence",
+      "country": "BEL",
+      "titleTr": "Belcika Guvence",
+      "dateWindow": {
+        "start": "1914-07-25",
+        "end": "1914-09-20"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "BEL"
+        },
+        {
+          "type": "crisis_active",
+          "value": "europe_crisis"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:belcika_guvence"
+      ],
+      "options": [
+        {
+          "id": "belcika_guvence_C1",
+          "titleTr": "Tarafsızlık beyanı",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "belcika_guvence_C2",
+          "titleTr": "Garanti talebi",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "belcika_guvence_C3",
+          "titleTr": "Savunmaya hazırlık",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_009",
+      "eventKey": "ingiltere_kita_karari",
+      "country": "GBR",
+      "titleTr": "Ingiltere Kita Karari",
+      "dateWindow": {
+        "start": "1914-07-25",
+        "end": "1914-09-30"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "GBR"
+        },
+        {
+          "type": "crisis_active",
+          "value": "europe_crisis"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:ingiltere_kita_karari"
+      ],
+      "options": [
+        {
+          "id": "ingiltere_kita_karari_C1",
+          "titleTr": "Arabuluculuk/ara düzen",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "ingiltere_kita_karari_C2",
+          "titleTr": "Garanti ve sınırlı yardım",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "ingiltere_kita_karari_C3",
+          "titleTr": "Savaşa katılma kararı",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_010",
+      "eventKey": "italya_tarafsizligi",
+      "country": "ITA",
+      "titleTr": "Italya Tarafsizligi",
+      "dateWindow": {
+        "start": "1914-08-01",
+        "end": "1915-06-01"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "ITA"
+        },
+        {
+          "type": "crisis_active",
+          "value": "europe_crisis"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:italya_tarafsizligi"
+      ],
+      "options": [
+        {
+          "id": "italya_tarafsizligi_C1",
+          "titleTr": "Tarafsız kal",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "italya_tarafsizligi_C2",
+          "titleTr": "İttifak yükümlülüğünü tart",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "italya_tarafsizligi_C3",
+          "titleTr": "Toprak ve ekonomik teklifleri dinle",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_011",
+      "eventKey": "osmanli_ittifak",
+      "country": "OSM",
+      "titleTr": "Osmanli Ittifak",
+      "dateWindow": {
+        "start": "1914-08-01",
+        "end": "1914-11-30"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "OSM"
+        },
+        {
+          "type": "crisis_active",
+          "value": "europe_crisis"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:osmanli_ittifak"
+      ],
+      "options": [
+        {
+          "id": "osmanli_ittifak_C1",
+          "titleTr": "Silahlı tarafsızlık",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "osmanli_ittifak_C2",
+          "titleTr": "Gizli Alman anlaşması",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "osmanli_ittifak_C3",
+          "titleTr": "İtilaf görüşmesi",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_012",
+      "eventKey": "goeben_krizi",
+      "country": "OSM",
+      "titleTr": "Goeben Krizi",
+      "dateWindow": {
+        "start": "1914-08-01",
+        "end": "1914-11-30"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "OSM"
+        },
+        {
+          "type": "flag_active",
+          "value": "osmanli_ittifak"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:goeben_krizi"
+      ],
+      "options": [
+        {
+          "id": "goeben_krizi_C1",
+          "titleTr": "Enterne et",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "goeben_krizi_C2",
+          "titleTr": "Satın alma için görüş",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "goeben_krizi_C3",
+          "titleTr": "Liman geçişini kısıtla",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_013",
+      "eventKey": "karadeniz_harekati",
+      "country": "OSM",
+      "titleTr": "Karadeniz Harekati",
+      "dateWindow": {
+        "start": "1914-08-15",
+        "end": "1915-02-01"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "OSM"
+        },
+        {
+          "type": "flag_active",
+          "value": "goeben_krizi"
+        },
+        {
+          "type": "is_at_war",
+          "value": "GER:RUS"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:karadeniz_harekati"
+      ],
+      "options": [
+        {
+          "id": "karadeniz_harekati_C1",
+          "titleTr": "Karadeniz görevini yasakla",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "karadeniz_harekati_C2",
+          "titleTr": "Sınırlı devriye",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "karadeniz_harekati_C3",
+          "titleTr": "Savaşa katılma kararı",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_014",
+      "eventKey": "japonya_pasifik",
+      "country": "JAP",
+      "titleTr": "Japonya Pasifik",
+      "dateWindow": {
+        "start": "1914-08-01",
+        "end": "1915-03-01"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "JAP"
+        },
+        {
+          "type": "crisis_active",
+          "value": "europe_crisis"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:japonya_pasifik"
+      ],
+      "options": [
+        {
+          "id": "japonya_pasifik_C1",
+          "titleTr": "Britanya desteğine yanıt",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "japonya_pasifik_C2",
+          "titleTr": "Sınırlı Pasifik planı",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "japonya_pasifik_C3",
+          "titleTr": "Tarafsız kal",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_015",
+      "eventKey": "rus_demiryolu",
+      "country": "RUS",
+      "titleTr": "Rus Demiryolu",
+      "dateWindow": {
+        "start": "1914-07-20",
+        "end": "1915-03-01"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "RUS"
+        },
+        {
+          "type": "crisis_active",
+          "value": "europe_crisis"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:rus_demiryolu"
+      ],
+      "options": [
+        {
+          "id": "rus_demiryolu_C1",
+          "titleTr": "Sınırda yığınak",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "rus_demiryolu_C2",
+          "titleTr": "Kapasiteyi tahsis et",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "rus_demiryolu_C3",
+          "titleTr": "Diplomatik yavaşlama",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_016",
+      "eventKey": "munimmat_acigi",
+      "country": "GER",
+      "titleTr": "Munimmat Acigi",
+      "dateWindow": {
+        "start": "1914-09-01",
+        "end": "1916-12-31"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "GER"
+        },
+        {
+          "type": "war_status",
+          "value": "ongoing"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:munimmat_acigi"
+      ],
+      "options": [
+        {
+          "id": "munimmat_acigi_C1",
+          "titleTr": "Topçu mühimmatına öncelik",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "munimmat_acigi_C2",
+          "titleTr": "Sanayi vardiyası",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "munimmat_acigi_C3",
+          "titleTr": "Sınırlı taarruz",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_017",
+      "eventKey": "muhimmat_fransa",
+      "country": "FRA",
+      "titleTr": "Muhimmat Fransa",
+      "dateWindow": {
+        "start": "1914-09-01",
+        "end": "1916-12-31"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "FRA"
+        },
+        {
+          "type": "war_status",
+          "value": "ongoing"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:muhimmat_fransa"
+      ],
+      "options": [
+        {
+          "id": "muhimmat_fransa_C1",
+          "titleTr": "Topçu üretimi",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "muhimmat_fransa_C2",
+          "titleTr": "Demiryolu teslimatı",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "muhimmat_fransa_C3",
+          "titleTr": "Dış sipariş",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_018",
+      "eventKey": "sivil_gida_krizi",
+      "country": "RUS",
+      "titleTr": "Sivil Gida Krizi",
+      "dateWindow": {
+        "start": "1914-10-01",
+        "end": "1918-12-31"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "RUS"
+        },
+        {
+          "type": "war_status",
+          "value": "ongoing"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:sivil_gida_krizi"
+      ],
+      "options": [
+        {
+          "id": "sivil_gida_krizi_C1",
+          "titleTr": "Karne ve gıda taşıması",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "sivil_gida_krizi_C2",
+          "titleTr": "Tarım emeğini koru",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "sivil_gida_krizi_C3",
+          "titleTr": "Askerî tüketime öncelik",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_019",
+      "eventKey": "britanya_konvoy",
+      "country": "GBR",
+      "titleTr": "Britanya Konvoy",
+      "dateWindow": {
+        "start": "1914-09-01",
+        "end": "1918-12-31"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "GBR"
+        },
+        {
+          "type": "war_status",
+          "value": "ongoing"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:britanya_konvoy"
+      ],
+      "options": [
+        {
+          "id": "britanya_konvoy_C1",
+          "titleTr": "Konvoy koruma",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "britanya_konvoy_C2",
+          "titleTr": "Abluka önceliği",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "britanya_konvoy_C3",
+          "titleTr": "Müttefik ticaret anlaşması",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_020",
+      "eventKey": "italya_koşullu_teklif",
+      "country": "ITA",
+      "titleTr": "Italya Koşullu Teklif",
+      "dateWindow": {
+        "start": "1915-01-01",
+        "end": "1916-12-31"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "ITA"
+        },
+        {
+          "type": "crisis_active",
+          "value": "europe_crisis"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:italya_koşullu_teklif"
+      ],
+      "options": [
+        {
+          "id": "italya_koşullu_teklif_C1",
+          "titleTr": "Savaş dışı kal",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "italya_koşullu_teklif_C2",
+          "titleTr": "İtilaf ile müzakere",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "italya_koşullu_teklif_C3",
+          "titleTr": "İttifak tarafıyla müzakere",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_021",
+      "eventKey": "canakkale_karar",
+      "country": "GBR",
+      "titleTr": "Canakkale Karar",
+      "dateWindow": {
+        "start": "1915-01-01",
+        "end": "1916-12-31"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "GBR"
+        },
+        {
+          "type": "is_at_war",
+          "value": "GBR:OSM"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:canakkale_karar"
+      ],
+      "options": [
+        {
+          "id": "canakkale_karar_C1",
+          "titleTr": "Boğaz harekâtı öner",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "canakkale_karar_C2",
+          "titleTr": "Kara desteği hazırlığı",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "canakkale_karar_C3",
+          "titleTr": "Alternatif deniz stratejisi",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_022",
+      "eventKey": "osmanli_savunma",
+      "country": "OSM",
+      "titleTr": "Osmanli Savunma",
+      "dateWindow": {
+        "start": "1915-01-01",
+        "end": "1916-12-31"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "OSM"
+        },
+        {
+          "type": "is_at_war",
+          "value": "GBR:OSM"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:osmanli_savunma"
+      ],
+      "options": [
+        {
+          "id": "osmanli_savunma_C1",
+          "titleTr": "Boğaz savunması",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "osmanli_savunma_C2",
+          "titleTr": "Deniz mayın/tahkimat soyut hazırlığı",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "osmanli_savunma_C3",
+          "titleTr": "Cephe ihtiyatı",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_023",
+      "eventKey": "bulgaristan_pazarligi",
+      "country": "BUL",
+      "titleTr": "Bulgaristan Pazarligi",
+      "dateWindow": {
+        "start": "1915-01-01",
+        "end": "1916-12-31"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "BUL"
+        },
+        {
+          "type": "crisis_active",
+          "value": "europe_crisis"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:bulgaristan_pazarligi"
+      ],
+      "options": [
+        {
+          "id": "bulgaristan_pazarligi_C1",
+          "titleTr": "Tarafsızlık",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "bulgaristan_pazarligi_C2",
+          "titleTr": "İttifaklarla görüş",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "bulgaristan_pazarligi_C3",
+          "titleTr": "Bölgesel güvence iste",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_024",
+      "eventKey": "romanya_pazarligi",
+      "country": "ROM",
+      "titleTr": "Romanya Pazarligi",
+      "dateWindow": {
+        "start": "1915-01-01",
+        "end": "1917-12-31"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "ROM"
+        },
+        {
+          "type": "crisis_active",
+          "value": "europe_crisis"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:romanya_pazarligi"
+      ],
+      "options": [
+        {
+          "id": "romanya_pazarligi_C1",
+          "titleTr": "Tarafsızlık",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "romanya_pazarligi_C2",
+          "titleTr": "Petrol ticaret anlaşması",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "romanya_pazarligi_C3",
+          "titleTr": "Taraf seçme müzakeresi",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_025",
+      "eventKey": "ortak_baris_konferansi",
+      "country": "FRA",
+      "titleTr": "Ortak Baris Konferansi",
+      "dateWindow": {
+        "start": "1914-12-01",
+        "end": "1918-12-31"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "FRA"
+        },
+        {
+          "type": "war_status",
+          "value": "ongoing"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:ortak_baris_konferansi"
+      ],
+      "options": [
+        {
+          "id": "ortak_baris_konferansi_C1",
+          "titleTr": "Ara buluculuk çağrısı",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "ortak_baris_konferansi_C2",
+          "titleTr": "Sınırlı ateşkes",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "ortak_baris_konferansi_C3",
+          "titleTr": "Savaşa devam",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_026",
+      "eventKey": "denizalti_ticaret",
+      "country": "GER",
+      "titleTr": "Denizalti Ticaret",
+      "dateWindow": {
+        "start": "1915-01-01",
+        "end": "1918-12-31"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "GER"
+        },
+        {
+          "type": "is_at_war",
+          "value": "GER:GBR"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:denizalti_ticaret"
+      ],
+      "options": [
+        {
+          "id": "denizalti_ticaret_C1",
+          "titleTr": "Ticaret baskısını artır",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "denizalti_ticaret_C2",
+          "titleTr": "Sınırlı deniz harekâtı",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "denizalti_ticaret_C3",
+          "titleTr": "Diplomatik riskten kaçın",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_027",
+      "eventKey": "italya_cephe_lojistik",
+      "country": "ITA",
+      "titleTr": "Italya Cephe Lojistik",
+      "dateWindow": {
+        "start": "1915-03-01",
+        "end": "1918-12-31"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "ITA"
+        },
+        {
+          "type": "war_status",
+          "value": "ongoing"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:italya_cephe_lojistik"
+      ],
+      "options": [
+        {
+          "id": "italya_cephe_lojistik_C1",
+          "titleTr": "Dağ cephesi ikmali",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "italya_cephe_lojistik_C2",
+          "titleTr": "Savaş dışı yatırımlar",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "italya_cephe_lojistik_C3",
+          "titleTr": "Müttefik yardımı",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_028",
+      "eventKey": "batı_cephe_yipratma",
+      "country": "FRA",
+      "titleTr": "Batı Cephe Yipratma",
+      "dateWindow": {
+        "start": "1915-01-01",
+        "end": "1918-12-31"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "FRA"
+        },
+        {
+          "type": "is_at_war",
+          "value": "FRA:GER"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:batı_cephe_yipratma"
+      ],
+      "options": [
+        {
+          "id": "batı_cephe_yipratma_C1",
+          "titleTr": "Savunma ve mevziler",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "batı_cephe_yipratma_C2",
+          "titleTr": "Sınırlı taarruz",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "batı_cephe_yipratma_C3",
+          "titleTr": "Barış görüşmesi",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_029",
+      "eventKey": "kafkas_ikmal_krizi",
+      "country": "OSM",
+      "titleTr": "Kafkas Ikmal Krizi",
+      "dateWindow": {
+        "start": "1915-01-01",
+        "end": "1918-12-31"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "OSM"
+        },
+        {
+          "type": "is_at_war",
+          "value": "OSM:RUS"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:kafkas_ikmal_krizi"
+      ],
+      "options": [
+        {
+          "id": "kafkas_ikmal_krizi_C1",
+          "titleTr": "İkmal hattını kur",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "kafkas_ikmal_krizi_C2",
+          "titleTr": "Kış için bekle",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "kafkas_ikmal_krizi_C3",
+          "titleTr": "Taarruz riski al",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_030",
+      "eventKey": "avusturya_ic_reform",
+      "country": "AUH",
+      "titleTr": "Avusturya Ic Reform",
+      "dateWindow": {
+        "start": "1915-01-01",
+        "end": "1918-12-31"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "AUH"
+        },
+        {
+          "type": "war_status",
+          "value": "ongoing"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:avusturya_ic_reform"
+      ],
+      "options": [
+        {
+          "id": "avusturya_ic_reform_C1",
+          "titleTr": "Kabine reformu",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "avusturya_ic_reform_C2",
+          "titleTr": "Merkezî güvenlik",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "avusturya_ic_reform_C3",
+          "titleTr": "Barış arayışı",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_031",
+      "eventKey": "romanya_katilim",
+      "country": "ROM",
+      "titleTr": "Romanya Katilim",
+      "dateWindow": {
+        "start": "1916-01-01",
+        "end": "1917-12-31"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "ROM"
+        },
+        {
+          "type": "crisis_active",
+          "value": "europe_crisis"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:romanya_katilim"
+      ],
+      "options": [
+        {
+          "id": "romanya_katilim_C1",
+          "titleTr": "Tarafsız kal",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "romanya_katilim_C2",
+          "titleTr": "Güvence ile katıl",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "romanya_katilim_C3",
+          "titleTr": "Ekonomik destek karşılığı pazarlık",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_032",
+      "eventKey": "rusya_1917_krizi",
+      "country": "RUS",
+      "titleTr": "Rusya 1917 Krizi",
+      "dateWindow": {
+        "start": "1916-01-01",
+        "end": "1918-12-31"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "RUS"
+        },
+        {
+          "type": "war_status",
+          "value": "ongoing"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:rusya_1917_krizi"
+      ],
+      "options": [
+        {
+          "id": "rusya_1917_krizi_C1",
+          "titleTr": "Kabine reformu",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "rusya_1917_krizi_C2",
+          "titleTr": "Halk desteği ve gıda",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "rusya_1917_krizi_C3",
+          "titleTr": "Savaşta kal / barış arayışı",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_033",
+      "eventKey": "abd_deniz_krizi",
+      "country": "USA",
+      "titleTr": "Abd Deniz Krizi",
+      "dateWindow": {
+        "start": "1916-01-01",
+        "end": "1918-12-31"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "USA"
+        },
+        {
+          "type": "crisis_active",
+          "value": "europe_crisis"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:abd_deniz_krizi"
+      ],
+      "options": [
+        {
+          "id": "abd_deniz_krizi_C1",
+          "titleTr": "Tarafsızlık ve protesto",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "abd_deniz_krizi_C2",
+          "titleTr": "Konvoy koruma",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "abd_deniz_krizi_C3",
+          "titleTr": "Savaşa katılmayı tartış",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_034",
+      "eventKey": "abd_1917_secim",
+      "country": "USA",
+      "titleTr": "Abd 1917 Secim",
+      "dateWindow": {
+        "start": "1917-01-01",
+        "end": "1918-12-31"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "USA"
+        },
+        {
+          "type": "crisis_active",
+          "value": "europe_crisis"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:abd_1917_secim"
+      ],
+      "options": [
+        {
+          "id": "abd_1917_secim_C1",
+          "titleTr": "Tarafsızlık ve ticaret",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "abd_1917_secim_C2",
+          "titleTr": "Müttefik yardımı",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "abd_1917_secim_C3",
+          "titleTr": "Koşullu müdahale",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_035",
+      "eventKey": "genel_ateskes",
+      "country": "GER",
+      "titleTr": "Genel Ateskes",
+      "dateWindow": {
+        "start": "1916-01-01",
+        "end": "1920-12-31"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "GER"
+        },
+        {
+          "type": "war_status",
+          "value": "ongoing"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:genel_ateskes"
+      ],
+      "options": [
+        {
+          "id": "genel_ateskes_C1",
+          "titleTr": "Koalisyon görüşmesi",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "genel_ateskes_C2",
+          "titleTr": "Sınırlı ayrı barış",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "genel_ateskes_C3",
+          "titleTr": "Savaş hedefini sürdür",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    },
+    {
+      "id": "E1914_036",
+      "eventKey": "savas_sonrasi_duzen",
+      "country": "GBR",
+      "titleTr": "Savas Sonrasi Duzen",
+      "dateWindow": {
+        "start": "1917-01-01",
+        "end": "1925-12-31"
+      },
+      "conditionsAll": [
+        {
+          "type": "country_active",
+          "country": "GBR"
+        },
+        {
+          "type": "crisis_active",
+          "value": "europe_crisis"
+        }
+      ],
+      "blockIfFlag": [
+        "event_completed:savas_sonrasi_duzen"
+      ],
+      "options": [
+        {
+          "id": "savas_sonrasi_duzen_C1",
+          "titleTr": "Barış konferansı",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "negotiation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "itibar"
+          ],
+          "aiAffinityFixed": 650000
+        },
+        {
+          "id": "savas_sonrasi_duzen_C2",
+          "titleTr": "Yeniden inşa ve ticaret",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "military_preparation",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 250000
+        },
+        {
+          "id": "savas_sonrasi_duzen_C3",
+          "titleTr": "Garantiler ve sınırlı silahsızlanma",
+          "effects": [
+            {
+              "kind": "submit_intent_template",
+              "intentTag": "policy_choice",
+              "requiresValidation": true
+            }
+          ],
+          "tradeoffs": [
+            "bütçe",
+            "zaman",
+            "savaş_riski"
+          ],
+          "aiAffinityFixed": 100000
+        }
+      ],
+      "cooldownDays": 3650,
+      "triggersOn": [
+        "calendar",
+        "diplomacy",
+        "war",
+        "goal",
+        "resource"
+      ],
+      "sourceStatus": "design_proposal",
+      "historicalOutcomeMandatory": false,
+      "notes": "Koşullar doğrulanmadan uygulama yapılmaz; eylemler engine emir doğrulama yoluna bağlanacak."
+    }
+  ]
+}

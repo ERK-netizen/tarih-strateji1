@@ -1,4 +1,4 @@
-import {nextV17Id,type V17State,type V17Goal,type V17Order} from './state.ts';
+import {nextV17Id,type V17State,type V17Order} from './state.ts';
 export function orderV17(s:V17State,country:number,unitIds:number[],kind:V17Order['kind'],targetRegion:number,day:number):V17Order {
   if(!unitIds.length||new Set(unitIds).size!==unitIds.length)throw Error('tekil birlik kimlikleri gerekli');
   if(s.orders.some(x=>x.status==='active'&&x.unitIds.some(u=>unitIds.includes(u))))throw Error('bu birliklerin yürürlükte planı var');
@@ -11,10 +11,5 @@ export function executeV17(s:V17State,day:number,canDo:(o:V17Order,u:number)=>bo
     if(o.lastAppliedDay===day)continue;
     for(const u of o.unitIds)if(canDo(o,u)){apply(o,u);s.stats.ordersExecuted++;}
     o.lastAppliedDay=day;
-  }
-}
-export function updateGoalsV17(s:V17State,day:number,metric:(g:V17Goal)=>number):void {
-  for(const g of s.goals.filter(g=>g.status==='active')) {
-    if(metric(g)>=g.target){g.status='completed';g.completedDay=day;}
   }
 }

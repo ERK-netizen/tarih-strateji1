@@ -1,0 +1,37 @@
+﻿Bulgu_ID,Bileşen,Kanıtlanan Durum / Risk,Kaynak Konum,R2 Çözüm Kararı,Öncelik,İş Paketi,Kanıt Seviyesi
+F01,Wrong branch,Main 1.4.0 vs developer branch 1.6.1,package.json; docs/v16/README.md,Use SHA 9f369... for v1.7; branch gate,P0-Core,PR00,CODE_VERIFIED
+F02,Schema conversion,"Schema 10, new tables not serialized",serialize/index.ts,Increment schema after checking and one-time 10->11 migration,P0-Core,PR02,CODE_VERIFIED
+F03,Old-to-new hash,Hash equality across modified schemas is logically wrong,serialize/index.ts,Compare preserved fields; verify new-schema replay bytes/hash,P0-Core,PR02,DESIGN_DECISION
+F04,Unit movement cap,At most one next region/day; progress zeroed,systems/kara.ts:37-88,Multi-edge microday budget; stop on encounter,P0-Core,PR01,CODE_VERIFIED
+F05,ETA divergence,ETA per edge ceil plus movement daily differs,systems/kara.ts:95-119,Shared pure edge-time function,P0-Core,PR01,CODE_VERIFIED
+F06,Automatic rail 3x,Rail speed multiplied without booking trains,systems/kara.ts:75-76,"Explicit rail loading, cap and waiting",P1-Play,PR01/PR05,CODE_VERIFIED
+F07,Factory scale,"Abstract SP, not machine/labor/energy per item",systems/ekonomi.ts:265-345; world.ts:HAT_KOL,Physical production capacity ledger,P0-Core,PR03,CODE_VERIFIED
+F08,Country stocks only,"Steel, coal, oil at country total, no city ledger",systems/ekonomi.ts:265-345,"StockAccount, LocalStock and transit",P0-Core,PR02/PR03,CODE_VERIFIED
+F09,Oil grant condition,"When petrolIht==0 and petrolDun==0, sets 120 days",systems/ekonomi.ts:288-295,One-time initial inventory only,P0-Core,PR03,CODE_VERIFIED
+F10,Mine reserve,"Mine level changes extraction, reserve not tracked",systems/ekonomi.ts:280-287,Deposit remainingKg and no infinite extraction,P1-Play,PR03,CODE_VERIFIED
+F11,Industry city mismatch,Region has aggregate factory counts,world.ts:R.sivilF/askeriF,"Separate city/facility, deterministic migration",P0-Core,PR02,CODE_VERIFIED
+F12,Named equipment,8 equipment families; model-specific catalog absent,donem.ts; docs/v16/README.md PR-10,"ModelId, recipes, prototype production",P1-Play,PR04,REPO_REPORTED
+F13,Commander duplicates,Direct komutanAta already exists,Muharebe.tsx:37; systems/komutan.ts,"Reuse, only extend HQ hierarchy",P0-Core,PR05,CODE_VERIFIED
+F14,No HQ hierarchy,Command groups not modeled,docs/v16/README.md PR-07,Army/corps/front hierarchy with one effect,P1-Play,PR05,REPO_REPORTED
+F15,Intel action mismatch,Successful sabotage text says factories affected; code resets fortification/resistance,emirEk.ts:443-460,Apply typed facility/transport damage or correct text,P0-Core,PR08,CODE_VERIFIED
+F16,Assassination does not change person,Success changes only legitimacy and unrest,emirEk.ts:421-442,Person succession where actual person model exists,P1-Play,PR08,CODE_VERIFIED
+F17,Intel no networks,IR report table exists but no Network/Agency,world.ts:ISTIHBARAT_KOL; docs/v16/README.md,Persistent networks and counterintelligence,P1-Play,PR08,REPO_REPORTED
+F18,Relationship reduction deterministic,iliskiBozma directly decreases both by 30,emirEk.ts:461-477,Success/partial/exposure with country risk and cover,P1-Play,PR08,CODE_VERIFIED
+F19,Political persons inferred,siyasiKisiler date-party derived,siyasiKisiler.ts:1,Person and CabinetAppointment canonical,P1-Play,PR07,CODE_VERIFIED
+F20,Minister as delegation mask,C.bakan controls five AI domains,world.ts:BAKAN; decision/index.ts:77-85,"Attach actors, budget, policy, maintain old bitmask migration",P1-Play,PR07,CODE_VERIFIED
+F21,Treaty revision limited,TK payload p1/p2/status limited,state/world.ts:TEKLIF_KOL,"Draft/revision/clause/commitment, visibility and atomicity",P1-Play,PR09,CODE_VERIFIED
+F22,AI no long-term plan,Country AI cyclical fixed schedule,decision/index.ts:69-98; docs/v16/README.md,"Goal memory, conditional planning and hysteresis",P1-Play,PR10,CODE_VERIFIED
+F23,1914 event rigidity,Events have historical dated flags and options,data-compiler/src/senaryolar/s1914.ts,"Cross-country goals, counterfactual guards",P1-Play,PR10,CODE_VERIFIED
+F24,Sea zone approximation,Fleets located on shore regions,docs/v16/README.md PR-08,Separate sea area graph while preserving FL/KN,P2-Depth,PR06,REPO_REPORTED
+F25,Shared transport budget incomplete,Land/sea shared transport absent,docs/v16/README.md PR-09,Unified shipment booking for rail/road/ship,P1-Play,PR06,REPO_REPORTED
+F26,City UX distributed,Region drawer and national city screen separate,ui/Cekmece.tsx; ui/Paneller.tsx,"Four top-level tabs, action parity",P1-Play,PR11,CODE_VERIFIED
+F27,No actual device benchmark,"360x800 web tested, Android device untested",docs/v16/README.md PR-17,Three Android device tiers and renderer memory,P0-Core,PR12,REPO_REPORTED
+F28,No teaching/onboarding gate,Not explicitly validated in v1.6 acceptance,docs/v16/README.md,Start goal onboarding and recoverable loss UX,P1-Play,PR11,DESIGN_DECISION
+F29,No full multi-year stress,365 day only verified in repo reports,docs/v16/README.md PR-17,5/10/25y runs and seed sweep,P0-Core,PR12,REPO_REPORTED
+F30,Priority inflation,Almost all first draft R requests P0,v1.7 first draft,"Split P0-Core, P1-Play, P2-Depth and gates",P0-Core,PR00,DESIGN_DECISION
+F31,Hidden state leakage,"Observe protects reports, AI hidden leaks not exhaustively tested",observe/index.ts; docs/v16/README.md T47,Policy-enforced visibility plus adversarial test,P0-Core,PR08,REPO_REPORTED
+F32,Cross-era compatibility,1914 and 2026 catalog share slots,donem.ts,Era rules and negative gates all 5 eras,P0-Core,PR12,CODE_VERIFIED
+F33,Civil unrest costs,Military suppression could be free unrest bonus,systems/siyaset.ts,"Civilian services, rights costs, legitimacy, unrest safeguards",P1-Play,PR05/PR07,DESIGN_DECISION
+F34,Battle replay is output only,Combat viewer does not calculate battle,ui/Muharebe.tsx,Keep pure viewer and no duplicate RNG,P0-Core,PR05,CODE_VERIFIED
+F35,Android process memory,WebView memory multi-process,AndroidManifest; Android docs,Track renderer+app PSS and OOM,P0-Core,PR12,EXTERNAL_VERIFIED
+F36,Treaty immediate vs day advancement,"Accept already administrative same-day, response AI at P3",worker/sunucu.ts; decision/index.ts,"Preserve same-day accept, day-phase physical execution",P0-Core,PR09,CODE_VERIFIED

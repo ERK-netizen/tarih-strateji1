@@ -1,0 +1,552 @@
+{
+  "schema": "tarih-strateji.v17-r2.equipment-design-v1",
+  "status": "DESIGN_ONLY",
+  "models": [
+    {
+      "id": "gew98",
+      "displayNameTr": "Gewehr 98",
+      "family": "rifle",
+      "allowedCountries": [
+        "GER"
+      ],
+      "historicalEarliestYear": 1898,
+      "initialStockEarliestYear": 1898,
+      "researchTechTags": [
+        "industrial_capacity",
+        "design_qualification"
+      ],
+      "modelGate": "license_or_country_or_capture",
+      "ammoCompatibilityId": "rifle_792",
+      "recipeExample": {
+        "inputs": [
+          {
+            "resourceId": "steel",
+            "quantityPerUnit": 4
+          },
+          {
+            "resourceId": "machine_parts",
+            "quantityPerUnit": 1
+          }
+        ],
+        "machineMinutesPerUnit": 600,
+        "laborMinutesPerUnit": 480,
+        "energyMJPerUnit": 4
+      },
+      "recipeIsHistorical": false,
+      "sourceStatus": "HISTORICAL_NAME__CALIBRATION_QUANTITIES",
+      "warningTr": "Reçete girdileri ve işçilik/makine süreleri tarihî ölçüm değil, geliştirici dengeleme örneğidir."
+    },
+    {
+      "id": "smle_mk3",
+      "displayNameTr": "SMLE Mk III",
+      "family": "rifle",
+      "allowedCountries": [
+        "GBR"
+      ],
+      "historicalEarliestYear": 1907,
+      "initialStockEarliestYear": 1907,
+      "researchTechTags": [
+        "industrial_capacity",
+        "design_qualification"
+      ],
+      "modelGate": "license_or_country_or_capture",
+      "ammoCompatibilityId": "rifle_303",
+      "recipeExample": {
+        "inputs": [
+          {
+            "resourceId": "steel",
+            "quantityPerUnit": 4
+          },
+          {
+            "resourceId": "machine_parts",
+            "quantityPerUnit": 1
+          }
+        ],
+        "machineMinutesPerUnit": 600,
+        "laborMinutesPerUnit": 480,
+        "energyMJPerUnit": 4
+      },
+      "recipeIsHistorical": false,
+      "sourceStatus": "HISTORICAL_NAME__CALIBRATION_QUANTITIES",
+      "warningTr": "Reçete girdileri ve işçilik/makine süreleri tarihî ölçüm değil, geliştirici dengeleme örneğidir."
+    },
+    {
+      "id": "mosin_m1891",
+      "displayNameTr": "Mosin–Nagant M1891",
+      "family": "rifle",
+      "allowedCountries": [
+        "RUS"
+      ],
+      "historicalEarliestYear": 1891,
+      "initialStockEarliestYear": 1891,
+      "researchTechTags": [
+        "industrial_capacity",
+        "design_qualification"
+      ],
+      "modelGate": "license_or_country_or_capture",
+      "ammoCompatibilityId": "rifle_762r",
+      "recipeExample": {
+        "inputs": [
+          {
+            "resourceId": "steel",
+            "quantityPerUnit": 4
+          },
+          {
+            "resourceId": "machine_parts",
+            "quantityPerUnit": 1
+          }
+        ],
+        "machineMinutesPerUnit": 600,
+        "laborMinutesPerUnit": 480,
+        "energyMJPerUnit": 4
+      },
+      "recipeIsHistorical": false,
+      "sourceStatus": "HISTORICAL_NAME__CALIBRATION_QUANTITIES",
+      "warningTr": "Reçete girdileri ve işçilik/makine süreleri tarihî ölçüm değil, geliştirici dengeleme örneğidir."
+    },
+    {
+      "id": "lebel_m1886",
+      "displayNameTr": "Lebel M1886/93",
+      "family": "rifle",
+      "allowedCountries": [
+        "FRA"
+      ],
+      "historicalEarliestYear": 1886,
+      "initialStockEarliestYear": 1886,
+      "researchTechTags": [
+        "industrial_capacity",
+        "design_qualification"
+      ],
+      "modelGate": "license_or_country_or_capture",
+      "ammoCompatibilityId": "rifle_8mm",
+      "recipeExample": {
+        "inputs": [
+          {
+            "resourceId": "steel",
+            "quantityPerUnit": 4
+          },
+          {
+            "resourceId": "machine_parts",
+            "quantityPerUnit": 1
+          }
+        ],
+        "machineMinutesPerUnit": 600,
+        "laborMinutesPerUnit": 480,
+        "energyMJPerUnit": 4
+      },
+      "recipeIsHistorical": false,
+      "sourceStatus": "HISTORICAL_NAME__CALIBRATION_QUANTITIES",
+      "warningTr": "Reçete girdileri ve işçilik/makine süreleri tarihî ölçüm değil, geliştirici dengeleme örneğidir."
+    },
+    {
+      "id": "mauser_m1903",
+      "displayNameTr": "Mauser M1903",
+      "family": "rifle",
+      "allowedCountries": [
+        "OSM"
+      ],
+      "historicalEarliestYear": 1903,
+      "initialStockEarliestYear": 1903,
+      "researchTechTags": [
+        "industrial_capacity",
+        "design_qualification"
+      ],
+      "modelGate": "license_or_country_or_capture",
+      "ammoCompatibilityId": "rifle_765",
+      "recipeExample": {
+        "inputs": [
+          {
+            "resourceId": "steel",
+            "quantityPerUnit": 4
+          },
+          {
+            "resourceId": "machine_parts",
+            "quantityPerUnit": 1
+          }
+        ],
+        "machineMinutesPerUnit": 600,
+        "laborMinutesPerUnit": 480,
+        "energyMJPerUnit": 4
+      },
+      "recipeIsHistorical": false,
+      "sourceStatus": "HISTORICAL_NAME__CALIBRATION_QUANTITIES",
+      "warningTr": "Reçete girdileri ve işçilik/makine süreleri tarihî ölçüm değil, geliştirici dengeleme örneğidir."
+    },
+    {
+      "id": "mg08",
+      "displayNameTr": "MG 08",
+      "family": "machine_gun",
+      "allowedCountries": [
+        "GER"
+      ],
+      "historicalEarliestYear": 1908,
+      "initialStockEarliestYear": 1908,
+      "researchTechTags": [
+        "industrial_capacity",
+        "design_qualification"
+      ],
+      "modelGate": "license_or_country_or_capture",
+      "ammoCompatibilityId": "mg_792",
+      "recipeExample": {
+        "inputs": [
+          {
+            "resourceId": "steel",
+            "quantityPerUnit": 35
+          },
+          {
+            "resourceId": "machine_parts",
+            "quantityPerUnit": 10
+          }
+        ],
+        "machineMinutesPerUnit": 2400,
+        "laborMinutesPerUnit": 3500,
+        "energyMJPerUnit": 12
+      },
+      "recipeIsHistorical": false,
+      "sourceStatus": "HISTORICAL_NAME__CALIBRATION_QUANTITIES",
+      "warningTr": "Reçete girdileri ve işçilik/makine süreleri tarihî ölçüm değil, geliştirici dengeleme örneğidir."
+    },
+    {
+      "id": "vickers_mk1",
+      "displayNameTr": "Vickers Mk I",
+      "family": "machine_gun",
+      "allowedCountries": [
+        "GBR"
+      ],
+      "historicalEarliestYear": 1912,
+      "initialStockEarliestYear": 1912,
+      "researchTechTags": [
+        "industrial_capacity",
+        "design_qualification"
+      ],
+      "modelGate": "license_or_country_or_capture",
+      "ammoCompatibilityId": "mg_303",
+      "recipeExample": {
+        "inputs": [
+          {
+            "resourceId": "steel",
+            "quantityPerUnit": 32
+          },
+          {
+            "resourceId": "machine_parts",
+            "quantityPerUnit": 10
+          }
+        ],
+        "machineMinutesPerUnit": 2400,
+        "laborMinutesPerUnit": 3500,
+        "energyMJPerUnit": 12
+      },
+      "recipeIsHistorical": false,
+      "sourceStatus": "HISTORICAL_NAME__CALIBRATION_QUANTITIES",
+      "warningTr": "Reçete girdileri ve işçilik/makine süreleri tarihî ölçüm değil, geliştirici dengeleme örneğidir."
+    },
+    {
+      "id": "fk96",
+      "displayNameTr": "7,7 cm FK 96 n.A.",
+      "family": "field_gun",
+      "allowedCountries": [
+        "GER"
+      ],
+      "historicalEarliestYear": 1905,
+      "initialStockEarliestYear": 1905,
+      "researchTechTags": [
+        "industrial_capacity",
+        "design_qualification"
+      ],
+      "modelGate": "license_or_country_or_capture",
+      "ammoCompatibilityId": "shell_77",
+      "recipeExample": {
+        "inputs": [
+          {
+            "resourceId": "steel",
+            "quantityPerUnit": 170
+          },
+          {
+            "resourceId": "machine_parts",
+            "quantityPerUnit": 80
+          }
+        ],
+        "machineMinutesPerUnit": 2400,
+        "laborMinutesPerUnit": 3500,
+        "energyMJPerUnit": 12
+      },
+      "recipeIsHistorical": false,
+      "sourceStatus": "HISTORICAL_NAME__CALIBRATION_QUANTITIES",
+      "warningTr": "Reçete girdileri ve işçilik/makine süreleri tarihî ölçüm değil, geliştirici dengeleme örneğidir."
+    },
+    {
+      "id": "mle1897",
+      "displayNameTr": "Canon de 75 modèle 1897",
+      "family": "field_gun",
+      "allowedCountries": [
+        "FRA"
+      ],
+      "historicalEarliestYear": 1897,
+      "initialStockEarliestYear": 1897,
+      "researchTechTags": [
+        "industrial_capacity",
+        "design_qualification"
+      ],
+      "modelGate": "license_or_country_or_capture",
+      "ammoCompatibilityId": "shell_75",
+      "recipeExample": {
+        "inputs": [
+          {
+            "resourceId": "steel",
+            "quantityPerUnit": 160
+          },
+          {
+            "resourceId": "machine_parts",
+            "quantityPerUnit": 70
+          }
+        ],
+        "machineMinutesPerUnit": 2400,
+        "laborMinutesPerUnit": 3500,
+        "energyMJPerUnit": 12
+      },
+      "recipeIsHistorical": false,
+      "sourceStatus": "HISTORICAL_NAME__CALIBRATION_QUANTITIES",
+      "warningTr": "Reçete girdileri ve işçilik/makine süreleri tarihî ölçüm değil, geliştirici dengeleme örneğidir."
+    },
+    {
+      "id": "qf18",
+      "displayNameTr": "QF 18-pounder",
+      "family": "field_gun",
+      "allowedCountries": [
+        "GBR"
+      ],
+      "historicalEarliestYear": 1904,
+      "initialStockEarliestYear": 1904,
+      "researchTechTags": [
+        "industrial_capacity",
+        "design_qualification"
+      ],
+      "modelGate": "license_or_country_or_capture",
+      "ammoCompatibilityId": "shell_84",
+      "recipeExample": {
+        "inputs": [
+          {
+            "resourceId": "steel",
+            "quantityPerUnit": 170
+          },
+          {
+            "resourceId": "machine_parts",
+            "quantityPerUnit": 80
+          }
+        ],
+        "machineMinutesPerUnit": 2400,
+        "laborMinutesPerUnit": 3500,
+        "energyMJPerUnit": 12
+      },
+      "recipeIsHistorical": false,
+      "sourceStatus": "HISTORICAL_NAME__CALIBRATION_QUANTITIES",
+      "warningTr": "Reçete girdileri ve işçilik/makine süreleri tarihî ölçüm değil, geliştirici dengeleme örneğidir."
+    },
+    {
+      "id": "sfh13",
+      "displayNameTr": "15 cm sFH 13",
+      "family": "heavy_gun",
+      "allowedCountries": [
+        "GER"
+      ],
+      "historicalEarliestYear": 1913,
+      "initialStockEarliestYear": 1913,
+      "researchTechTags": [
+        "industrial_capacity",
+        "design_qualification"
+      ],
+      "modelGate": "license_or_country_or_capture",
+      "ammoCompatibilityId": "shell_150",
+      "recipeExample": {
+        "inputs": [
+          {
+            "resourceId": "steel",
+            "quantityPerUnit": 330
+          },
+          {
+            "resourceId": "machine_parts",
+            "quantityPerUnit": 130
+          }
+        ],
+        "machineMinutesPerUnit": 2400,
+        "laborMinutesPerUnit": 3500,
+        "energyMJPerUnit": 12
+      },
+      "recipeIsHistorical": false,
+      "sourceStatus": "HISTORICAL_NAME__CALIBRATION_QUANTITIES",
+      "warningTr": "Reçete girdileri ve işçilik/makine süreleri tarihî ölçüm değil, geliştirici dengeleme örneğidir."
+    },
+    {
+      "id": "be2",
+      "displayNameTr": "Royal Aircraft Factory B.E.2",
+      "family": "recon_plane",
+      "allowedCountries": [
+        "GBR"
+      ],
+      "historicalEarliestYear": 1912,
+      "initialStockEarliestYear": 1912,
+      "researchTechTags": [
+        "industrial_capacity",
+        "design_qualification"
+      ],
+      "modelGate": "license_or_country_or_capture",
+      "ammoCompatibilityId": "aviation_fuel",
+      "recipeExample": {
+        "inputs": [
+          {
+            "resourceId": "timber",
+            "quantityPerUnit": 230
+          },
+          {
+            "resourceId": "machine_parts",
+            "quantityPerUnit": 60
+          }
+        ],
+        "machineMinutesPerUnit": 2400,
+        "laborMinutesPerUnit": 3500,
+        "energyMJPerUnit": 12
+      },
+      "recipeIsHistorical": false,
+      "sourceStatus": "HISTORICAL_NAME__CALIBRATION_QUANTITIES",
+      "warningTr": "Reçete girdileri ve işçilik/makine süreleri tarihî ölçüm değil, geliştirici dengeleme örneğidir."
+    },
+    {
+      "id": "etrich_taube",
+      "displayNameTr": "Etrich Taube",
+      "family": "recon_plane",
+      "allowedCountries": [
+        "GER",
+        "AUH"
+      ],
+      "historicalEarliestYear": 1910,
+      "initialStockEarliestYear": 1910,
+      "researchTechTags": [
+        "industrial_capacity",
+        "design_qualification"
+      ],
+      "modelGate": "license_or_country_or_capture",
+      "ammoCompatibilityId": "aviation_fuel",
+      "recipeExample": {
+        "inputs": [
+          {
+            "resourceId": "timber",
+            "quantityPerUnit": 230
+          },
+          {
+            "resourceId": "machine_parts",
+            "quantityPerUnit": 65
+          }
+        ],
+        "machineMinutesPerUnit": 2400,
+        "laborMinutesPerUnit": 3500,
+        "energyMJPerUnit": 12
+      },
+      "recipeIsHistorical": false,
+      "sourceStatus": "HISTORICAL_NAME__CALIBRATION_QUANTITIES",
+      "warningTr": "Reçete girdileri ve işçilik/makine süreleri tarihî ölçüm değil, geliştirici dengeleme örneğidir."
+    },
+    {
+      "id": "fokker_e1",
+      "displayNameTr": "Fokker E.I",
+      "family": "fighter_plane",
+      "allowedCountries": [
+        "GER"
+      ],
+      "historicalEarliestYear": 1915,
+      "initialStockEarliestYear": 1915,
+      "researchTechTags": [
+        "industrial_capacity",
+        "design_qualification"
+      ],
+      "modelGate": "license_or_country_or_capture",
+      "ammoCompatibilityId": "aviation_fuel",
+      "recipeExample": {
+        "inputs": [
+          {
+            "resourceId": "timber",
+            "quantityPerUnit": 260
+          },
+          {
+            "resourceId": "machine_parts",
+            "quantityPerUnit": 90
+          }
+        ],
+        "machineMinutesPerUnit": 2400,
+        "laborMinutesPerUnit": 3500,
+        "energyMJPerUnit": 12
+      },
+      "recipeIsHistorical": false,
+      "sourceStatus": "HISTORICAL_NAME__CALIBRATION_QUANTITIES",
+      "warningTr": "Reçete girdileri ve işçilik/makine süreleri tarihî ölçüm değil, geliştirici dengeleme örneğidir."
+    },
+    {
+      "id": "mark1_tank",
+      "displayNameTr": "Mark I tank",
+      "family": "tank",
+      "allowedCountries": [
+        "GBR"
+      ],
+      "historicalEarliestYear": 1916,
+      "initialStockEarliestYear": 1916,
+      "researchTechTags": [
+        "industrial_capacity",
+        "design_qualification"
+      ],
+      "modelGate": "license_or_country_or_capture",
+      "ammoCompatibilityId": "engine_fuel",
+      "recipeExample": {
+        "inputs": [
+          {
+            "resourceId": "steel",
+            "quantityPerUnit": 480
+          },
+          {
+            "resourceId": "machine_parts",
+            "quantityPerUnit": 210
+          }
+        ],
+        "machineMinutesPerUnit": 2400,
+        "laborMinutesPerUnit": 3500,
+        "energyMJPerUnit": 12
+      },
+      "recipeIsHistorical": false,
+      "sourceStatus": "HISTORICAL_NAME__CALIBRATION_QUANTITIES",
+      "warningTr": "Reçete girdileri ve işçilik/makine süreleri tarihî ölçüm değil, geliştirici dengeleme örneğidir."
+    },
+    {
+      "id": "renault_ft",
+      "displayNameTr": "Renault FT",
+      "family": "tank",
+      "allowedCountries": [
+        "FRA"
+      ],
+      "historicalEarliestYear": 1917,
+      "initialStockEarliestYear": 1917,
+      "researchTechTags": [
+        "industrial_capacity",
+        "design_qualification"
+      ],
+      "modelGate": "license_or_country_or_capture",
+      "ammoCompatibilityId": "engine_fuel",
+      "recipeExample": {
+        "inputs": [
+          {
+            "resourceId": "steel",
+            "quantityPerUnit": 380
+          },
+          {
+            "resourceId": "machine_parts",
+            "quantityPerUnit": 160
+          }
+        ],
+        "machineMinutesPerUnit": 2400,
+        "laborMinutesPerUnit": 3500,
+        "energyMJPerUnit": 12
+      },
+      "recipeIsHistorical": false,
+      "sourceStatus": "HISTORICAL_NAME__CALIBRATION_QUANTITIES",
+      "warningTr": "Reçete girdileri ve işçilik/makine süreleri tarihî ölçüm değil, geliştirici dengeleme örneğidir."
+    }
+  ],
+  "reference": "Historical name/date requires individual verification; numbers intentionally calibration-only."
+}

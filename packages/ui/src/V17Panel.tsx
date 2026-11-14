@@ -20,12 +20,21 @@ export function V17Panel() {
   const people=v.availablePoliticians??[];
   const sites=v.sites??[];
   const networks=v.networks??[];
-  const goals=v.goals??[];
+  const goals=(v.goals??[]) as any[];
   const proposals=v.proposals??[];
   const countryNames=ozet.value?.ulke?.kisa??'Ülkem';
   return <section class="bolum" aria-label="v1.7 devlet yönetimi">
     <h3>v1.7 · Gelişmiş devlet yönetimi</h3>
     <p class="soluk kucuk">Kalıcı kabine, istihbarat ağı ve anlaşma revizyonları. Fiziksel üretim motoru henüz geçiş kilidindedir.</p>
+    <h4>Ulusal hedefler · hedef puanı {v.goalScore??0}</h4>
+    <p class="soluk kucuk">Hedefler devletinizin gerçek durumunu ölçer; ilerleme 120 günlük ortalamadır, bir kerelik iyi durum tamamlamaz. Tarih sonucu dayatılmaz.</p>
+    <ul class="komutan-liste">{goals.map((g:any)=><li key={g.id}>
+      <div class="km-bas"><strong>{g.label}</strong>
+        <span class="km-rozet">{g.status==='completed'?'Tamamlandı':g.status==='failed'?'Kaybedildi':`Aşama ${g.stage}/${g.stages.length}`}</span></div>
+      <div class="cubukluk" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.floor(g.progress*100/g.threshold)} aria-label={`${g.label} ilerlemesi`}><span style={{width:`${Math.min(100,Math.floor(g.progress*100/g.threshold))}%`}} /></div>
+      <p class="soluk kucuk">{g.metricName}: şimdi %{Math.floor(g.value/10000)} · ilerleme %{Math.floor(g.progress/10000)} / hedef %{Math.floor(g.threshold/10000)} · +{g.weight} puan</p>
+      {g.paths?.length>0&&<details><summary class="soluk kucuk">Nasıl ulaşılır?</summary><ul class="liste">{g.paths.map((y:string)=><li key={y} class="kucuk">{y}</li>)}</ul></details>}
+    </li>)}</ul>
     <h4>Kabine</h4>
     <p class="soluk kucuk">{(v.ministers??[]).map((m:any)=>`${m.portfolio}: ${m.personKey}`).join(' · ')||'Ek kabine ataması yapılmadı'}</p>
     <div class="satir-ayar"><label>Bakanlık</label><select value={portfolio} onChange={e=>setPortfolio((e.target as HTMLSelectElement).value)}>
@@ -70,7 +79,5 @@ export function V17Panel() {
       {['savun','taarruz','intikal','garnizon'].map(x=><option key={x} value={x}>{x}</option>)}
     </select></div>
     <button disabled={front<0||seciliBirlik.value.size===0} onClick={()=>onizle({tur:'v17Harekat',birlikler:[...seciliBirlik.value],emir:planKind,hedef:front})}>Harekât planını önizle</button>
-    <h4>Ulusal hedefler</h4>
-    <ul class="liste">{goals.slice(0,12).map((g:any)=><li key={g.id}>{g.label} · {g.status==='completed'?'Tamamlandı':'Sürüyor'}</li>)}</ul>
   </section>;
 }

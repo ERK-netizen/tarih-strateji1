@@ -1,0 +1,217 @@
+{
+  "schema": "tarih-strateji.v17-r2.commands-design-v1",
+  "status": "DESIGN_ONLY",
+  "diplomacy": [
+    {
+      "id": "improve_relations",
+      "titleTr": "İlişkileri iyileştir",
+      "group": "relations",
+      "requiresDraftRevision": false,
+      "requiresWorldValidation": true
+    },
+    {
+      "id": "recall_envoy",
+      "titleTr": "Elçi geri çağır",
+      "group": "relations",
+      "requiresDraftRevision": false,
+      "requiresWorldValidation": true
+    },
+    {
+      "id": "nonaggression",
+      "titleTr": "Saldırmazlık paktı",
+      "group": "security",
+      "requiresDraftRevision": true,
+      "requiresWorldValidation": true
+    },
+    {
+      "id": "guarantee_neutrality",
+      "titleTr": "Tarafsızlık garantisi",
+      "group": "security",
+      "requiresDraftRevision": true,
+      "requiresWorldValidation": true
+    },
+    {
+      "id": "military_access",
+      "titleTr": "Askerî geçiş",
+      "group": "security",
+      "requiresDraftRevision": true,
+      "requiresWorldValidation": true
+    },
+    {
+      "id": "trade_treaty",
+      "titleTr": "Ticaret anlaşması",
+      "group": "economy",
+      "requiresDraftRevision": true,
+      "requiresWorldValidation": true
+    },
+    {
+      "id": "supply_credit",
+      "titleTr": "Kredi ve tedarik",
+      "group": "economy",
+      "requiresDraftRevision": true,
+      "requiresWorldValidation": true
+    },
+    {
+      "id": "supply_delivery",
+      "titleTr": "Ekipman yardımı",
+      "group": "economy",
+      "requiresDraftRevision": true,
+      "requiresWorldValidation": true
+    },
+    {
+      "id": "ultimatum",
+      "titleTr": "Ültimatom",
+      "group": "crisis",
+      "requiresDraftRevision": false,
+      "requiresWorldValidation": true
+    },
+    {
+      "id": "mediation",
+      "titleTr": "Arabuluculuk",
+      "group": "crisis",
+      "requiresDraftRevision": false,
+      "requiresWorldValidation": true
+    },
+    {
+      "id": "ceasefire",
+      "titleTr": "Ateşkes",
+      "group": "peace",
+      "requiresDraftRevision": true,
+      "requiresWorldValidation": true
+    },
+    {
+      "id": "war_reparations",
+      "titleTr": "Savaş tazminatı",
+      "group": "peace",
+      "requiresDraftRevision": true,
+      "requiresWorldValidation": true
+    },
+    {
+      "id": "territorial_exchange",
+      "titleTr": "Toprak değişimi",
+      "group": "territory",
+      "requiresDraftRevision": true,
+      "requiresWorldValidation": true
+    },
+    {
+      "id": "secret_protocol",
+      "titleTr": "Gizli protokol",
+      "group": "secret",
+      "requiresDraftRevision": true,
+      "requiresWorldValidation": true
+    },
+    {
+      "id": "conditional_war_promise",
+      "titleTr": "Koşullu savaş vaadi",
+      "group": "secret",
+      "requiresDraftRevision": true,
+      "requiresWorldValidation": true
+    },
+    {
+      "id": "peace_conference",
+      "titleTr": "Barış konferansı",
+      "group": "international",
+      "requiresDraftRevision": false,
+      "requiresWorldValidation": true
+    }
+  ],
+  "intelligence": [
+    {
+      "id": "intel_economy",
+      "titleTr": "Ekonomik bilgi toplama",
+      "group": "information",
+      "requiresActiveNetwork": true,
+      "requiresBudget": true,
+      "realWorldMethodDetailsAllowed": false
+    },
+    {
+      "id": "intel_army",
+      "titleTr": "Ordu ve tahkimat keşfi",
+      "group": "information",
+      "requiresActiveNetwork": true,
+      "requiresBudget": true,
+      "realWorldMethodDetailsAllowed": false
+    },
+    {
+      "id": "intel_diplomacy",
+      "titleTr": "Diplomatik bilgi",
+      "group": "information",
+      "requiresActiveNetwork": true,
+      "requiresBudget": true,
+      "realWorldMethodDetailsAllowed": false
+    },
+    {
+      "id": "counterintel",
+      "titleTr": "Karşı istihbarat",
+      "group": "defense",
+      "requiresActiveNetwork": true,
+      "requiresBudget": true,
+      "realWorldMethodDetailsAllowed": false
+    },
+    {
+      "id": "intel_network",
+      "titleTr": "Hedef ülkede ajan ağı",
+      "group": "infrastructure",
+      "requiresActiveNetwork": false,
+      "requiresBudget": true,
+      "realWorldMethodDetailsAllowed": false
+    },
+    {
+      "id": "intel_cipher",
+      "titleTr": "Şifre ve haberleşme araştırması",
+      "group": "research",
+      "requiresActiveNetwork": false,
+      "requiresBudget": true,
+      "realWorldMethodDetailsAllowed": false
+    },
+    {
+      "id": "intel_secrecy",
+      "titleTr": "Gizli anlaşma hakkında bilgi",
+      "group": "information",
+      "requiresActiveNetwork": true,
+      "requiresBudget": true,
+      "realWorldMethodDetailsAllowed": false
+    },
+    {
+      "id": "intel_diplomatic_influence",
+      "titleTr": "Ülkeler arası ilişkiye etki",
+      "group": "political",
+      "requiresActiveNetwork": true,
+      "requiresBudget": true,
+      "realWorldMethodDetailsAllowed": false
+    },
+    {
+      "id": "intel_sabotage_economy",
+      "titleTr": "Ekonomik faaliyeti aksatma",
+      "group": "covert_abstract",
+      "requiresActiveNetwork": true,
+      "requiresBudget": true,
+      "realWorldMethodDetailsAllowed": false
+    },
+    {
+      "id": "intel_sabotage_rail",
+      "titleTr": "Ulaştırma aksaması",
+      "group": "covert_abstract",
+      "requiresActiveNetwork": true,
+      "requiresBudget": true,
+      "realWorldMethodDetailsAllowed": false
+    },
+    {
+      "id": "intel_person_risk",
+      "titleTr": "Siyasi kişi krizi (soyut)",
+      "group": "covert_abstract",
+      "requiresActiveNetwork": true,
+      "requiresBudget": true,
+      "realWorldMethodDetailsAllowed": false
+    },
+    {
+      "id": "intel_unrest_risk",
+      "titleTr": "İç gerilim desteği (soyut)",
+      "group": "covert_abstract",
+      "requiresActiveNetwork": true,
+      "requiresBudget": true,
+      "realWorldMethodDetailsAllowed": false
+    }
+  ],
+  "notExistingGameCommandNames": true
+}

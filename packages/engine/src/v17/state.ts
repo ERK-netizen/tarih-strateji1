@@ -19,8 +19,14 @@ export interface V17Network { id:number; owner:number; target:number; strength:n
 export interface V17Operation { id:number; owner:number; target:number; region:number; networkId:number; kind: 'sabotaj'|'bilgi'|'nufuz'; createdDay:number; resolveDay:number; status: V17OperationStatus; result:number }
 export interface V17Proposal { id:number; from:number; to:number; clause: 'ticaret'|'gecis'|'saldirmazlik'|'garanti'; revision:number; parentId:number; status:V17ProposalStatus; createdDay:number; expiryDay:number; visibility:'public'|'parties' }
 export interface V17Order { id:number; country:number; unitIds:number[]; kind:'savun'|'taarruz'|'intikal'|'garnizon'; targetRegion:number; createdDay:number; expiryDay:number; lastAppliedDay:number; status:'active'|'completed'|'cancelled' }
-export interface V17Goal { id:number; country:number; code:string; label:string; metric:'bolge'|'refah'|'teknoloji'|'baris'; target:number; baseline:number; reward:number; status:V17GoalStatus; completedDay:number }
-export interface V17Stats { industrialDays:number; opsResolved:number; treatiesAccepted:number; ordersExecuted:number; sourceLedger:Record<string,number> }
+/** Ulusal hedef: metrik (0..S ölçütü, v17/hedef.ts) zamanla yumuşatılarak ilerlemeye dönüşür; eşik üç aşamayla izlenir. */
+export interface V17Goal {
+  id:number; country:number; code:string; label:string; category:string; weight:number;
+  metric:string; threshold:number; stages:number[]; stage:number;
+  /** 0..S: ölçütün 120 günlük üstel ortalaması (anlık dalgalanma hedefi tamamlamaz) */ progress:number;
+  /** son ölçüm (0..S) */ value:number; status:V17GoalStatus; completedDay:number; paths:string[];
+}
+export interface V17Stats { goalScore:number; goalDay:number; industrialDays:number; opsResolved:number; treatiesAccepted:number; ordersExecuted:number; sourceLedger:Record<string,number> }
 export interface V17Flags {
   /** advanced production isn't turned on until old factory math is cut over; prevents double production */
   detailedProduction: boolean;
@@ -38,7 +44,7 @@ export interface V17State {
 export function emptyV17():V17State {
   return {version:1,nextId:1,lastDay:-1,sites:[],resources:[],models:[],jobs:[],ministers:[],networks:[],operations:[],proposals:[],orders:[],goals:[],
     flags:{detailedProduction:false,enableAiDiplomacy:true,enableAiPlans:false,enableIntel:true},
-    stats:{industrialDays:0,opsResolved:0,treatiesAccepted:0,ordersExecuted:0,sourceLedger:{}}};
+    stats:{goalScore:0,goalDay:-1,industrialDays:0,opsResolved:0,treatiesAccepted:0,ordersExecuted:0,sourceLedger:{}}};
 }
 export function nextV17Id(s:V17State):number {const v=s.nextId; if(!Number.isSafeInteger(v)||v<=0||v>=2**31)throw Error('v17 kimlik tavanı');s.nextId++;return v;}
 export function safeNonnegative(v:number,name:string):number {if(!Number.isSafeInteger(v)||v<0)throw Error(`v17 geçersiz sayı ${name}:${v}`);return v;}

@@ -1,5 +1,6 @@
 // 28 Haziran 1914: Saraybosna suikastı günü. Devletler, hükümdarlar ve bağlaşmalar 1914 yazındaki durumdur.
 import type { SenaryoTanim } from '../senaryo.ts';
+import { v17Olaylar } from '../v17olay.ts';
 
 export const S1914: SenaryoTanim = {
   kimlik: 's1914', ad: 'Büyük Savaş', alt: '1914 · Birinci Dünya Savaşı', donem: 'buyuk', nufusDonem: '1914',
@@ -269,3 +270,7 @@ export const S1914: SenaryoTanim = {
       ] },
   ],
 };
+
+// v1.7 R2: tasarlanmış 36 koşullu olay (stratejik tutum kararları) ve 64 ulusal hedef
+S1914.olaylar!.push(...v17Olaylar(new Set(S1914.devletler.map((d) => d.k))));
+S1914.v17Hedef = true;

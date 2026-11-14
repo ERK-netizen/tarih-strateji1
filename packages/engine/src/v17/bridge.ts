@@ -10,11 +10,12 @@ import {anlasmaKur} from '../systems/diplomasi.ts';
 import {rotaTip} from '../systems/ortak.ts';
 import {istihbaratRaporu} from '../observe/index.ts';
 import {emptyV17,nextV17Id,assertV17,type V17State,type V17Minister,type V17Order,type V17Proposal} from './state.ts';
-import {MODELS_1914,GOAL_SEEDS_1914,PORTFOLIOS} from './catalog.ts';
+import {MODELS_1914,PORTFOLIOS} from './catalog.ts';
+import {kurHedefler,guncelleHedefler,OLCUTLER} from './hedef.ts';
 import {addSite,factoryPolicyBonus} from './industry.ts';
 import {offerV17,replyV17,expireV17,proposalVisible} from './diplomacy.ts';
 import {networkV17,planOperationV17,resolveV17} from './intelligence.ts';
-import {orderV17,executeV17,updateGoalsV17} from './strategy.ts';
+import {orderV17,executeV17} from './strategy.ts';
 
 const money=(w:World,c:number)=>w.C.c.hazine[c]!;
 const power=(w:World,c:number)=>w.C.c.pg[c]!;
@@ -37,17 +38,8 @@ export function initialiseV17(w:World):V17State {
       if(capacity>0)s.resources.push({id:nextV17Id(s),region:r,kind,capacity,reserve:-1});
     }
   }
-  if(w.pkg.donem==='buyuk') {
-    s.models=MODELS_1914.map(x=>({...x}));
-    const valid=new Set(['GER','FRA','GBR','RUS','AUH','OSM','SRB','ITA','USA','JAP','BEL','BUL','ROM','GRE','NLD','TUR']);
-    for(let c=0;c<w.nC;c++){
-      if(!valid.has(w.pkg.ulkeler[c]!.kod))continue;
-      for(const g of GOAL_SEEDS_1914) {
-        const baseline=g.metric==='baris'?w.gun:g.metric==='bolge'?w.C.c.bazBolge[c]! : g.metric==='teknoloji'?w.C.c.tekSay[c]!:g.metric==='refah'?w.C.c.tuketimYet[c]!:0;
-        s.goals.push({id:nextV17Id(s),country:c,code:`${w.pkg.ulkeler[c]!.kod}_${g.code}`,label:g.label,metric:g.metric,target:g.metric==='baris'?180:baseline+g.target,baseline,reward:g.reward,status:'active',completedDay:-1});
-      }
-    }
-  }
+  if(w.pkg.donem==='buyuk')s.models=MODELS_1914.map(x=>({...x}));
+  kurHedefler(w,s,w.oyuncu);
   return s;
 }
 export function v17LoadFromLegacy(w:World):void {w.v17=initialiseV17(w);}
@@ -201,13 +193,7 @@ export function v17P11(w:World):void {
     if(existing){existing.capacity=capacity;existing.country=w.R.c.sahip[r]!;}
     else if(capacity>0)addSite(s,w.R.c.sahip[r]!,r,kind,capacity);
   }
-  updateGoalsV17(s,w.gun,g=>{
-    if(g.metric==='teknoloji')return w.C.c.tekSay[g.country]!;
-    if(g.metric==='refah')return w.C.c.tuketimYet[g.country]!;
-    if(g.metric==='bolge'){let n=0;for(let r=0;r<w.nR;r++)if(w.R.c.sahip[r]===g.country)n++;return n;}
-    const war=w.SV.list().some(i=>(w.savasTaraf[i*w.nC+g.country] ?? 0)>0);
-    return war?0:w.gun-g.baseline;
-  });
+  guncelleHedefler(w,s);
   assertV17(s);
 }
 /** Only own countries and directly involved diplomatic messages may be returned to player UI. */
@@ -222,7 +208,8 @@ export function v17View(w:World,viewer=w.oyuncu){
     operations:s.operations.filter(x=>x.owner===viewer).map(x=>({...x})),
     proposals:s.proposals.filter(x=>proposalVisible(x,viewer)).map(x=>({...x,fromName:w.pkg.ulkeler[x.from]!.kisa,toName:w.pkg.ulkeler[x.to]!.kisa})),
     orders:s.orders.filter(x=>x.country===viewer).map(x=>({...x,unitIds:[...x.unitIds]})),
-    goals:s.goals.filter(x=>x.country===viewer).map(x=>({...x})),
+    goals:s.goals.filter(x=>x.country===viewer).map(x=>({...x,stages:[...x.stages],paths:[...x.paths],metricName:OLCUTLER[x.metric]?.ad??x.metric})),
+    goalScore:viewer===w.oyuncu?s.stats.goalScore:0,
     availablePoliticians:siyasiKisiler(AKTIF.donem).filter(x=>x.kod===w.pkg.ulkeler[viewer]!.kod&&x.bas<=currentYear(w)&&x.bit>=currentYear(w)).map(x=>({ad:x.ad,rol:x.gorev})),
     models:s.models.filter(x=>x.era===w.pkg.donem).map(x=>({...x})),
     stats:{...s.stats,sourceLedger:{...s.stats.sourceLedger}},
