@@ -7,6 +7,7 @@ import { GEMI, HAVA, NGEMI, NHAVA } from '../katalogEk.ts';
 import { largestRemainder } from '../num/index.ts';
 import { pasif } from './ortak.ts';
 import { UCAK_KAPASITE, havaMenzili, kiyidaMi } from './us.ts';
+import { v17Uretildi } from '../v17/bridge.ts';
 
 export const FG = ['g0', 'g1', 'g2', 'g3', 'g4'] as const;
 export const KU = ['u0', 'u1', 'u2'] as const;
@@ -230,6 +231,7 @@ export function ucakTeslim(w: World, c: number, tip: number, adet: number): void
   let k = [...kl].sort((a, b) => { const x = usDoluluk(w, w.KN.c.us[a]!), y = usDoluluk(w, w.KN.c.us[b]!); return (y.kapasite - y.ucak) - (x.kapasite - x.ucak) || a - b; })[0];
   if (k === undefined) k = kanatKur(w, c, usler(w, c)[0] ?? w.pkg.ulkeler[c]!.baskent, []);
   w.KN.c[KU[tip]!][k] = w.KN.c[KU[tip]!][k]! + adet;
+  v17Uretildi(w, c, `ucak${tip}`, adet);
   kuvvetEsitle(w, c);
 }
 

@@ -1,5 +1,5 @@
 import { denizGucu } from './systems/deniz.ts';
-import {V17_COMMANDS,v17Preview,v17Apply} from './v17/bridge.ts'; // v1.7 integration R3: commands
+import {V17_COMMANDS,v17Preview,v17Apply,v17UcakBagla} from './v17/bridge.ts'; // v1.7 integration R3: commands
 import { cepheler, usMesafesi, havaMenzili, ucakKapasitesi, ucakToplam } from './systems/us.ts';
 // Ek emirler (şema 7): donanma ve hava kuvvetleri, tabur düzeni, siyaset, demografi, ekonomi ayarları, örtülü diplomasi.
 // Her emir için önizleme (dünyayı değiştirmez) ve uygulama; oyuncu ve karar modülü aynı kuralları kullanır.
@@ -758,3 +758,4 @@ void NGEMI; void NHAVA;
 void NYUVA;
 // v1.7 integration R3: normal preview/confirm route for new commands.
 for(const kind of V17_COMMANDS) EK_EMIRLER[kind]={onizle:v17Preview,uygula:v17Apply};
+v17UcakBagla(EK_EMIRLER.ucakUret!);

@@ -783,9 +783,9 @@ function cepheYonet(w: World, c: number): void {
     return;
   }
   // kaynak bölgede kalması gereken güç: karşıdaki düşman gücünün %70'i, bölgenin savunma çarpanıyla bölünür
-  // ezici üstün olduğumuz düşmanın (ezilen) karşı taarruzu beklenmez: onun payı yarım sayılır; öteki düşmanlara karşı güç tam tutulur
+  // ezici üstün olduğumuz düşmanın (ezilen) karşı taarruzu beklenmez: onun payı geride tutulacak güçten düşülür; öteki düşmanlara karşı güç tam tutulur
   const tutGerek = (r: number, ezilen = -1) => {
-    const kg = (karsiGuc.get(r) ?? 0) - (ezilen >= 0 ? Math.floor((karsiUlke.get(r)?.get(ezilen) ?? 0) / 2) : 0);
+    const kg = (karsiGuc.get(r) ?? 0) - (ezilen >= 0 ? (karsiUlke.get(r)?.get(ezilen) ?? 0) : 0);
     return mulDiv(mulDiv(kg, 700_000, S).q, S, Math.max(S, savunmaCarpan(w, r, 0))).q;
   };
   // taarruz adayları (yalnız savaşta)
@@ -836,7 +836,7 @@ function cepheYonet(w: World, c: number): void {
         const r = U.bolge![u]!;
         const s = birlikIstat(w, u);
         const kalan = (bolgeGuc.get(r) ?? 0) - s.YS - s.SV;
-        // büyük kent yığınağı kuşatmayı kilitlemesin: ezilen düşmanın payı yarım sayılır (bkz. tutGerek)
+        // büyük kent yığınağı kuşatmayı kilitlemesin: ezilen düşmanın payı sayılmaz (bkz. tutGerek)
         if (kalan < tutGerek(r, ezici ? hk : -1)) continue;
         bolgeGuc.set(r, kalan);
         giden.push(u);

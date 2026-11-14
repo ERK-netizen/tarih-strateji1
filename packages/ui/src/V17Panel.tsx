@@ -14,6 +14,8 @@ export function V17Panel() {
   const [operation,setOperation]=useState('bilgi');
   const [front,setFront]=useState(-1);
   const [planKind,setPlanKind]=useState('savun');
+  const [model,setModel]=useState('');
+  const [adet,setAdet]=useState(1);
   const ps=panelSurum.value,day=ozet.value?.gun;
   useEffect(()=>{let live=true;void istemci.istek('query',{gorunum:'v17'}).then((x)=>{if(live)setV(x.veri);});return()=>{live=false;};},[ps,day]);
   if(!v)return null;
@@ -71,8 +73,14 @@ export function V17Panel() {
       {p.to===ozet.value?.oyuncu&&<div class="dugmeler"><button onClick={()=>onizle({tur:'v17TeklifYanit',teklif:p.id,yanit:'accept'})}>Kabul</button><button onClick={()=>onizle({tur:'v17TeklifYanit',teklif:p.id,yanit:'reject'})}>Ret</button><button onClick={()=>onizle({tur:'v17TeklifYanit',teklif:p.id,yanit:'counter'})}>Karşı teklif</button></div>}
     </div>)}
     {(v.namedModels??[]).length>0&&<><h4>Adlı ekipman modelleri</h4>
-    <p class="soluk kucuk">Ülkenizin ve yılın kapısından geçen tasarım kataloğu. Üretim hattına bağlanması sonraki sürümdedir; mevcut fabrika üretimi eskisi gibi sürer.</p>
-    <ul class="liste">{v.namedModels.map((m:any)=><li key={m.id} class="kucuk">{m.ad} · {m.aile} · {m.yil}</li>)}</ul></>}
+    <p class="soluk kucuk">Ülkenizin ve yılın kapısından geçen modeller. Üretim mevcut fabrika hattından yapılır; model yalnız çıktıya ad verir (ikinci hat ya da ek hammadde tüketimi yoktur).</p>
+    <div class="satir-ayar"><label>Model</label><select value={model} onChange={e=>setModel((e.target as HTMLSelectElement).value)}>
+      <option value="">Model seç</option>{v.namedModels.map((m:any)=><option key={m.id} value={m.id}>{m.ad} · {m.aile} · {m.yil}</option>)}
+    </select></div>
+    {model&&(()=>{const m=v.namedModels.find((x:any)=>x.id===model);const ucak=m?.aile?.endsWith('uçağı');return <div class="satir-ayar"><label>{ucak?'Filo adedi':'Askerî fabrika'}</label>
+      <input type="number" min={0} max={20} value={adet} onInput={e=>setAdet(Number((e.target as HTMLInputElement).value))} />
+      <button onClick={()=>onizle(ucak?{tur:'v17SanayiGorevi',model,adet:Math.max(1,adet)}:{tur:'v17SanayiGorevi',model,fabrika:Math.max(0,adet)*1000})}>{ucak?'Uçak siparişini önizle':adet===0?'Üretimi durdurmayı önizle':'Model üretimini önizle'}</button></div>;})()}
+    {(v.modelLines??[]).length>0&&<ul class="liste">{v.modelLines.map((l:any)=><li key={l.id} class="kucuk">{l.modelName}: üretilen {l.produced}</li>)}</ul>}</>}
     <h4>Harekât planı</h4>
     <p class="soluk kucuk">{seciliBirlik.value.size} seçili birlik için kalıcı emir. Önce haritadan birlik seçin.</p>
     <div class="satir-ayar"><label>Hedef bölge</label><select value={front} onChange={e=>setFront(Number((e.target as HTMLSelectElement).value))}>

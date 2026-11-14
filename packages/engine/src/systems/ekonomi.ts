@@ -1,4 +1,4 @@
-import {v17IndustryBonus} from '../v17/bridge.ts';
+import {v17IndustryBonus,v17Uretildi} from '../v17/bridge.ts';
 import { US_MAX } from './us.ts';
 // Bölüm 11–13: tarım, gıda, sanayi, üretim hatları, projeler, araştırma, vergi, harcama, borç, pazar.
 import type { World } from '../state/world.ts';
@@ -333,7 +333,7 @@ export function sanayiGunu(w: World): void {
         H.wip[s] = mulDiv(m.rem, 1, 1000).q;
       } else {
         const adet = Math.floor(H.wip[s]! / tarifSP);
-        if (adet > 0) { w.ekip[ck(c, urun)] = w.ekip[ck(c, urun)]! + adet; H.wip[s] = H.wip[s]! - adet * tarifSP; }
+        if (adet > 0) { w.ekip[ck(c, urun)] = w.ekip[ck(c, urun)]! + adet; H.wip[s] = H.wip[s]! - adet * tarifSP; v17Uretildi(w, c, `ekip${urun}`, adet); }
       }
       // verim (13.1): Δ = 0,01 × (tavan − mevcut) × çalışmaOranı
       const tavan = (tek(w, c, 'sanayi2') ? 600_000 : 500_000) + (tek(w, c, 'sanayi3') ? 50_000 : 0);

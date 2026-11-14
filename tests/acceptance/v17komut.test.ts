@@ -34,6 +34,7 @@ describe('T123 v1.7 emirleri: eşdeğer komut metni geri çözülür', () => {
   const emirler: Record<string, unknown>[] = [
     { tur: 'v17BakanAta', alan: 'uretim', kisi }, { tur: 'v17BakanAta', alan: 'ordu', kisi }, { tur: 'v17BakanAta', alan: 'ekonomi', kisi },
     { tur: 'v17AgKur', hedef: FRA },
+    { tur: 'v17SanayiGorevi', model: 'gew98', fabrika: 2000 }, { tur: 'v17SanayiGorevi', model: 'mg08', fabrika: 1000 }, { tur: 'v17SanayiGorevi', model: 'mg08', fabrika: 0 }, { tur: 'v17SanayiGorevi', model: 'etrich_taube', adet: 2 },
     { tur: 'v17Operasyon', ag: ag.id, operasyon: 'bilgi', bolge: -1 }, { tur: 'v17Operasyon', ag: ag.id, operasyon: 'nufuz', bolge: -1 },
     { tur: 'v17Operasyon', ag: ag.id, operasyon: 'sabotaj', bolge: p1914.bolgeler.findIndex((b) => b.ad === 'Moskova') },
     { tur: 'v17Teklif', hedef: FRA, madde: 'ticaret' }, { tur: 'v17Teklif', hedef: FRA, madde: 'saldirmazlik' }, { tur: 'v17Teklif', hedef: FRA, madde: 'garanti' },

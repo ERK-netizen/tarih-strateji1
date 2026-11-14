@@ -65,3 +65,11 @@ export const TESISLER_TASARIM:readonly V17TesisTuru[]=[
 ] as const;
 /** Model bu ülke ve yılda kullanılabilir mi? (ülke kapısı + ilk yıl; lisans/ele geçirme sonraki sürümdür) */
 export const modelKullanilabilir=(m:V17Model,ulkeKod:string,yil:number):boolean=>m.ulkeler.includes(ulkeKod)&&yil>=m.yil;
+/**
+ * Tasarım ailesi → mevcut oyun ürünü. Adlı model, eski üretim hattının çıktısına ad verir; yeni bir üretim hattı kurmaz (çifte üretim yok).
+ * 'ekip': EKIPMAN kodu; 'ucak': HAVA tür dizini. Tank ailesinin 1914 oyun karşılığı yoktur.
+ */
+export const AILE_URUN:Readonly<Record<string,{tur:'ekip'|'ucak';kod:string|number}|undefined>>={
+  'Tüfek':{tur:'ekip',kod:'psil1'},'Makineli tüfek':{tur:'ekip',kod:'mt'},'Sahra topu':{tur:'ekip',kod:'sahra'},'Ağır top':{tur:'ekip',kod:'agir1'},
+  'Keşif uçağı':{tur:'ucak',kod:2},'Avcı uçağı':{tur:'ucak',kod:0},
+};

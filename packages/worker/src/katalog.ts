@@ -36,6 +36,7 @@ export function katalogKur(w: World, secili: number[] = []): Katalog {
         aglar: v.networks.map((n) => ({ id: n.id, hedef: n.target })),
         teklifler: v.proposals.filter((x) => x.status === 'pending' && x.to === P).map((x) => ({ id: x.id, kimden: x.from })),
         tesisler: v.sites.map((x) => ({ id: x.id, bolge: x.region, tur: x.kind })),
+        modeller: v.namedModels.map((m) => ({ id: m.id, ad: m.ad, ucak: m.aile.endsWith('uçağı') })),
       };
     })(),
     komutanlar: komutan.ulkeKomutanlari(w, P).map((k) => ({ id: w.KM.id(k), ad: komutan.komutanAdi(w, k) })),

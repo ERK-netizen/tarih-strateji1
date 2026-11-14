@@ -26,6 +26,8 @@ export interface V17Goal {
   /** 0..S: ölçütün 120 günlük üstel ortalaması (anlık dalgalanma hedefi tamamlamaz) */ progress:number;
   /** son ölçüm (0..S) */ value:number; status:V17GoalStatus; completedDay:number; paths:string[];
 }
+/** Adlı model üretim hattı: gerçek üretim eski (tek) hattan yapılır; bu kayıt hangi adlı modelin üretildiğini ve toplamını izler. */
+export interface V17ModelLine { id:number; country:number; modelId:string; /** 'ekip<i>' (EKIPMAN dizini) ya da 'ucak<tür>' */ product:string; produced:number; startedDay:number }
 export interface V17Stats { goalScore:number; goalDay:number; industrialDays:number; opsResolved:number; treatiesAccepted:number; ordersExecuted:number; sourceLedger:Record<string,number> }
 export interface V17Flags {
   /** advanced production isn't turned on until old factory math is cut over; prevents double production */
@@ -38,11 +40,11 @@ export interface V17State {
   version:1; nextId:number; lastDay:number;
   sites:V17Site[]; resources:V17Resource[]; models:V17EquipmentModel[]; jobs:V17Job[];
   ministers:V17Minister[]; networks:V17Network[]; operations:V17Operation[];
-  proposals:V17Proposal[]; orders:V17Order[]; goals:V17Goal[];
+  proposals:V17Proposal[]; orders:V17Order[]; goals:V17Goal[]; modelLines:V17ModelLine[];
   flags:V17Flags; stats:V17Stats;
 }
 export function emptyV17():V17State {
-  return {version:1,nextId:1,lastDay:-1,sites:[],resources:[],models:[],jobs:[],ministers:[],networks:[],operations:[],proposals:[],orders:[],goals:[],
+  return {version:1,nextId:1,lastDay:-1,sites:[],resources:[],models:[],jobs:[],ministers:[],networks:[],operations:[],proposals:[],orders:[],goals:[],modelLines:[],
     flags:{detailedProduction:false,enableAiDiplomacy:true,enableAiPlans:false,enableIntel:true},
     stats:{goalScore:0,goalDay:-1,industrialDays:0,opsResolved:0,treatiesAccepted:0,ordersExecuted:0,sourceLedger:{}}};
 }
@@ -50,7 +52,7 @@ export function nextV17Id(s:V17State):number {const v=s.nextId; if(!Number.isSaf
 export function safeNonnegative(v:number,name:string):number {if(!Number.isSafeInteger(v)||v<0)throw Error(`v17 geçersiz sayı ${name}:${v}`);return v;}
 export function assertV17(s:V17State):void {
   if(s.version!==1)throw Error('v17 eklenti sürümü');safeNonnegative(s.nextId,'nextId');
-  for(const [name,rows] of Object.entries({sites:s.sites,resources:s.resources,jobs:s.jobs,ministers:s.ministers,networks:s.networks,operations:s.operations,proposals:s.proposals,orders:s.orders,goals:s.goals})) {
+  for(const [name,rows] of Object.entries({sites:s.sites,resources:s.resources,jobs:s.jobs,ministers:s.ministers,networks:s.networks,operations:s.operations,proposals:s.proposals,orders:s.orders,goals:s.goals,modelLines:s.modelLines})) {
     const seen=new Set<number>();for(const row of rows){if(seen.has(row.id))throw Error(`v17 mükerrer ${name}:${row.id}`);seen.add(row.id);safeNonnegative(row.id,`id:${name}`);}
   }
   for(const q of s.resources){safeNonnegative(q.capacity,'resource.capacity');if(q.reserve!==-1)safeNonnegative(q.reserve,'resource.reserve');}

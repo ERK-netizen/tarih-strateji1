@@ -35,6 +35,7 @@ export interface Katalog {
     aglar: { id: number; hedef: number }[];
     teklifler: { id: number; kimden: number }[];
     tesisler: { id: number; bolge: number; tur: string }[];
+    modeller?: { id: string; ad: string; ucak: boolean }[];
   };
   filolar?: { id: number; ad: string; gorev: number }[];
   kanatlar?: { id: number; ad: string }[];

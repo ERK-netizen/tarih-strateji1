@@ -12,12 +12,18 @@ import {istihbaratRaporu} from '../observe/index.ts';
 import {emptyV17,nextV17Id,assertV17,type V17State,type V17Site,type V17Minister,type V17Order,type V17Proposal} from './state.ts';
 import {MODELS_1914,PORTFOLIOS} from './catalog.ts';
 import {kurHedefler,guncelleHedefler,OLCUTLER} from './hedef.ts';
-import {MODELLER_TASARIM,KAYNAKLAR_TASARIM,TESISLER_TASARIM,modelKullanilabilir} from './katalogTasarim.ts';
+import {MODELLER_TASARIM,KAYNAKLAR_TASARIM,TESISLER_TASARIM,modelKullanilabilir,AILE_URUN} from './katalogTasarim.ts';
+import {EKIPMAN,AKTIF as AKT,NTEK,TEKNOLOJI} from '../catalog.ts';
+import {HAVA} from '../katalogEk.ts';
+import {hatEkle,toplamAskeriFabrika} from '../state/world.ts';
 import {addSite,factoryPolicyBonus} from './industry.ts';
 import {offerV17,replyV17,expireV17,proposalVisible} from './diplomacy.ts';
 import {networkV17,planOperationV17,resolveV17} from './intelligence.ts';
 import {orderV17,executeV17} from './strategy.ts';
 
+/** Eski uçak siparişi emri (emirEk.ts kaydeder; döngüsel içe aktarmayı önlemek için geç bağlanır). */
+let ucakEmri:{onizle:(w:World,e:Emir)=>Kart;uygula:(w:World,e:Emir)=>void}|undefined;
+export function v17UcakBagla(x:{onizle:(w:World,e:Emir)=>Kart;uygula:(w:World,e:Emir)=>void}):void{ucakEmri=x;}
 const money=(w:World,c:number)=>w.C.c.hazine[c]!;
 const power=(w:World,c:number)=>w.C.c.pg[c]!;
 const N=(a:unknown,d=-1):number=>typeof a==='number'&&Number.isSafeInteger(a)?a:d;
@@ -118,7 +124,24 @@ export function v17Preview(w:World,e:Emir):Kart {
       if(ids.some(id=>{const u=w.U.resolve(id);return !rotaTip(w,c,0,w.U.c.bolge[u]!,hedef);}))return bad('Harekât','Birlik için uygun rota yok');
       return good('Harekât planı',`${ids.length} birlik · ${kind} · ${w.pkg.bolgeler[hedef]!.ad}`,[],['Emir gün başlangıcında doğrulanır, manuel emir önceliği korunur']);
     }
-    case 'v17SanayiGorevi': return bad('Ayrıntılı üretim','Bu sürümde model bazlı gerçek stok dönüşümü henüz etkinleştirilmedi; çift üretimi önlemek için emir kilitli');
+    case 'v17SanayiGorevi': {
+      const model=MODELLER_TASARIM.find(m=>m.id===String(e.model));
+      if(!model)return bad('Model üretimi','Model bulunamadı');
+      if(w.pkg.donem!=='buyuk')return bad('Model üretimi','Adlı model kataloğu bu çağda yok');
+      if(!modelKullanilabilir(model,w.pkg.ulkeler[c]!.kod,currentYear(w)))return bad('Model üretimi',`${model.ad}: bu ülke ve yılda kullanılamaz (ülke kapısı ${model.ulkeler.join('/')}, ilk yıl ${model.yil})`);
+      const u=modelUrun(model.aile);
+      if(!u)return bad('Model üretimi',`${model.aile} ailesinin bu oyunda üretim hattı yok`);
+      if(u.tur==='ucak'){
+        const adet=Math.max(1,N(e.adet,1));
+        const k=ucakEmri?ucakEmri.onizle(w,{tur:'ucakUret',ulke:c,tip:u.urun,adet}):bad('Model üretimi','Uçak siparişi hazır değil');
+        if(!k.gecerli)return bad('Model üretimi',k.neden??'Uçak üretimi kabul edilmedi');
+        return good(`${model.ad} üretimi`,`${adet} filo · ${HAVA[AKT.donem][u.urun]?.ad ?? 'uçak'}`,k.bugun,[...k.tahmin,'Teslim edilen uçaklar bu modelin üretim toplamına yazılır']);
+      }
+      const eq=EKIPMAN[u.urun]!;
+      if(eq.tek&&!w.tekBitti[c*NTEK+TEKNOLOJI.findIndex(t=>t.kod===eq.tek)])return bad('Model üretimi',`${eq.ad} için önce araştırma gerekir`);
+      const top=toplamAskeriFabrika(w,c)*1000,fab=Math.max(0,Math.min(N(e.fabrika,1000),top));
+      return good(`${model.ad} üretimi`,fab===0?'üretim durur':`${(fab/1000).toFixed(1)} askerî fabrika`,['Mevcut hat verimini korur; yeni hat %30 verimle başlar'],[`${eq.ad} hattı bu adla üretir; ikinci bir hat ya da ek hammadde tüketimi yoktur`]);
+    }
     default: return bad('v1.7','Emir bulunamadı');
   }
 }
@@ -142,7 +165,33 @@ export function v17Apply(w:World,e:Emir):void {
     }
     case 'v17SehirPolitika':s.sites.find(q=>q.id===N(e.tesis))!.policy=String(e.politika) as 'normal'|'verim'|'istihdam';w.C.c.pg[c]=power(w,c)-5000;break;
     case 'v17Harekat':orderV17(s,c,(e.birlikler as number[]),String(e.emir) as V17Order['kind'],N(e.hedef),w.gun);break;
+    case 'v17SanayiGorevi':{
+      const model=MODELLER_TASARIM.find(m=>m.id===String(e.model))!,u=modelUrun(model.aile)!;
+      const product=u.tur==='ucak'?`ucak${u.urun}`:`ekip${u.urun}`;
+      if(u.tur==='ucak')ucakEmri!.uygula(w,{tur:'ucakUret',ulke:c,tip:u.urun,adet:Math.max(1,N(e.adet,1))});
+      else{
+        const fab=N(e.fabrika,1000);let hat=-1;
+        for(const x of w.HT.rows())if(w.HT.c.ulke[x]===c&&w.HT.c.urun[x]===u.urun)hat=x;
+        if(fab<=0){if(hat>=0)w.HT.release(hat);}
+        else{if(hat<0)hat=hatEkle(w,c,u.urun,0);w.HT.c.fabrika[hat]=fab;}
+      }
+      // aynı ürün için tek adlı hat: yeni model eskisinin adını devralır, toplamlar modele göre ayrı kalır
+      s.modelLines=s.modelLines.filter(x=>!(x.country===c&&x.product===product));
+      s.modelLines.push({id:nextV17Id(s),country:c,modelId:model.id,product,produced:0,startedDay:w.gun});
+      break;
+    }
   }
+}
+/** Aile adından eski oyun ürününü çözer ('ekip' için EKIPMAN dizini, 'ucak' için tür). */
+function modelUrun(aile:string):{tur:'ekip'|'ucak';urun:number}|undefined{
+  const m=AILE_URUN[aile];if(!m)return undefined;
+  if(m.tur==='ucak')return {tur:'ucak',urun:Number(m.kod)};
+  const i=EKIPMAN.findIndex(x=>x.kod===m.kod);return i<0?undefined:{tur:'ekip',urun:i};
+}
+/** Eski üretim ya da teslimat bir ürün ürettiğinde çağrılır: çıktı o ürünün adlı hattına yazılır (çıktıyı artırmaz). */
+export function v17Uretildi(w:World,c:number,product:string,adet:number):void{
+  if(adet<=0)return;
+  for(const l of w.v17.modelLines)if(l.country===c&&l.product===product){l.produced+=adet;return;}
 }
 function applyAgreement(w:World,p:V17Proposal):void {
   const type=({'ticaret':A.ticaret,'gecis':A.gecis,'saldirmazlik':A.saldirmazlik,'garanti':A.garanti} as const)[p.clause];
@@ -218,6 +267,7 @@ export function v17View(w:World,viewer=w.oyuncu){
     availablePoliticians:siyasiKisiler(AKTIF.donem).filter(x=>x.kod===w.pkg.ulkeler[viewer]!.kod&&x.bas<=currentYear(w)&&x.bit>=currentYear(w)).map(x=>({ad:x.ad,rol:x.gorev})),
     models:s.models.filter(x=>x.era===w.pkg.donem).map(x=>({...x})),
     /** Tasarım kataloğu: bu ülke ve yılda kullanılabilir adlı ekipman (üretim hattına henüz bağlı değil) */
+    modelLines:s.modelLines.filter(x=>x.country===viewer).map(x=>({...x,modelName:MODELLER_TASARIM.find(m=>m.id===x.modelId)?.ad??x.modelId})),
     namedModels:w.pkg.donem==='buyuk'?MODELLER_TASARIM.filter(m=>modelKullanilabilir(m,w.pkg.ulkeler[viewer]!.kod,currentYear(w))).map(m=>({...m,girdi:{...m.girdi}})):[],
     catalog:{resources:KAYNAKLAR_TASARIM.map(x=>({...x})),facilityTypes:TESISLER_TASARIM.map(x=>({...x}))},
     stats:{...s.stats,sourceLedger:{...s.stats.sourceLedger}},

@@ -82,6 +82,15 @@ export function yapiliAyristir(c: YBaglam): Yorum | string | null {
       if (!alan) return `${v17.kisiler[kisi]!.ad} hangi bakanlığa atanacak? (maliye, araştırma, sanayi, harbiye ya da bayındırlık)`;
       return yorum({ tur: 'v17BakanAta', ulke: P, alan: alan[0], kisi: v17.kisiler[kisi]!.ad }, `bakan ata: ${v17.kisiler[kisi]!.ad}`, k);
     }
+    const model = v17.modeller?.length ? adBul(toks, v17.modeller.map((x) => x.ad)) : -1;
+    if (model >= 0 && has(/ (uret|uretim|siparis)/)) {
+      const m = v17.modeller![model]!;
+      // model adındaki sayı (ör. "MG 08") adetle karışmasın: adet yalnız "N filo" / "N fabrika" biçiminden okunur
+      const adetOku = (re: RegExp): number => { const x = re.exec(f); return x ? Number(x[1]) : 1; };
+      if (m.ucak) return yorum({ tur: 'v17SanayiGorevi', ulke: P, model: m.id, adet: Math.max(1, Math.floor(adetOku(/ (\d+) filo/))) }, `model üretimi: ${m.ad}`, k);
+      const fab = has(/ (durdur|dursun|kapat)/) ? 0 : Math.max(1, Math.floor(adetOku(/ (\d+(?:,\d+)?) fabrika/) * 1000));
+      return yorum({ tur: 'v17SanayiGorevi', ulke: P, model: m.id, fabrika: fab }, `model üretimi: ${m.ad}`, k);
+    }
     if (ulke && has(/ agi? (kur|guclendir)/) && has(/ (istihbarat|casus)/)) return yorum({ tur: 'v17AgKur', ulke: P, hedef: ulke.id }, 'istihbarat ağı', k);
     if (ulke && has(/ operasyon/)) {
       const tur = has(/ sabotaj/) ? 'sabotaj' : has(/ nufuz/) ? 'nufuz' : has(/ bilgi/) ? 'bilgi' : '';
@@ -300,6 +309,11 @@ export function yapiliMetin(e: Emir, k: Katalog): string | null {
   const nAd = (id: unknown) => k.kanatlar?.find((x) => x.id === Number(id))?.ad ?? '?';
   switch (e.tur) {
     case 'v17BakanAta': return `${e.kisi} ${({ ekonomi: 'maliye', arastirma: 'araştırma', uretim: 'sanayi', ordu: 'harbiye', insa: 'bayındırlık' } as Record<string, string>)[String(e.alan)] ?? '?'} bakanı olsun`;
+    case 'v17SanayiGorevi': {
+      const m = k.v17?.modeller?.find((x) => x.id === String(e.model));
+      if (!m) return '? modeli üret';
+      return m.ucak ? `${m.ad} modelinden ${Number(e.adet ?? 1)} filo üret` : Number(e.fabrika) === 0 ? `${m.ad} modelinin üretimini durdur` : `${m.ad} modelini ${Number(e.fabrika ?? 1000) / 1000} fabrikayla üret`;
+    }
     case 'v17AgKur': return `${ekle(u(e.hedef), 'bulunma')} istihbarat ağı kur`;
     case 'v17Operasyon': {
       const hedef = k.v17?.aglar.find((x) => x.id === Number(e.ag))?.hedef;
