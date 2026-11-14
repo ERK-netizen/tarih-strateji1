@@ -1,4 +1,5 @@
 import { denizGucu } from './systems/deniz.ts';
+import {V17_COMMANDS,v17Preview,v17Apply} from './v17/bridge.ts'; // v1.7 integration R3: commands
 import { cepheler, usMesafesi, havaMenzili, ucakKapasitesi, ucakToplam } from './systems/us.ts';
 // Ek emirler (şema 7): donanma ve hava kuvvetleri, tabur düzeni, siyaset, demografi, ekonomi ayarları, örtülü diplomasi.
 // Her emir için önizleme (dünyayı değiştirmez) ve uygulama; oyuncu ve karar modülü aynı kuralları kullanır.
@@ -452,7 +453,11 @@ export const EK_EMIRLER: Record<string, EkEmir> = {
       const c = e.ulke, d = n(e.hedef), r = n(e.bolge);
       w.C.c.pg[c] = w.C.c.pg[c]! - 40_000; w.C.c.hazine[c] = w.C.c.hazine[c]! - 40_000;
       if (uniformInt(rng(w.tohum, w.gun, 46, c, r, AMAC.sabotage, 0, 0), 100) < 55) {
-        w.R.c.tahkimat[r] = 0; w.R.c.direnis[r] = Math.min(100_000, w.R.c.direnis[r]! + 20_000);
+        w.R.c.tahkimat[r] = 0;
+        w.R.c.direnis[r] = Math.min(100_000, w.R.c.direnis[r]! + 20_000);
+        // Gerçek tesis hasarı: mevcut ekonomi ve tarım hesaplarında R.hasar kullanılır;
+        // aylık siyaset kapanışındaki onarım 50.000/ay ile deterministik biçimde işler.
+        w.R.c.hasar[r] = Math.min(500_000, w.R.c.hasar[r]! + 100_000);
         anlat(w, `${bAd(w, r)}'da bilinmeyen kişilerce sabotaj: tahkimat ve tesisler zarar gördü.`, 'siyaset', d, 2);
       }
       if (uniformInt(rng(w.tohum, w.gun, 47, c, r, AMAC.sabotage, 1, 0), 100) < 25) { gorusDegis(w, d, c, -25_000); anlat(w, `${uAd(w, d)}, ${bAd(w, r)} sabotajının arkasında ${trEkK(w.pkg.ulkeler[c]!.kisa, 'in')} olduğunu açıkladı.`, 'diplomasi', d, 2); }
@@ -751,3 +756,5 @@ EK_EMIRLER.kanatAktar = {
 };
 void NGEMI; void NHAVA;
 void NYUVA;
+// v1.7 integration R3: normal preview/confirm route for new commands.
+for(const kind of V17_COMMANDS) EK_EMIRLER[kind]={onizle:v17Preview,uygula:v17Apply};

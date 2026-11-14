@@ -1,5 +1,7 @@
 // Bölüm 6.6: kanonik serileştirme (küçük-endian, şema sırası) ve hash. Görsel durum ve önbellek dışarıda kalır.
 import type { World } from '../state/world.ts';
+import {v17LoadFromLegacy} from '../v17/bridge.ts'; // v1.7 integration R3: migration
+import type {V17State} from '../v17/state.ts';
 import { yeniDunya, BAKAN_VARSAYILAN, partiBaslat, kuvvetBaslat, IDDIA_MAX, H_EYALET, T_KISI } from '../state/world.ts';
 import { MAL, NHUCRE, NKIMLIK, ST } from '../catalog.ts';
 import { largestRemainder } from '../num/index.ts';
@@ -12,7 +14,7 @@ import type { Paket } from '../paket.ts';
 import { usTersaneKur } from '../systems/us.ts';
 import { hashV1, hashText } from '../hash/index.ts';
 
-export const SEMA_SURUM = 10;
+export const SEMA_SURUM = 11;
 /** Şema 9'da eklenen kolonlar (komutanlar). */
 const YENI9: Record<string, string[]> = { birlik: ['komutan'] };
 /** Şema 6'da eklenen kolonlar: 5 sürümlü kayıt okunurken atlanır, varsayılanla doldurulur. */
@@ -173,6 +175,7 @@ export function serilestir(w: World): Uint8Array {
   y.str(kanonikJson(w.olayBayrak));
   y.u32(w.komutanAd.length); for (const s of w.komutanAd) y.str(s);
   y.u32(w.kuvvetAd.length); for (const s of w.kuvvetAd) y.str(s);
+  y.str(kanonikJson(w.v17)); // v1.7 integration R3: trailing canonical extension
   return y.bytes();
 }
 
@@ -200,7 +203,7 @@ function cozIc(bytes: Uint8Array, pkg: Paket, paketSerbest: boolean): World {
   const o = new Okuyucu(bytes);
   if (o.u32() !== MAGIC) throw new Error('kayıt dosyası değil');
   const sv = o.u32();
-  if (sv !== SEMA_SURUM && sv !== 5 && sv !== 6 && sv !== 7 && sv !== 8 && sv !== 9) throw new Error(`şema sürümü uyumsuz: ${sv}`);
+  if (sv !== SEMA_SURUM && sv !== 10 && sv !== 5 && sv !== 6 && sv !== 7 && sv !== 8 && sv !== 9) throw new Error(`şema sürümü uyumsuz: ${sv}`);
   const pid = o.str(), psur = o.str();
   if (pid !== pkg.kimlik || (!paketSerbest && psur !== pkg.surum)) throw new Error(`paket uyumsuz: ${pid}@${psur}`);
   const gun = o.f64(), surum = o.f64(), tohum = o.f64(), oyuncu = o.f64(), mod = o.f64(), emirSira = o.f64(), rotaEpoch = o.f64();
@@ -244,6 +247,8 @@ function cozIc(bytes: Uint8Array, pkg: Paket, paketSerbest: boolean): World {
   else { komutanBaslat(w); for (let c = 0; c < w.nC; c++) komutanDagit(w, c); } // şema 8 → 9: kadro senaryo kuralıyla kurulur
   if (sv >= 10) { const nk = o.u32(); w.kuvvetAd = []; for (let i = 0; i < nk; i++) w.kuvvetAd.push(o.str()); }
   else kuvvetKurHepsi(w); // şema ≤ 9 → 10: ülke toplamları filo ve kanatlara dağıtılır (toplam korunur)
+  if(sv>=11)w.v17=JSON.parse(o.str()) as V17State;
+  else v17LoadFromLegacy(w); // legacy şema 5–10 → 11 eklentisi deterministik üretilir
   return w;
 }
 
@@ -399,5 +404,6 @@ function haritaGoc(bytes: Uint8Array, pkg: Paket): World {
   for (const [kimlik, l] of Object.entries(e.teklifBolge)) w.teklifBolge[kimlik] = [...new Set(l.flatMap((i) => aile[i] ?? []))].sort((a, b) => a - b);
   kentYuvaUyumla(w);
   w.diploSurum++; w.savasSurum++; w.anSurum++;
+  v17LoadFromLegacy(w); // v1.7 integration R3: harita göçünden sonra oluştur
   return w;
 }

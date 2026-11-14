@@ -1,5 +1,6 @@
 // Kanonik dünya durumu. Tek yazar: çözümleyici (faz hattı). Bütün değerler tamsayıdır.
 import { Table, fixedTable, type ColType } from './table.ts';
+import {emptyV17,type V17State} from '../v17/state.ts'; // v1.7 integration R3: canonical state
 import type { Paket } from '../paket.ts';
 import { NHUCRE, NKIMLIK, NEKIP, NTEK, NMAL, MAL, BAYRAK, ST, YB, TABUR, SABLON, AILE_EKIP, EKIPMAN, MAX_TABUR, K, TEKNOLOJI, donemYukle } from '../catalog.ts';
 import type { DonemKod } from '../donem.ts';
@@ -146,6 +147,7 @@ export interface Bildirim { tur: string; metin: string; ulke: number; durdur: bo
 
 export interface World {
   pkg: Paket;
+  v17:V17State;
   gun: number;
   surum: number;
   tohum: number;
@@ -247,6 +249,7 @@ export function yeniDunya(pkg: Paket, oyuncu: number): World {
   donemYukle(pkg.donem as DonemKod | undefined);
   const nR = pkg.bolgeler.length, nE = pkg.eyaletler.length, nC = pkg.ulkeler.length;
   const w: World = {
+    v17:emptyV17(),
     pkg, gun: gunNo(pkg.senaryo.baslangic), surum: 0, tohum: pkg.tohum, oyuncu, mod: 0,
     bayrak: new Uint8Array(BAYRAK.length), hasatKademe: new Int32Array(2),
     nR, nE, nC,

@@ -1,7 +1,7 @@
 // Simülasyon Worker'ının çekirdeği: tek yazar. Mesaj döngüsünden bağımsızdır (Node testlerinde de çalışır).
 import {
   type World, type Paket, senaryoBaslat, gunIlerle, onizle, uygula, kuyrugaAl, serilestir, coz, acikla, tarihMetni, ayEkle, dunyaHash, anlatiHash, kayitPaketi,
-  type Emir, SEMA_SURUM,
+  type Emir, SEMA_SURUM, v17View,
 } from '@ts/engine';
 import { ayristir, emirMetni, type Sonuc } from '@ts/command';
 import { KayitDeposu, type Depo } from '@ts/storage';
@@ -23,6 +23,7 @@ const ANLIK_EMIR = new Set([
   'rejim', 'partiDestek', 'secimErken', 'sandbox', 'kaliciGida',
   'komutanAta', 'komutanEmir', 'komutanEgit', 'komutanOto', 'antlasma',
   'filoGorev', 'filoUs', 'filoAktar', 'kanatGorev', 'kanatUs', 'kanatAktar', 'donanmaGonder',
+  'v17BakanAta','v17AgKur','v17Operasyon','v17Teklif','v17TeklifYanit','v17SehirPolitika','v17Harekat',
 ]);
 
 export class Sunucu {
@@ -163,6 +164,7 @@ export class Sunucu {
       case 'danisman': v = danis(w, 'oneri'); break;
       case 'komutan': v = G.komutanG(w); break;
       case 'muharebe': v = G.muharebeG(w); break;
+      case 'v17': v = v17View(w); break; // v1.7 integration R3: fogged own data
       default: v = null;
     }
     this.yanit(m.id, 'view', { gorunum: p.gorunum, veri: v });

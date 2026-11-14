@@ -158,6 +158,7 @@ function BirlikBolumu({ v }: { v: any }) {
           <div class="secim-ozet">
             <p><strong>{buradakiSecili.length} birlik seçili.</strong> <span class="soluk">Haritada hedef bölgeye dokunun.</span></p>
             <div class="dugmeler sar">
+              <button class="ana" onClick={() => panelAc('ordu')}>Komutan ata</button>
               <button onClick={() => onizle({ tur: 'durus', birlikler: buradakiSecili.map((b: any) => b.id), durus: 0 })}>Hattı tut</button>
               <button onClick={() => onizle({ tur: 'durus', birlikler: buradakiSecili.map((b: any) => b.id), durus: 1 })}>Esnek savunma</button>
               <button onClick={() => onizle({ tur: 'dur', birlikler: buradakiSecili.map((b: any) => b.id) })}>Dur</button>

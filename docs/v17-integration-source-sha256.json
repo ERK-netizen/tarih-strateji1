@@ -1,0 +1,21 @@
+{
+  "packages/engine/src/emirEk.ts": "9d252f0033417ef79021630c3e4371cd4981d63dc95e1984a70f637fdca1232e",
+  "packages/engine/src/index.ts": "b2105c4e7ad7ae894321f48b848a5466939654aa48f757bf59e407db30da3c53",
+  "packages/engine/src/phases/index.ts": "f6b7a39b20f77af747a9fd73a906e70cc4ea8956bbce8cbc1c19bce27f84823e",
+  "packages/engine/src/serialize/index.ts": "8e69954aea48f3800830c8ebeb7ad3e8ba6523f2371efc65d503f726c7302688",
+  "packages/engine/src/state/world.ts": "e20b233998b768ef5a3c36913dbe21195b08bf5ad295b650fd262b0edc9c749e",
+  "packages/engine/src/systems/ekonomi.ts": "e7d43324d1e62131683be367881b0c01865901a4deba4bfb89162d4918b49d5c",
+  "packages/engine/src/systems/kara.ts": "9175fe3e0dc86f233a0cb3ed5ce95c26ed5326c50d19f50c9ff324854ac5509b",
+  "packages/ui/src/Cekmece.tsx": "1e87bbfed0457ea80a6072ab4a991c7ad8a8702ff250c5117a4882f45b7fbba6",
+  "packages/ui/src/Paneller.tsx": "9c2ec1a1c701abf77083bc37f464ba58460b327848a4e6fa272740c1ff12656c",
+  "packages/worker/src/sunucu.ts": "683baa6e26e2047beb445712231618065e4c981f8f44dd0c1e5ea513c37f54f7",
+  "packages/engine/src/v17/bridge.ts": "1daab406792dcccb1182db2d492997cb2d60533d546f3685f550ff6b27962774",
+  "packages/engine/src/v17/catalog.ts": "d74c71b9cfb6a8972bbae0fe8e90c04a95c0e4f52885ace368eaa601d1e50c35",
+  "packages/engine/src/v17/diplomacy.ts": "817ea929b2efb83cbc1aa13745dbca0135da97e26e6590c7ffb4ba2ad3ac8cd4",
+  "packages/engine/src/v17/industry.ts": "31491aac3f306e72d06d9c215654fcaf39005797c757bbb22d7f0557b737a605",
+  "packages/engine/src/v17/intelligence.ts": "54f66a4d9e14a3b6d06695268f70222e60a024c8964a9205a7d4999a754922b1",
+  "packages/engine/src/v17/state.ts": "e39da0dfa27d36c4fcdaba9e7afc4def7d2f84b26171bec524bd7f870e705372",
+  "packages/engine/src/v17/strategy.ts": "1b11f8027a4e230cc96da36680fa74713502d6c4cf567b37ed5451a3bff6fa03",
+  "packages/ui/src/V17Panel.tsx": "8536acecbb8ed0f78c06b20ae5e4f7e32158996b99a76a37986a52c2411c4886",
+  "tests/acceptance/v17.integration.test.ts": "a8e39cf296ec30df6857ee3444677c1fffa3bc3bafd71c0f80196387ce43539b"
+}

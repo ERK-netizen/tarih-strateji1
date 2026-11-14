@@ -7,6 +7,7 @@ import { onizle, komutCalistir } from './eylem.ts';
 import { bolgeyeGit, KomutAlani } from './App.tsx';
 import { KomutanBolumu, MuharebeBolumu } from './Muharebe.tsx';
 import { FiloBolumu, KanatBolumu } from './Kuvvetler.tsx';
+import {V17Panel} from './V17Panel.tsx'; // v1.7 integration R3: country dashboard
 import { hazirKomutlar } from './hazirKomutlar.ts';
 import { SablonSecici, KonuslanmaSecici, konuslanmaBolgesi, OrgBar, diploOdak } from './Cekmece.tsx';
 import { BirlikPulu, Simge } from './Simge.tsx';
@@ -25,6 +26,7 @@ export function Paneller({ p }: { p: Panel }) {
   return (
     <>
       {p === 'devlet' && <Devlet />}
+      {p === 'devlet' && <V17Panel />}
       {p === 'siyaset' && <Siyaset />}
       {p === 'ordu' && <Ordu />}
       {p === 'kuvvet' && <Kuvvet />}

@@ -34,6 +34,43 @@ export function birlikTuketim(w: World): void {
 interface Muharebe { bolge: number; saldiran: number[]; savunan: number[] }
 
 /** P8: hareket ve karşılaşma listesi. */
+// v1.7.0 PR01: tek gün içinde kesintisiz çok-kenarlı hareket; ETA aynı kenar hızını kullanır.
+const HAREKET_GUNLUK_KENAR_TAVANI = 24;
+
+/** Her kara/deniz kenarı için gerçek hareket ve tahminin kullandığı ortak hız (mili-km/gün). */
+function hareketKenarHizi(w: World, u: number, r: number, sonraki: number, ist: Istat): number {
+  const U = uc(w);
+  const c = U.ulke![u]!;
+  const deniz = kenarTur(w, r, sonraki);
+  let hiz = deniz > 0 ? (deniz === 1 ? K.bogazHiz : K.okyanusHiz) * 1000 : ist.hiz * 1000;
+  if (deniz === 0) {
+    hiz = mulRatio(hiz, hareketMevsim(w, sonraki)).q;
+    hiz = mulRatio(hiz, ARAZI[w.pkg.bolgeler[sonraki]!.arazi]!.hareket).q;
+    const demir = w.R.c.demiryolu[r]! >= 1 && w.R.c.demiryolu[sonraki]! >= 1
+      && w.R.c.kontrolEden[r] === c && w.R.c.kontrolEden[sonraki] === c;
+    if (demir) hiz *= 3;
+    if (U.org![u]! < mulDiv(ist.orgMax, 100_000, S).q) hiz = Math.floor(hiz / 2);
+    const kontrol = w.R.c.kontrolEden[sonraki]!;
+    if (savasta(w, c, kontrol)) {
+      hiz = w.pkg.bolgeler[sonraki]!.anaYurt.includes(kontrol)
+        ? Math.floor(hiz * 2 / 5) : Math.floor(hiz / 2);
+    }
+  }
+  return Math.max(0, hiz);
+}
+
+/** Bir kenarın toplam uzunluğu (mili-km). Bozuk sıfır uzunluklu kenar ilerlemeyi kilitlemez. */
+function hareketKenarMesafe(w: World, r: number, sonraki: number): number {
+  return Math.max(1, w.kenarKm.get(kenarKey(r, sonraki)) ?? 150) * 1000;
+}
+
+/** Pozitif tamsayıların güvenli tavan bölmesi: ara çarpımda safe integer korunur. */
+function hareketSureMikro(mesafe: number, hiz: number): number {
+  const x = mulDiv(mesafe, S, hiz);
+  return x.q + (x.rem > 0 ? 1 : 0);
+}
+
+/** P8: bir günlük hareket bütçesi, kısa dost kenarlar arasında kaybolmadan aktarılır. */
 export function hareketGunu(w: World): Muharebe[] {
   const U = uc(w);
   const muh = new Map<number, Muharebe>();
@@ -41,49 +78,62 @@ export function hareketGunu(w: World): Muharebe[] {
   for (const u of birimler) U.muharebe![u] = 0;
   for (const u of birimler) {
     if (U.egitimBitis![u]! > w.gun) continue;
-    const hedef = U.hedef![u]!;
-    if (hedef < 0) { U.ilerleme![u] = 0; U.sonraki![u] = -1; continue; }
     const c = U.ulke![u]!;
-    const r = U.bolge![u]!;
-    if (r === hedef) { U.hedef![u] = -1; U.sonraki![u] = -1; continue; }
-    // komşu hedefe doğrudan (sık durum: cephe hareketi), uzak hedefe önbellekli rota
-    const y = w.komsuluk[r]!.includes(hedef) && denizGecer(w, c, r, hedef) ? { yol: [r, hedef], km: 0 } : rotaTip(w, c, 0, r, hedef);
-    if (!y || y.yol.length < 2) {
-      if (c === w.oyuncu && w.mod !== 2 && kenarTur(w, r, hedef) > 0) bildir(w, 'birlik', `${birlikAdi(w, u)}: düşman donanması deniz geçişini kapatıyor`, c, false);
-      U.hedef![u] = -1; continue;
-    }
-    const sonraki = y.yol[1]!;
-    if (U.sonraki![u] !== sonraki) { U.sonraki![u] = sonraki; U.ilerleme![u] = 0; }
-    const kontrol = w.R.c.kontrolEden[sonraki]!;
-    if (savasta(w, c, kontrol) && savunanlar(w, sonraki, c).length > 0) {
-      // karşılaşma: P8'de tek çatışma kaydı (T050)
-      let m = muh.get(sonraki);
-      if (!m) { m = { bolge: sonraki, saldiran: [], savunan: [] }; muh.set(sonraki, m); }
-      m.saldiran.push(u);
-      continue;
-    }
-    // ilerleme
-    const ist = birlikIstat(w, u);
-    const deniz = kenarTur(w, r, sonraki);
-    let hiz = ist.hiz * 1000;
-    if (deniz > 0) {
-      // deniz intikali: sabit hız (boğaz geçişi / açık deniz nakliyesi)
-      hiz = (deniz === 1 ? K.bogazHiz : K.okyanusHiz) * 1000;
-    } else {
-      hiz = mulRatio(hiz, hareketMevsim(w, sonraki)).q;
-      hiz = mulRatio(hiz, ARAZI[w.pkg.bolgeler[sonraki]!.arazi]!.hareket).q;
-      const demir = w.R.c.demiryolu[r]! >= 1 && w.R.c.demiryolu[sonraki]! >= 1 && w.R.c.kontrolEden[r] === c && w.R.c.kontrolEden[sonraki] === c;
-      if (demir) hiz *= 3;
-      if (U.org![u]! < mulDiv(ist.orgMax, 100_000, S).q) hiz = Math.floor(hiz / 2);
-      // düşman toprağına giriş: keşif, yerel direniş ve köprü yıkımı ilerlemeyi yarıya indirir; ana yurtta daha da yavaş
-      if (savasta(w, c, kontrol)) hiz = w.pkg.bolgeler[sonraki]!.anaYurt.includes(kontrol) ? Math.floor(hiz * 2 / 5) : Math.floor(hiz / 2);
-    }
-    U.ilerleme![u] = U.ilerleme![u]! + hiz;
-    const km = (w.kenarKm.get(kenarKey(r, sonraki)) ?? 150) * 1000;
-    if (U.ilerleme![u]! >= km) {
-      U.bolge![u] = sonraki; U.ilerleme![u] = 0; U.sonraki![u] = -1;
-      if (savasta(w, c, kontrol)) kontrolDegistir(w, sonraki, c);
-      if (sonraki === hedef) U.hedef![u] = -1;
+    let gunButcesi = S;
+    for (let adim = 0; adim < HAREKET_GUNLUK_KENAR_TAVANI && gunButcesi > 0; adim++) {
+      const hedef = U.hedef![u]!;
+      if (hedef < 0) { U.ilerleme![u] = 0; U.sonraki![u] = -1; break; }
+      const r = U.bolge![u]!;
+      if (r === hedef) { U.hedef![u] = -1; U.ilerleme![u] = 0; U.sonraki![u] = -1; break; }
+      // Komşu hedefte doğrudan bağlantı; uzun mesafede mevcut deterministik rota sistemi.
+      const y = w.komsuluk[r]!.includes(hedef) && denizGecer(w, c, r, hedef)
+        ? { yol: [r, hedef], km: 0 } : rotaTip(w, c, 0, r, hedef);
+      if (!y || y.yol.length < 2) {
+        if (c === w.oyuncu && w.mod !== 2 && kenarTur(w, r, hedef) > 0) {
+          bildir(w, 'birlik', `${birlikAdi(w, u)}: düşman donanması deniz geçişini kapatıyor`, c, false);
+        }
+        U.hedef![u] = -1; U.ilerleme![u] = 0; U.sonraki![u] = -1;
+        break;
+      }
+      const sonraki = y.yol[1]!;
+      if (U.sonraki![u] !== sonraki) { U.sonraki![u] = sonraki; U.ilerleme![u] = 0; }
+      const kontrol = w.R.c.kontrolEden[sonraki]!;
+      if (savasta(w, c, kontrol) && savunanlar(w, sonraki, c).length > 0) {
+        // Düşman garnizonu bulunan kenardan muharebesiz geçilmez.
+        let m = muh.get(sonraki);
+        if (!m) { m = { bolge: sonraki, saldiran: [], savunan: [] }; muh.set(sonraki, m); }
+        m.saldiran.push(u);
+        break;
+      }
+      const ist = birlikIstat(w, u);
+      const hiz = hareketKenarHizi(w, u, r, sonraki, ist);
+      if (hiz <= 0) break;
+      const km = hareketKenarMesafe(w, r, sonraki);
+      const kalanKm = Math.max(0, km - Math.min(km, U.ilerleme![u]!));
+      const ilerleyebilen = mulDiv(hiz, gunButcesi, S).q;
+      if (ilerleyebilen < kalanKm) {
+        U.ilerleme![u] = U.ilerleme![u]! + ilerleyebilen;
+        break;
+      }
+      const harcanan = hareketSureMikro(kalanKm, hiz);
+      if (harcanan > gunButcesi) { // Tamsayı yuvarlamasına karşı koruma.
+        U.ilerleme![u] = U.ilerleme![u]! + ilerleyebilen;
+        break;
+      }
+      U.bolge![u] = sonraki;
+      U.ilerleme![u] = 0;
+      U.sonraki![u] = -1;
+      gunButcesi -= harcanan;
+      const deniz = kenarTur(w, r, sonraki);
+      if (savasta(w, c, kontrol)) {
+        kontrolDegistir(w, sonraki, c);
+        // İşgal ve muharebe sonrasında aynı gün yeni düşman bölgelerini zincirleme ele geçirme.
+        if (sonraki === hedef) U.hedef![u] = -1;
+        break;
+      }
+      if (sonraki === hedef) { U.hedef![u] = -1; break; }
+      // Boğaz/deniz intikali sonunda aynı gün başka bir kıyı kenarını atlamayı önle.
+      if (deniz > 0) break;
     }
   }
   for (const m of muh.values()) {
@@ -96,30 +146,25 @@ export function hareketGunu(w: World): Muharebe[] {
   return [...muh.values()].sort((a, b) => a.bolge - b.bolge);
 }
 
-/** Bölgedeki, saldıran ülkeyle savaşta olan savunucular. */
-/** Önizleme: yol boyunca hareket kuralının aynısıyla tahmini gün (bugünkü mevsim, arazi, demiryolu, deniz). */
+/** Önizleme: P8 ile aynı hız, mevcut kenar ilerlemesi ve deniz durakları; muharebe bekleme süresi hariç. */
 export function tahminiGun(w: World, u: number, yol: number[]): number {
   const ist = birlikIstat(w, u);
-  const c = uc(w).ulke![u]!;
-  let gun = 0;
+  const U = uc(w);
+  let sureMikro = 0;
   for (let i = 0; i + 1 < yol.length; i++) {
     const r = yol[i]!, q = yol[i + 1]!;
-    const deniz = kenarTur(w, r, q);
-    let hiz = ist.hiz * 1000;
-    if (deniz > 0) hiz = (deniz === 1 ? K.bogazHiz : K.okyanusHiz) * 1000;
-    else {
-      hiz = mulRatio(hiz, hareketMevsim(w, q)).q;
-      hiz = mulRatio(hiz, ARAZI[w.pkg.bolgeler[q]!.arazi]!.hareket).q;
-      if (w.R.c.demiryolu[r]! >= 1 && w.R.c.demiryolu[q]! >= 1 && w.R.c.kontrolEden[r] === c && w.R.c.kontrolEden[q] === c) hiz *= 3;
-      const k = w.R.c.kontrolEden[q]!;
-      if (savasta(w, c, k)) hiz = w.pkg.bolgeler[q]!.anaYurt.includes(k) ? Math.floor(hiz * 2 / 5) : Math.floor(hiz / 2);
-    }
-    const km = (w.kenarKm.get(kenarKey(r, q)) ?? 150) * 1000;
-    gun += Math.ceil(km / Math.max(1, hiz));
+    const hiz = hareketKenarHizi(w, u, r, q, ist);
+    if (hiz <= 0) return 9999;
+    const km = hareketKenarMesafe(w, r, q);
+    const ilerleme = i === 0 && U.sonraki![u] === q ? Math.min(km, U.ilerleme![u]!) : 0;
+    sureMikro += hareketSureMikro(Math.max(0, km - ilerleme), hiz);
+    // Denizde geçirilen kenar gün sonunda bitiş noktası kabul edilir.
+    if (kenarTur(w, r, q) > 0) sureMikro = Math.ceil(sureMikro / S) * S;
   }
-  return Math.max(1, gun);
+  return Math.max(1, Math.ceil(sureMikro / S));
 }
 
+/** Bölgedeki, saldıran ülkeyle savaşta olan savunucular. */
 export function savunanlar(w: World, r: number, saldiranUlke: number): number[] {
   const U = uc(w);
   return w.U.list().filter((u) => U.bolge![u] === r && savasta(w, saldiranUlke, U.ulke![u]!));

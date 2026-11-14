@@ -1,3 +1,4 @@
+import {v17IndustryBonus} from '../v17/bridge.ts';
 import { US_MAX } from './us.ts';
 // Bölüm 11–13: tarım, gıda, sanayi, üretim hatları, projeler, araştırma, vergi, harcama, borç, pazar.
 import type { World } from '../state/world.ts';
@@ -229,13 +230,14 @@ export function ulkeGidaStok(w: World, c: number): { stok: number; gunluk: numbe
 }
 
 // ---------- Sanayi (13.1) ----------
+// v1.7 integration R3: bounded, additive city specialization / minister incentive.
 export function fabrikaCarpan(w: World, c: number): number {
   let m = S;
   m += Math.min(3 * S, tekKat(w, c, 'sanayi1', 100_000) + tekKat(w, c, 'sanayi2', 100_000) + tekKat(w, c, 'sanayi3', 50_000));
   m += modDeger(w, c, MT.uretim) + EKO_MODEL[w.C.c.model[c]!]!.sanayi + Math.min(150_000, mulDiv(w.C.c.tarife[c]!, 1, 3).q) + Math.min(200_000, mulDiv(w.C.c.subSanayi[c]!, 8, 5).q);
   // petrol açığı: çağdaş sanayi yakıt bekler
   if (PETROL_KULLANIM[AKTIF.donem].fabrika > 0 && w.C.c.petrolIht[c]! > 0 && w.C.c.petrol[c]! < w.C.c.petrolIht[c]!) m -= mulDiv(250_000, w.C.c.petrolIht[c]! - w.C.c.petrol[c]!, w.C.c.petrolIht[c]!).q;
-  return Math.max(200_000, m);
+  return Math.max(200_000, m + v17IndustryBonus(w,c));
 }
 /** Bölgenin fabrika işçi doluluğu (S). */
 export function fabrikaDoluluk(w: World, r: number): number {

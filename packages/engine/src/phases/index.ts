@@ -1,4 +1,5 @@
 import { usTersaneKur } from '../systems/us.ts';
+import {v17LoadFromLegacy,v17P2,v17P3,v17P11} from '../v17/bridge.ts'; // v1.7 integration R3: daily phases
 import { kentYuvaUyumla } from '../systems/gelisim.ts';
 import { kuvvetKurHepsi, kuvvetGunu, kuvvetDenetim } from '../systems/kuvvet.ts';
 import { komutanBaslat, komutanDagit, komutanAy, komutanGunu } from '../systems/komutan.ts';
@@ -49,6 +50,7 @@ export function senaryoBaslat(pkg: Paket, oyuncu: number, mod = 0): World {
   // komutan kadrosu ve ilk dağıtım (oyuncu sonradan değiştirebilir)
   komutanBaslat(w);
   for (let c = 0; c < w.nC; c++) komutanDagit(w, c);
+  v17LoadFromLegacy(w); // v1.7 integration R3: scenario initialization
   baslangicNufus.set(w, toplamNufus(w));
   return w;
 }
@@ -94,6 +96,7 @@ export function gunIlerle(w: World, kesinlestir = true): GunSonuc {
     if (!r.ok && (k.emir as Emir).ulke === w.oyuncu) anlat(w, `Emir uygulanamadı: ${r.neden ?? ''}`, 'emir', w.oyuncu, 1);
   }
   fazDegisti(w);
+  v17P2(w);
   kararGunu(w);
   // P2c: komutanların daimî emirleri (ikmal/organizasyon eşiği, savunma emri)
   komutanGunu(w);
@@ -102,6 +105,7 @@ export function gunIlerle(w: World, kesinlestir = true): GunSonuc {
   fazDegisti(w);
   // P3: diplomasi
   teklifYanitlari(w);
+  v17P3(w);
   gerekceGunu(w);
   for (let c = 0; c < w.nC; c++) w.C.c.savasGunu[c] = savastaMi(w, c) ? w.C.c.savasGunu[c]! + 1 : 0;
   modTemizle(w);
@@ -129,6 +133,7 @@ export function gunIlerle(w: World, kesinlestir = true): GunSonuc {
   fazDegisti(w);
   // P11: olaylar ve durma koşulları
   olayGunu(w);
+  v17P11(w);
   durmaKosullari(w);
   // P12: bütünlük, hash, yayımla
   butunluk(w, n0);
