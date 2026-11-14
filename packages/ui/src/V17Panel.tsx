@@ -28,6 +28,8 @@ export function V17Panel() {
   return <section class="bolum" aria-label="v1.7 devlet yönetimi">
     <h3>v1.7 · Gelişmiş devlet yönetimi</h3>
     <p class="soluk kucuk">Kalıcı kabine, istihbarat ağı ve anlaşma revizyonları. Fiziksel üretim motoru henüz geçiş kilidindedir.</p>
+    {(v.suggestions??[]).length>0&&<><h4>Önerilen 3 hareket</h4>
+    <ol class="liste">{v.suggestions.map((x:any)=><li key={x.goalId} class="kucuk"><strong>{x.goal}</strong>: {x.advice}</li>)}</ol></>}
     <h4>Ulusal hedefler · hedef puanı {v.goalScore??0}</h4>
     <p class="soluk kucuk">Hedefler devletinizin gerçek durumunu ölçer; ilerleme 120 günlük ortalamadır, bir kerelik iyi durum tamamlamaz. Tarih sonucu dayatılmaz.</p>
     <ul class="komutan-liste">{goals.map((g:any)=><li key={g.id}>

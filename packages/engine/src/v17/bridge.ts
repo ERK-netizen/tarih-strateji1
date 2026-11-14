@@ -11,7 +11,7 @@ import {rotaTip} from '../systems/ortak.ts';
 import {istihbaratRaporu} from '../observe/index.ts';
 import {emptyV17,nextV17Id,assertV17,type V17State,type V17Site,type V17Minister,type V17Order,type V17Proposal} from './state.ts';
 import {MODELS_1914,PORTFOLIOS} from './catalog.ts';
-import {kurHedefler,guncelleHedefler,OLCUTLER} from './hedef.ts';
+import {kurHedefler,guncelleHedefler,OLCUTLER,HEDEF_ONERI} from './hedef.ts';
 import {MODELLER_TASARIM,KAYNAKLAR_TASARIM,TESISLER_TASARIM,modelKullanilabilir,AILE_URUN} from './katalogTasarim.ts';
 import {EKIPMAN,AKTIF as AKT,NTEK,TEKNOLOJI} from '../catalog.ts';
 import {HAVA} from '../katalogEk.ts';
@@ -263,6 +263,9 @@ export function v17View(w:World,viewer=w.oyuncu){
     orders:s.orders.filter(x=>x.country===viewer).map(x=>({...x,unitIds:[...x.unitIds]})),
     goals:s.goals.filter(x=>x.country===viewer).map(x=>({...x,stages:[...x.stages],paths:[...x.paths],metricName:OLCUTLER[x.metric]?.ad??x.metric})),
     goalScore:viewer===w.oyuncu?s.stats.goalScore:0,
+    /** Danışman: en büyük açığı (ağırlık × eksik ilerleme) olan üç etkin hedef için önerilen eylem */
+    suggestions:s.goals.filter(g=>g.country===viewer&&g.status==='active').map(g=>({g,acik:(g.threshold-g.progress)*g.weight})).sort((a,b)=>b.acik-a.acik||a.g.id-b.g.id).slice(0,3)
+      .map(({g})=>({goalId:g.id,goal:g.label,metricName:OLCUTLER[g.metric]?.ad??g.metric,advice:HEDEF_ONERI[g.metric]??'Bu ölçütü yükseltecek kararlar verin.'})),
     goalsMeasured:s.stats.goalDay>=0,
     availablePoliticians:siyasiKisiler(AKTIF.donem).filter(x=>x.kod===w.pkg.ulkeler[viewer]!.kod&&x.bas<=currentYear(w)&&x.bit>=currentYear(w)).map(x=>({ad:x.ad,rol:x.gorev})),
     models:s.models.filter(x=>x.era===w.pkg.donem).map(x=>({...x})),

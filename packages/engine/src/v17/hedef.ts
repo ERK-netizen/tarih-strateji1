@@ -138,3 +138,32 @@ export function guncelleHedefler(w:World,s:V17State):void{
     }
   }
 }
+
+/** Ölçüt başına oyuncuya önerilen eylem (danışman metni; mevcut emir türlerine yönlendirir). */
+const IKMAL='Mühimmat ve gıda üretimini artırın, cepheye giden demiryolunu güçlendirin (inşa) ve ikmali bitmiş birliklerin hattını kısaltın.';
+const ISTIKRAR='Huzuru ve meşruiyeti yükseltin: vergiyi düşürün, sosyal ve eğitim bütçesini artırın, savaş yorgunluğu yüksekse barış yollarını deneyin.';
+const GUVENLIK='Sınır bölgelerine savunma planı verin, tahkimatı artırın ve düşmanla aranızdaki güç dengesini istihbaratla izleyin.';
+const MALI='Hazineyi güçlendirin: gelir getirmeyen harcamaları kısın, ticaret anlaşmaları yapın, gerekirse borcu yeniden yapılandırın.';
+const DENIZ='Donanmayı ticaret yollarına ve limanlara yönlendirin (Deniz/Hava paneli); ablukaya karşı eskort ve konvoy görevleri verin.';
+const DIPLO='Müttefik ve komşularla ilişkileri iyileştirin: müzakere teklifleri gönderin, ticaret ve saldırmazlık anlaşmaları önerin.';
+const SAVAS='Savaş hedefinizi netleştirin: ezici olduğunuz cepheye saldırı planı verin, güçsüz olduğunuz cephede savunmaya geçin.';
+const SANAYI='Fabrika ve maden yatırımı yapın; hasarlı tesisleri onarın, şehir sanayi politikasını verime çevirin.';
+export const HEDEF_ONERI:Record<string,string>={
+  fronts_supplied:IKMAL,front_supply_days:IKMAL,army_supply_days:IKMAL,ammo_supply_days:IKMAL,artillery_ammo_days:IKMAL,overseas_supply_days:IKMAL+' Denizaşırı ikmal için deniz yolu güvenliğini de koruyun.',
+  fuel_days_supply:'Petrol stokunu artırın: petrol alın, petrol kuyusu ve maden yatırımı yapın ya da yakıt tüketen filo ve uçak sayısını azaltın.',
+  army_readiness:'Birlikleri dinlendirin (organizasyon yükselsin), ikmali tamamlayın ve komutan atayın.',defensive_readiness:'Birlikleri dinlendirin (organizasyon yükselsin), ikmali tamamlayın ve komutan atayın.',
+  rail_mobilization_ready:'Demiryolu düzeyini artırın (inşa) ve birliklerin organizasyonunu yüksek tutun.',
+  border_security:GUVENLIK,controlled_homeland:GUVENLIK,national_sovereignty:GUVENLIK,straits_security:GUVENLIK+' Boğaz ve başkent bölgelerinde birlik bulundurun.',
+  belgian_security:'Belçika’nın güvenliği için diplomasi yürütün: garanti ve ittifak önerin, Almanya ile gerilimi düşürün.',serbia_security:'Sırbistan’ın güvenliği için diplomasi ve askerî destek verin: garanti, yardım ve ittifak.',
+  serbia_crisis_resolution:'Krizi diplomasiyle çözün: müzakere teklifleri ve ateşkes; savaştaysanız işgal ilerlemesini artırın.',crisis_resolution:DIPLO,
+  peace_with_GBR_days:'Britanya ile savaşa girmeyin: ilişkileri iyileştirin, deniz silahlanmasında gerilimi düşürün.',
+  alliance_trust:DIPLO,alliance_policy:DIPLO,
+  neutrality_commitment:'Duruşunuzu netleştirin: ya bir ittifaka katılın ya da tarafsız kalıp iç istikrarı güçlendirin.',neutrality_security:'Savaştan uzak durun, sınırlarınızı koruyun ve komşularla saldırmazlık anlaşmaları yapın.',
+  war_choice_fulfilled:'Savaş tercihinizi diplomasi kozu olarak kullanın: büyük devletlerden teklif alın, ilişkilerinizi dengede tutun.',
+  war_goal_progress:SAVAS,war_risk_management:'Gerginliği düşürün: müzakere teklifleri yapın, sınır olaylarından kaçının.',war_policy_stability:ISTIKRAR,war_fatigue_inverse:'Savaş yorgunluğunu azaltın: barış arayın, kayıpları sınırlayın, sosyal harcamaları artırın.',
+  territorial_claim_progress:'İddia ettiğiniz bölgelere yönelin: saldırı planı verin ya da müzakere ve antlaşmayla toprak isteyin.',treaty_claim_progress:'İddia ettiğiniz bölgeler için antlaşma ve müzakere yürütün; güvenilir bir ortak olun.',
+  political_stability:ISTIKRAR,stability_and_food:ISTIKRAR+' Gıda güvencesi için tarım yatırımı ve ithalat yapın.',
+  treasury_runway:MALI,treasury_and_rail:MALI+' Demiryolu yatırımını da sürdürün.',
+  industrial_damage_inverse:'Hasarlı tesisleri onarın ve sabotaja karşı istihbarat ağı kurun.',industry_supply:SANAYI+' Çelik stokunu da koruyun.',
+  convoy_security:DENIZ,naval_security:DENIZ,trade_throughput:DENIZ+' Ticaret anlaşmaları liman hacmini artırır.',resource_exports:'Çelik ve kömür üretimini artırın: maden yatırımı yapın ve üretim hatlarını genişletin.',
+};

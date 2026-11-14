@@ -128,6 +128,24 @@ describe('G01 ilerleme: kalıcı performans tamamlar, anlık iyi durum tamamlama
   });
 });
 
+describe('G05 danışman: hedef açığına göre önerilen üç hareket', () => {
+  test('her ölçütün önerisi vardır; görünüm en büyük açıklı üç hedefi sıralar ve tamamlanan hedefi önermez', async () => {
+    const { OLCUTLER: O, HEDEF_ONERI } = await import('../../packages/engine/src/v17/hedef.ts');
+    for (const m of Object.keys(O)) expect(HEDEF_ONERI[m], m).toBeTruthy();
+    const w = oyna('GER');
+    gunler(w, 30);
+    const v = v17View(w);
+    expect(v.suggestions.length).toBe(3);
+    expect(new Set(v.suggestions.map((x) => x.goalId)).size).toBe(3);
+    const acik = (id: number) => { const g = w.v17.goals.find((x) => x.id === id)!; return (g.threshold - g.progress) * g.weight; };
+    const sirali = v.suggestions.map((x) => acik(x.goalId));
+    expect([...sirali].sort((a, b) => b - a)).toEqual(sirali);
+    w.v17.goals[0]!.status = 'completed';
+    expect(v17View(w).suggestions.some((x) => x.goalId === w.v17.goals[0]!.id)).toBe(false);
+    for (const x of v.suggestions) expect(x.advice.length).toBeGreaterThan(20);
+  });
+});
+
 describe('G02 olay ağı: 36 tasarım olayı paket olaylarıdır; tarih dayatılmaz', () => {
   const v17 = (p1914.olaylar ?? []).filter((o) => o.kod.startsWith('v17_'));
   test('36 olay derlenmiştir; her biri 3 seçenekli, bayrakla zincirli, bedelli ve savaş/toprak değişikliği içermez', () => {

@@ -23,7 +23,8 @@ Harita Natural Earth sınırları ve GeoNames şehirleriyle derlenir (**813 böl
 | Kabine ve istihbarat | Kalıcı bakan ataması (tarihî kişiler), kalıcı istihbarat ağı ve 21 günlük operasyonlar, sürümlü müzakere teklifi/karşı teklif, şehir sanayi politikası, kalıcı harekât planları (savun/taarruz/intikal/garnizon) |
 | Hareket | Çok kenarlı kesintisiz günlük ilerleme ve aynı kurala dayanan ETA |
 | Komut | Yeni emirler Türkçe yazılabilir: “Fransa'da istihbarat ağı kur”, “3 numaralı müzakere teklifini kabul et” |
-| Katalog | 16 adlı ekipman modeli (ülke ve yıl kapılı; üretime henüz bağlı değil) |
+| Adlı ekipman | 16 adlı model (ülke ve yıl kapılı); “Gewehr 98 modelini 2 fabrikayla üret” mevcut üretim hattından çalışır, çıktı modele yazılır (çifte üretim yok) |
+| Danışman | Devlet panelinde hedeflere göre “Önerilen 3 hareket” |
 
 Ayrıntı, bilerek yapılmayanlar ve kabul matrisi: [`docs/v17/README.md`](docs/v17/README.md).
 
