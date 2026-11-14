@@ -29,6 +29,13 @@ export interface Katalog {
   /** şema 9: oyuncunun görevdeki komutanları */
   komutanlar?: { id: number; ad: string }[];
   /** şema 10: oyuncunun filoları (gorev: yürürlükteki görev) ve hava kanatları */
+  /** v1.7: kabine adayları, istihbarat ağları, bekleyen müzakere teklifleri ve tesisler */
+  v17?: {
+    kisiler: { ad: string; rol: string }[];
+    aglar: { id: number; hedef: number }[];
+    teklifler: { id: number; kimden: number }[];
+    tesisler: { id: number; bolge: number; tur: string }[];
+  };
   filolar?: { id: number; ad: string; gorev: number }[];
   kanatlar?: { id: number; ad: string }[];
   gemiler?: { ad: string; kisa: string }[];

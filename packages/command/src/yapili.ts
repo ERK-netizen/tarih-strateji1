@@ -72,6 +72,51 @@ export function yapiliAyristir(c: YBaglam): Yorum | string | null {
     const tazminat = sayi(/ tazminat (\d+)/, 0);
     return yorum({ tur: 'antlasma', ulke: P, kime: ulke.id, bolgeler, tazminat, taksitYil: tazminat > 0 ? sayi(/ altin (\d+) yil/, 5) : 5, ateskesYil: sayi(/ ateskes (\d+) yil/, 5), garanti: has(/ garanti/) ? 1 : 0 }, 'çok maddeli antlaşma', k, 0.88);
   }
+  // ---------- v1.7: kabine, istihbarat ağı, müzakere, şehir politikası, harekât planı ----------
+  if (k.v17) {
+    const v17 = k.v17;
+    const ALAN = [['ekonomi', 'maliye'], ['arastirma', 'arastirma'], ['uretim', 'sanayi'], ['ordu', 'harbiye'], ['insa', 'bayindirlik']] as const;
+    const kisi = v17.kisiler.length ? adBul(toks, v17.kisiler.map((x) => x.ad)) : -1;
+    if (kisi >= 0 && has(/ bakan/)) {
+      const alan = ALAN.find(([, w]) => f.includes(` ${w}`));
+      if (!alan) return `${v17.kisiler[kisi]!.ad} hangi bakanlığa atanacak? (maliye, araştırma, sanayi, harbiye ya da bayındırlık)`;
+      return yorum({ tur: 'v17BakanAta', ulke: P, alan: alan[0], kisi: v17.kisiler[kisi]!.ad }, `bakan ata: ${v17.kisiler[kisi]!.ad}`, k);
+    }
+    if (ulke && has(/ agi? (kur|guclendir)/) && has(/ (istihbarat|casus)/)) return yorum({ tur: 'v17AgKur', ulke: P, hedef: ulke.id }, 'istihbarat ağı', k);
+    if (ulke && has(/ operasyon/)) {
+      const tur = has(/ sabotaj/) ? 'sabotaj' : has(/ nufuz/) ? 'nufuz' : has(/ bilgi/) ? 'bilgi' : '';
+      const ag = v17.aglar.find((x) => x.hedef === ulke.id);
+      if (tur) {
+        if (!ag) return `${k.ulkeler[ulke.id]?.kisa ?? 'Bu ülke'} içinde istihbarat ağınız yok; önce ağ kurun.`;
+        if (tur === 'sabotaj' && bolge === undefined) return 'Sabotaj için hedef bölge belirtilmedi.';
+        return yorum({ tur: 'v17Operasyon', ulke: P, ag: ag.id, operasyon: tur, bolge: tur === 'sabotaj' ? bolge : -1 }, `operasyon: ${tur}`, k);
+      }
+    }
+    if (has(/ muzakere/) && has(/ (kabul|reddet|karsi)/)) {
+      const bekleyen = v17.teklifler;
+      const id = sayilar[0] !== undefined && bekleyen.some((x) => x.id === Math.floor(sayilar[0]!)) ? Math.floor(sayilar[0]!) : bekleyen.length === 1 ? bekleyen[0]!.id : -1;
+      if (id < 0) return bekleyen.length ? 'Hangi teklif? Numarasını yazın (ör. "3 numaralı müzakere teklifini kabul et").' : 'Yanıt bekleyen müzakere teklifi yok.';
+      return yorum({ tur: 'v17TeklifYanit', ulke: P, teklif: id, yanit: has(/ karsi/) ? 'counter' : has(/ reddet/) ? 'reject' : 'accept' }, 'müzakere yanıtı', k);
+    }
+    if (ulke && has(/ muzakere/) && has(/ teklif/)) {
+      const madde = has(/ ticaret/) ? 'ticaret' : has(/ gecis/) ? 'gecis' : has(/ saldirmazlik/) ? 'saldirmazlik' : has(/ garanti/) ? 'garanti' : '';
+      if (!madde) return 'Müzakere maddesi belirtilmedi (ticaret, geçiş, saldırmazlık ya da garanti).';
+      return yorum({ tur: 'v17Teklif', ulke: P, hedef: ulke.id, madde }, `müzakere teklifi: ${madde}`, k);
+    }
+    if (bolge !== undefined && has(/ politika/) && has(/ (tesis|fabrika)/)) {
+      const pol = has(/ istihdam/) ? 'istihdam' : has(/ verim/) ? 'verim' : has(/ normal/) ? 'normal' : '';
+      const tesis = v17.tesisler.filter((x) => x.bolge === bolge).sort((x, y) => (x.tur === 'askeri' ? 0 : 1) - (y.tur === 'askeri' ? 0 : 1) || x.id - y.id)[0];
+      if (!pol) return 'Politika belirtilmedi (normal, verim ya da istihdam).';
+      if (!tesis) return 'Bu bölgede sizin tesisiniz yok.';
+      return yorum({ tur: 'v17SehirPolitika', ulke: P, tesis: tesis.id, politika: pol }, `tesis politikası: ${pol}`, k);
+    }
+    if (bolge !== undefined && has(/ plan/) && has(/ (savunma|taarruz|intikal|garnizon)/)) {
+      const ids = c.birlikler();
+      if (!ids.length) return 'Hangi birlikler? Birlikleri adıyla yazın ya da seçin.';
+      const emir = has(/ taarruz/) ? 'taarruz' : has(/ intikal/) ? 'intikal' : has(/ garnizon/) ? 'garnizon' : 'savun';
+      return yorum({ tur: 'v17Harekat', ulke: P, birlikler: ids, hedef: bolge, emir }, `harekât planı: ${emir}`, k);
+    }
+  }
   // ---------- Komutanlar (şema 9) ----------
   if (k.komutanlar && k.komutanlar.length) {
     const ki = adBul(toks, k.komutanlar.map((x) => x.ad));
@@ -254,6 +299,17 @@ export function yapiliMetin(e: Emir, k: Katalog): string | null {
   const fAd = (id: unknown) => k.filolar?.find((x) => x.id === Number(id))?.ad ?? '?';
   const nAd = (id: unknown) => k.kanatlar?.find((x) => x.id === Number(id))?.ad ?? '?';
   switch (e.tur) {
+    case 'v17BakanAta': return `${e.kisi} ${({ ekonomi: 'maliye', arastirma: 'araştırma', uretim: 'sanayi', ordu: 'harbiye', insa: 'bayındırlık' } as Record<string, string>)[String(e.alan)] ?? '?'} bakanı olsun`;
+    case 'v17AgKur': return `${ekle(u(e.hedef), 'bulunma')} istihbarat ağı kur`;
+    case 'v17Operasyon': {
+      const hedef = k.v17?.aglar.find((x) => x.id === Number(e.ag))?.hedef;
+      const tur = ({ bilgi: 'bilgi toplama', nufuz: 'nüfuz', sabotaj: 'sabotaj' } as Record<string, string>)[String(e.operasyon)] ?? '?';
+      return `${hedef === undefined ? '?' : u(hedef)} ağıyla ${tur} operasyonu yap${Number(e.bolge) >= 0 ? `: ${b(e.bolge)}` : ''}`;
+    }
+    case 'v17Teklif': return `${ekle(u(e.hedef), 'yonelme')} müzakere teklifi ver: ${({ ticaret: 'ticaret', gecis: 'geçiş', saldirmazlik: 'saldırmazlık', garanti: 'garanti' } as Record<string, string>)[String(e.madde)] ?? '?'}`;
+    case 'v17TeklifYanit': return `${Number(e.teklif)} numaralı müzakere teklifini ${({ accept: 'kabul et', reject: 'reddet', counter: 'karşı teklifle yanıtla' } as Record<string, string>)[String(e.yanit)] ?? '?'}`;
+    case 'v17SehirPolitika': { const t = k.v17?.tesisler.find((x) => x.id === Number(e.tesis)); return `${t ? b(t.bolge) : '?'} tesisinde ${String(e.politika)} politikası uygula`; }
+    case 'v17Harekat': return `${birl(e.birlikler)}: ${b(e.hedef)} için ${({ savun: 'savunma', taarruz: 'taarruz', intikal: 'intikal', garnizon: 'garnizon' } as Record<string, string>)[String(e.emir)] ?? '?'} planı`;
     case 'komutanAta': return Number(e.komutan) < 0 ? `${birl(e.birlikler)}: komutandan ayır` : `${birl(e.birlikler)}: komutan ${kAd(e.komutan)} olsun`;
     case 'komutanEmir': return `Komutan ${kAd(e.komutan)}: emir ${['serbest', 'savun', 'taarruz'][Number(e.emir)] ?? 'serbest'}${Number(e.ikmalEsik) > 0 ? `, ikmal ${yuzdeYaz(Number(e.ikmalEsik))} altında beklesin` : ''}${Number(e.orgEsik) > 0 ? `, organizasyon ${yuzdeYaz(Number(e.orgEsik))} altında beklesin` : ''}`;
     case 'komutanEgit': return `Komutan ${kAd(e.komutan)} kurmay eğitimi alsın`;
