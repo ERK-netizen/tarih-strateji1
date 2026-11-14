@@ -70,6 +70,9 @@ export function V17Panel() {
       <p>{p.fromName} → {p.toName}: {p.clause}, rev. {p.revision}</p>
       {p.to===ozet.value?.oyuncu&&<div class="dugmeler"><button onClick={()=>onizle({tur:'v17TeklifYanit',teklif:p.id,yanit:'accept'})}>Kabul</button><button onClick={()=>onizle({tur:'v17TeklifYanit',teklif:p.id,yanit:'reject'})}>Ret</button><button onClick={()=>onizle({tur:'v17TeklifYanit',teklif:p.id,yanit:'counter'})}>Karşı teklif</button></div>}
     </div>)}
+    {(v.namedModels??[]).length>0&&<><h4>Adlı ekipman modelleri</h4>
+    <p class="soluk kucuk">Ülkenizin ve yılın kapısından geçen tasarım kataloğu. Üretim hattına bağlanması sonraki sürümdedir; mevcut fabrika üretimi eskisi gibi sürer.</p>
+    <ul class="liste">{v.namedModels.map((m:any)=><li key={m.id} class="kucuk">{m.ad} · {m.aile} · {m.yil}</li>)}</ul></>}
     <h4>Harekât planı</h4>
     <p class="soluk kucuk">{seciliBirlik.value.size} seçili birlik için kalıcı emir. Önce haritadan birlik seçin.</p>
     <div class="satir-ayar"><label>Hedef bölge</label><select value={front} onChange={e=>setFront(Number((e.target as HTMLSelectElement).value))}>

@@ -9,9 +9,10 @@ import {rng,uniformInt,AMAC} from '../rng/index.ts';
 import {anlasmaKur} from '../systems/diplomasi.ts';
 import {rotaTip} from '../systems/ortak.ts';
 import {istihbaratRaporu} from '../observe/index.ts';
-import {emptyV17,nextV17Id,assertV17,type V17State,type V17Minister,type V17Order,type V17Proposal} from './state.ts';
+import {emptyV17,nextV17Id,assertV17,type V17State,type V17Site,type V17Minister,type V17Order,type V17Proposal} from './state.ts';
 import {MODELS_1914,PORTFOLIOS} from './catalog.ts';
 import {kurHedefler,guncelleHedefler,OLCUTLER} from './hedef.ts';
+import {MODELLER_TASARIM,KAYNAKLAR_TASARIM,TESISLER_TASARIM,modelKullanilabilir} from './katalogTasarim.ts';
 import {addSite,factoryPolicyBonus} from './industry.ts';
 import {offerV17,replyV17,expireV17,proposalVisible} from './diplomacy.ts';
 import {networkV17,planOperationV17,resolveV17} from './intelligence.ts';
@@ -188,8 +189,11 @@ export function v17P3(w:World):void {
 export function v17P11(w:World):void {
   const s=w.v17;if(s.lastDay===w.gun)return;s.lastDay=w.gun;
   // Newly built/captured factories are reflected in the additive site mirror without duplicating physical production.
+  // bölge × tür → tesis dizini (günde bir kez kurulur; bölge başına doğrusal arama yapılmaz)
+  const dizin=new Map<number,V17Site>();
+  for(const q of s.sites)if(q.kind==='sivil'||q.kind==='askeri')dizin.set(q.region*2+(q.kind==='askeri'?1:0),q);
   for(let r=0;r<w.nR;r++)for(const [kind,capacity] of [['sivil',w.R.c.sivilF[r]!],['askeri',w.R.c.askeriF[r]!]] as const){
-    const existing=s.sites.find(q=>q.region===r&&q.kind===kind);
+    const existing=dizin.get(r*2+(kind==='askeri'?1:0));
     if(existing){existing.capacity=capacity;existing.country=w.R.c.sahip[r]!;}
     else if(capacity>0)addSite(s,w.R.c.sahip[r]!,r,kind,capacity);
   }
@@ -212,6 +216,9 @@ export function v17View(w:World,viewer=w.oyuncu){
     goalScore:viewer===w.oyuncu?s.stats.goalScore:0,
     availablePoliticians:siyasiKisiler(AKTIF.donem).filter(x=>x.kod===w.pkg.ulkeler[viewer]!.kod&&x.bas<=currentYear(w)&&x.bit>=currentYear(w)).map(x=>({ad:x.ad,rol:x.gorev})),
     models:s.models.filter(x=>x.era===w.pkg.donem).map(x=>({...x})),
+    /** Tasarım kataloğu: bu ülke ve yılda kullanılabilir adlı ekipman (üretim hattına henüz bağlı değil) */
+    namedModels:w.pkg.donem==='buyuk'?MODELLER_TASARIM.filter(m=>modelKullanilabilir(m,w.pkg.ulkeler[viewer]!.kod,currentYear(w))).map(m=>({...m,girdi:{...m.girdi}})):[],
+    catalog:{resources:KAYNAKLAR_TASARIM.map(x=>({...x})),facilityTypes:TESISLER_TASARIM.map(x=>({...x}))},
     stats:{...s.stats,sourceLedger:{...s.stats.sourceLedger}},
   };
 }
