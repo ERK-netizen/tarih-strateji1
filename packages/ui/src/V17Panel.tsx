@@ -32,7 +32,7 @@ export function V17Panel() {
       <div class="km-bas"><strong>{g.label}</strong>
         <span class="km-rozet">{g.status==='completed'?'Tamamlandı':g.status==='failed'?'Kaybedildi':`Aşama ${g.stage}/${g.stages.length}`}</span></div>
       <div class="cubukluk" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.floor(g.progress*100/g.threshold)} aria-label={`${g.label} ilerlemesi`}><span style={{width:`${Math.min(100,Math.floor(g.progress*100/g.threshold))}%`}} /></div>
-      <p class="soluk kucuk">{g.metricName}: şimdi %{Math.floor(g.value/10000)} · ilerleme %{Math.floor(g.progress/10000)} / hedef %{Math.floor(g.threshold/10000)} · +{g.weight} puan</p>
+      <p class="soluk kucuk">{g.metricName}: {v.goalsMeasured?`şimdi %${Math.floor(g.value/10000)}`:'ilk ölçüm bekleniyor'} · ilerleme %{Math.floor(g.progress/10000)} / hedef %{Math.floor(g.threshold/10000)} · +{g.weight} puan</p>
       {g.paths?.length>0&&<details><summary class="soluk kucuk">Nasıl ulaşılır?</summary><ul class="liste">{g.paths.map((y:string)=><li key={y} class="kucuk">{y}</li>)}</ul></details>}
     </li>)}</ul>
     <h4>Kabine</h4>

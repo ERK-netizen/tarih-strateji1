@@ -214,6 +214,7 @@ export function v17View(w:World,viewer=w.oyuncu){
     orders:s.orders.filter(x=>x.country===viewer).map(x=>({...x,unitIds:[...x.unitIds]})),
     goals:s.goals.filter(x=>x.country===viewer).map(x=>({...x,stages:[...x.stages],paths:[...x.paths],metricName:OLCUTLER[x.metric]?.ad??x.metric})),
     goalScore:viewer===w.oyuncu?s.stats.goalScore:0,
+    goalsMeasured:s.stats.goalDay>=0,
     availablePoliticians:siyasiKisiler(AKTIF.donem).filter(x=>x.kod===w.pkg.ulkeler[viewer]!.kod&&x.bas<=currentYear(w)&&x.bit>=currentYear(w)).map(x=>({ad:x.ad,rol:x.gorev})),
     models:s.models.filter(x=>x.era===w.pkg.donem).map(x=>({...x})),
     /** Tasarım kataloğu: bu ülke ve yılda kullanılabilir adlı ekipman (üretim hattına henüz bağlı değil) */

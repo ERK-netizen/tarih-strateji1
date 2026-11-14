@@ -14,6 +14,19 @@ Android için çevrimdışı, yapay zekâsız, komut öncelikli büyük strateji
 
 Harita Natural Earth sınırları ve GeoNames şehirleriyle derlenir (**813 bölge**, 179 ülke; v1.6'da 463'ten genişletildi, eski bölgelerin tamamı korunur); her senaryo bölge adlarını, sahiplerini, liderleri, kültürleri, orduları ve tarihî olay zincirini kendi döneminden alır. Birlik, ekipman, teknoloji ve tesis adları dönemle değişir (ör. 750'de Piyade Ordusu ve mancınık, 2026'da mekanize tugay ve roket taburu).
 
+## v1.7'de gelenler
+
+| Alan | Yenilik |
+|---|---|
+| Ulusal hedefler | 1914'te 16 ülke için 64 tasarım hedefi (diğer ülke/senaryolarda genel 4 hedef); 40 ölçüt devletin gerçek durumundan hesaplanır, ilerleme 120 günlük ortalamadır, hedef puanı ve Kronik kaydı verir. Devlet panelinde ilerleme çubuğu ve alternatif yollar |
+| Olay ağı | 1914'te 36 "stratejik tutum" olayı (Saraybosna'dan savaş sonrası düzene): üç seçenek, bedel ve savaş riski; hiçbir seçenek savaş ilan etmez |
+| Kabine ve istihbarat | Kalıcı bakan ataması (tarihî kişiler), kalıcı istihbarat ağı ve 21 günlük operasyonlar, sürümlü müzakere teklifi/karşı teklif, şehir sanayi politikası, kalıcı harekât planları (savun/taarruz/intikal/garnizon) |
+| Hareket | Çok kenarlı kesintisiz günlük ilerleme ve aynı kurala dayanan ETA |
+| Komut | Yeni emirler Türkçe yazılabilir: “Fransa'da istihbarat ağı kur”, “3 numaralı müzakere teklifini kabul et” |
+| Katalog | 16 adlı ekipman modeli (ülke ve yıl kapılı; üretime henüz bağlı değil) |
+
+Ayrıntı, bilerek yapılmayanlar ve kabul matrisi: [`docs/v17/README.md`](docs/v17/README.md).
+
 ## v1.6'da gelenler
 
 | Alan | Yenilik |

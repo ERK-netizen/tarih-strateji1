@@ -120,7 +120,8 @@ export function kurHedefler(w:World,s:V17State,c:number):void{
 /** Haftalık değerlendirme (P11'den çağrılır): ölçüt → yumuşatılmış ilerleme → aşama/tamamlanma. Ülke yok olduysa hedef başarısızdır. */
 export function guncelleHedefler(w:World,s:V17State):void{
   if(s.stats.goalDay>=0&&w.gun-s.stats.goalDay<7)return;
-  const adim=s.stats.goalDay<0?7:Math.min(30,w.gun-s.stats.goalDay);
+  // ilk değerlendirme yalnız ölçer (geçmiş süre yok); sonrakilerde geçen gün kadar (en çok 30) ilerler
+  const adim=s.stats.goalDay<0?0:Math.min(30,w.gun-s.stats.goalDay);
   s.stats.goalDay=w.gun;
   const okumalar=new Map<number,Okuma>();
   for(const g of s.goals){
