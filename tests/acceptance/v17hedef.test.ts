@@ -8,7 +8,9 @@ const oku = (k: string) => JSON.parse(readFileSync(`data/derlenmis/${k}.json`, '
 const p1914 = oku('s1914');
 const kod = (p: Paket, k: string) => p.ulkeler.findIndex((u) => u.kod === k);
 const oyna = (k: string, mod = 2, p: Paket = p1914) => senaryoBaslat(JSON.parse(JSON.stringify(p)) as Paket, kod(p, k), mod);
-const gunler = (w: World, n: number) => { for (let i = 0; i < n; i++) gunIlerle(w, false); };
+const gunler = (w: World, n: number) => {
+  for (let i = 0; i < n; i++) gunIlerle(w, false);
+};
 const ONALTI = ['GER', 'FRA', 'GBR', 'RUS', 'AUH', 'OSM', 'SRB', 'BEL', 'ITA', 'BUL', 'ROM', 'JAP', 'USA', 'GRE', 'NLD', 'SWE'];
 
 describe('G01 ulusal hedefler: tasarım verisi pakete derlenir', () => {
@@ -63,20 +65,24 @@ describe('G01 ölçütler: 0…S aralığında, belirlenimci, gerçek durumdan',
     const g = w.v17.goals.find((x) => x.metric === 'ammo_supply_days')!;
     expect(g.value).toBeGreaterThan(900_000);
     for (const u of w.U.list()) if (w.U.c.ulke[u] === w.oyuncu) w.U.c.muhimmatS[u] = 0;
-    w.v17.stats.goalDay = -1; guncelleHedefler(w, w.v17);
+    w.v17.stats.goalDay = -1;
+    guncelleHedefler(w, w.v17);
     expect(g.value).toBeLessThan(200_000);
     const barisH = w.v17.goals.find((x) => x.metric === 'peace_with_GBR_days')!;
     expect(barisH.value).toBe(S);
   });
   test('iki koşu aynı hedef durumunu üretir ve kayıt-yükleme hash eşittir', () => {
-    const a = oyna('FRA'), b = oyna('FRA');
-    gunler(a, 100); gunler(b, 100);
+    const a = oyna('FRA'),
+      b = oyna('FRA');
+    gunler(a, 100);
+    gunler(b, 100);
     expect(JSON.stringify(a.v17.goals)).toBe(JSON.stringify(b.v17.goals));
     expect(dunyaHash(a)).toBe(dunyaHash(b));
     const y = coz(serilestir(a), a.pkg);
     expect(dunyaHash(y)).toBe(dunyaHash(a));
     expect(y.v17.stats.goalDay).toBe(a.v17.stats.goalDay);
-    gunler(a, 30); gunler(y, 30);
+    gunler(a, 30);
+    gunler(y, 30);
     expect(dunyaHash(y)).toBe(dunyaHash(a));
   });
 });
@@ -91,7 +97,11 @@ describe('G01 ilerleme: kalıcı performans tamamlar, anlık iyi durum tamamlama
     const bitti = w.v17.goals.filter((g) => g.status === 'completed');
     expect(bitti.length).toBeGreaterThan(0);
     expect(w.v17.stats.goalScore).toBe(bitti.reduce((t, g) => t + g.weight, 0));
-    for (const g of bitti) { expect(g.progress).toBeGreaterThanOrEqual(g.threshold); expect(g.stage).toBe(3); expect(g.completedDay).toBeGreaterThan(0); }
+    for (const g of bitti) {
+      expect(g.progress).toBeGreaterThanOrEqual(g.threshold);
+      expect(g.stage).toBe(3);
+      expect(g.completedDay).toBeGreaterThan(0);
+    }
     expect(w.anlati.some((a) => a.tur === 'hedef' && a.metin.startsWith('Ulusal hedef tamamlandı'))).toBe(true);
   });
   test('aşamalar sırayla geçilir; ilerleme ölçütten yavaş ve ölçüte doğru hareket eder', () => {
@@ -110,7 +120,8 @@ describe('G01 ilerleme: kalıcı performans tamamlar, anlık iyi durum tamamlama
     const w = oyna('BEL');
     gunler(w, 14);
     w.C.c.pasif[w.oyuncu] = 1;
-    w.v17.stats.goalDay = -1; guncelleHedefler(w, w.v17);
+    w.v17.stats.goalDay = -1;
+    guncelleHedefler(w, w.v17);
     expect(w.v17.goals.every((g) => g.status === 'failed')).toBe(true);
   });
   test('görünüm: ölçüt adı, aşamalar, alternatif yollar ve hedef puanı oyuncuya döner; yabancı hedefler dönmez', () => {
@@ -118,7 +129,11 @@ describe('G01 ilerleme: kalıcı performans tamamlar, anlık iyi durum tamamlama
     gunler(w, 30);
     const v = v17View(w);
     expect(v.goals.length).toBe(4);
-    for (const g of v.goals) { expect(g.metricName.length).toBeGreaterThan(3); expect(g.paths.length).toBeGreaterThanOrEqual(2); expect(g.stages.length).toBe(3); }
+    for (const g of v.goals) {
+      expect(g.metricName.length).toBeGreaterThan(3);
+      expect(g.paths.length).toBeGreaterThanOrEqual(2);
+      expect(g.stages.length).toBe(3);
+    }
     expect(typeof v.goalScore).toBe('number');
     expect(v17View(w, kod(p1914, 'FRA')).goals.length).toBe(0);
     // kurulum yeniden çağrılırsa aynı kimlikler üretilmez
@@ -137,7 +152,10 @@ describe('G05 danışman: hedef açığına göre önerilen üç hareket', () =>
     const v = v17View(w);
     expect(v.suggestions.length).toBe(3);
     expect(new Set(v.suggestions.map((x) => x.goalId)).size).toBe(3);
-    const acik = (id: number) => { const g = w.v17.goals.find((x) => x.id === id)!; return (g.threshold - g.progress) * g.weight; };
+    const acik = (id: number) => {
+      const g = w.v17.goals.find((x) => x.id === id)!;
+      return (g.threshold - g.progress) * g.weight;
+    };
     const sirali = v.suggestions.map((x) => acik(x.goalId));
     expect([...sirali].sort((a, b) => b - a)).toEqual(sirali);
     w.v17.goals[0]!.status = 'completed';
@@ -156,8 +174,14 @@ describe('G02 olay ağı: 36 tasarım olayı paket olaylarıdır; tarih dayatıl
       expect(o.kosul?.bayrakDegil).toContain(o.kod.replace('v17_', 'v17:'));
       for (const s of o.secenekler) {
         expect(s.e.some((e) => e.t === 'bayrak' && e.olay === o.kod.replace('v17_', 'v17:'))).toBe(true);
-        expect(s.e.every((e) => !['savas', 'katil', 'bolge', 'baris', 'ittifak'].includes(e.t)), `${o.kod}: otomatik sonuç yok`).toBe(true);
-        expect(s.e.some((e) => e.t === 'pg' || e.t === 'mesru' || e.t === 'gerginlik'), `${o.kod}: bedel var`).toBe(true);
+        expect(
+          s.e.every((e) => !['savas', 'katil', 'bolge', 'baris', 'ittifak'].includes(e.t)),
+          `${o.kod}: otomatik sonuç yok`,
+        ).toBe(true);
+        expect(
+          s.e.some((e) => e.t === 'pg' || e.t === 'mesru' || e.t === 'gerginlik'),
+          `${o.kod}: bedel var`,
+        ).toBe(true);
         expect(s.yz).toBeGreaterThan(0);
       }
       // YZ ağırlıkları: görüşme en olası, siyaset en az
