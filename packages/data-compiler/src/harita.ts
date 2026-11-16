@@ -5,7 +5,7 @@
 // Komşuluk 2× çözünürlüklü raster üzerinden bulunur; boğaz ve okyanus geçişleri elle tanımlanır.
 // Kayan nokta yalnız burada (derleme zamanı) kullanılır; oyuna tamsayı/sabit sayı yazılır.
 import { createRequire } from 'node:module';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { feature } from 'topojson-client';
@@ -148,7 +148,7 @@ const TR_SEHIR: Record<string, string> = {
   Kayseri: 'Kayseri', Sivas: 'Sivas', Van: 'Van', Gaziantep: 'Antep', Sanliurfa: 'Urfa', Malatya: 'Malatya', Eskisehir: 'Eskişehir', Balikesir: 'Balıkesir', Canakkale: 'Çanakkale',
 };
 
-interface Bolge { ad: string; iso: string; lon: number; lat: number; x: number; y: number; poligon: MPoly; alanKm2: number; nufus: number; kent: number; arazi: number; kiyi: boolean }
+interface Bolge { ad: string; iso: string; lon: number; lat: number; x: number; y: number; poligon: MPoly; alanKm2: number; nufus: number; kent: number; arazi: number; kiyi: boolean; ata: number; eski: boolean }
 const bolgeler: Bolge[] = [];
 
 function mesafeKm(a: [number, number], b: [number, number]): number {
@@ -168,7 +168,95 @@ function noktaIcinde(p: P2, mp: MPoly): boolean {
   return ic;
 }
 
+// ---------- v2 (şartname v1.6, PR-05): 463 → ≥788 bölge ----------
+// Eski (v1) tohumlar birebir korunur: her eski bölge aynı adla, aynı tohum şehriyle yaşamaya devam eder ve
+// yeni bölgeler eski bölgelerin alt bölümleridir. `ata` her yeni bölgenin içinden çıktığı v1 bölge numarasıdır;
+// senaryolar sahipliği ve kayıt göçü nüfusu bu bağ üzerinden aktarır (eski → yeni eşleme varsayımla yapılmaz).
+const V1: [string, string][] = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'veri/harita-v1.json'), 'utf8'));
+/** Cephe coğrafyası: 1914/1939 harekât alanlarında mutlaka ayrı bölge olacak şehirler. */
+const ZORUNLU2: [string, string][] = [
+  // Batı Cephesi: Belçika, Ren, Alsas-Loren, Manş
+  ['Liège', 'BE'], ['Antwerpen', 'BE'], ['Ieper', 'BE'], ['Namur', 'BE'], ['Rotterdam', 'NL'], ['Groningen', 'NL'],
+  ['Verdun', 'FR'], ['Metz', 'FR'], ['Reims', 'FR'], ['Amiens', 'FR'], ['Calais', 'FR'], ['Brest', 'FR'],
+  ['Koblenz', 'DE'], ['Saarbrücken', 'DE'], ['Kiel', 'DE'], ['Dresden', 'DE'], ['Bremen', 'DE'], ['Essen', 'DE'],
+  ['Dover', 'GB'], ['Portsmouth', 'GB'], ['Plymouth', 'GB'], ['Edinburgh', 'GB'],
+  // Doğu Cephesi: Polonya, Baltık, Karpatlar
+  ['Łódź', 'PL'], ['Wrocław', 'PL'], ['Katowice', 'PL'], ['Przemyśl', 'PL'], ['Brest', 'BY'], ['Hrodna', 'BY'], ['Kaunas', 'LT'], ['Klaipėda', 'LT'],
+  ['Daugavpils', 'LV'], ['Tartu', 'EE'], ['Pskov', 'RU'], ['Kursk', 'RU'], ['Sevastopol', 'UA'], ['Košice', 'SK'], ['Ostrava', 'CZ'],
+  // Alpler, Tuna ve Balkanlar
+  ['Innsbruck', 'AT'], ['Graz', 'AT'], ['Salzburg', 'AT'], ['Trieste', 'IT'], ['Udine', 'IT'], ['Genoa', 'IT'], ['Bari', 'IT'], ['Szeged', 'HU'],
+  ['Niš', 'RS'], ['Novi Sad', 'RS'], ['Bitola', 'MK'], ['Ioánnina', 'GR'], ['Lárisa', 'GR'], ['Plovdiv', 'BG'], ['Constanţa', 'RO'], ['Braşov', 'RO'],
+  ['Split', 'HR'], ['Mostar', 'BA'], ['Vlorë', 'AL'],
+  // Boğazlar, Kafkasya ve Yakın Doğu
+  ['Çanakkale', 'TR'], ['Edirne', 'TR'], ['Bursa', 'TR'], ['Kars', 'TR'], ['Trabzon', 'TR'], ['Sivas', 'TR'],
+  ['Batumi', 'GE'], ['Kutaisi', 'GE'], ['Gyumri', 'AM'], ['Ganja', 'AZ'], ['Haifa', 'IL'], ['Jerusalem', 'IL'], ['Homs', 'SY'], ['Latakia', 'SY'],
+  ['Kirkuk', 'IQ'], ['Medina', 'SA'], ['Mecca', 'SA'], ['Aqaba', 'JO'],
+  // Süveyş ve Kuzey Afrika
+  ['Alexandria', 'EG'], ['Port Said', 'EG'], ['Suez', 'EG'], ['Tobruk', 'LY'], ['Sfax', 'TN'], ['Oran', 'DZ'], ['Constantine', 'DZ'],
+  // İskandinavya ve Pasifik
+  ['Narvik', 'NO'], ['Trondheim', 'NO'], ['Tampere', 'FI'], ['Turku', 'FI'], ['Malmö', 'SE'],
+  ['Naha', 'JP'], ['Hiroshima', 'JP'], ['Nagasaki', 'JP'], ['Davao', 'PH'], ['Cebu City', 'PH'], ['Busan', 'KR'], ['Hamhŭng', 'KP'],
+  ['Da Nang', 'VN'], ['Haiphong', 'VN'], ['Mandalay', 'MM'], ['Lae', 'PG'], ['Dalian', 'CN'], ['Qingdao', 'CN'],
+  // Rusya'nın batısı ve güneyi (Sibirya yerine harekât alanı)
+  ['Tula', 'RU'], ['Bryansk', 'RU'], ['Tver', 'RU'], ['Rostov-na-Donu', 'RU'], ['Saratov', 'RU'], ['Samara', 'RU'], ['Yaroslavl', 'RU'], ['Vyborg', 'RU'], ['Petrozavodsk', 'RU'],
+  ['Orël', 'RU'], ['Belgorod', 'RU'], ['Astrakhan', 'RU'], ['Groznyy', 'RU'], ['Novorossiysk', 'RU'], ['Ryazan’', 'RU'], ['Ufa', 'RU'], ['Chelyabinsk', 'RU'], ['Perm', 'RU'], ['Rzhev', 'RU'],
+  ['Chernihiv', 'UA'], ['Zaporizhia', 'UA'], ['Poltava', 'UA'], ['Mykolayiv', 'UA'], ['Chernivtsi', 'UA'], ['Galaţi', 'RO'],
+  // ek cephe noktaları
+  ['Gelibolu', 'TR'], ['Zonguldak', 'TR'], ['Mersin', 'TR'], ['Erzincan', 'TR'], ['Bitlis', 'TR'], ['Sedan', 'FR'], ['Arras', 'FR'], ['Nancy', 'FR'], ['Dunkerque', 'FR'], ['Caen', 'FR'], ['Mulhouse', 'FR'],
+  ['Aachen', 'DE'], ['Bizerte', 'TN'], ['Beersheba', 'IL'], ['Al Kūt', 'IQ'], ['Tabriz', 'IR'], ['Kermanshah', 'IR'], ['Bandar Abbas', 'IR'], ['Stavanger', 'NO'], ['Tromsø', 'NO'],
+];
+/** Geniş ve seyrek ülkelerde genel çoğaltma düşük tutulur; ayrıntı zorunlu şehirlerle harekât alanına verilir. */
+const KAT_OZEL: Record<string, number> = { RU: 1.0, CA: 1.3, AU: 1.3, KZ: 1.3, GL: 1 };
+/** v2 bölge hedefi: eski sayının harekât alanına göre katı; cephe ülkelerinde zorunlu şehirler ayrıca eklenir. */
+function hedefV2(u: Ulke, k1: number): number {
+  const { lon, lat } = u;
+  const avrupa = lon > -25 && lon < 45 && lat > 35 && lat < 72, yakinDogu = lon > 25 && lon < 63 && lat > 12 && lat <= 43;
+  const kat = avrupa ? 1.85 : yakinDogu ? 1.8 : lat > 15 && lat < 38 && lon > -18 && lon <= 25 ? 1.7 : 1.6;
+  if (k1 === 1) return u.alanKm2 >= 60_000 && (avrupa || yakinDogu) ? 2 : 1;
+  return Math.round(k1 * (KAT_OZEL[u.iso] ?? kat));
+}
+const TR2: Record<string, string> = {
+  Liège: 'Liège', Antwerpen: 'Anvers', Ieper: 'Ypres', Genoa: 'Cenova', Jerusalem: 'Kudüs', Mecca: 'Mekke', Medina: 'Medine', Alexandria: 'İskenderiye', 'Port Said': 'Port Said', Suez: 'Süveyş',
+  Tobruk: 'Tobruk', Sfax: 'Sfaks', Oran: 'Vahran', Constantine: 'Konstantin', Haifa: 'Hayfa', Homs: 'Humus', Latakia: 'Lazkiye', Kirkuk: 'Kerkük', Aqaba: 'Akabe', Batumi: 'Batum',
+  Gyumri: 'Gümrü', Ganja: 'Gence', 'Ioánnina': 'Yanya', 'Lárisa': 'Larissa', Plovdiv: 'Filibe', 'Constanţa': 'Köstence', 'Braşov': 'Braşov', Bitola: 'Manastır', 'Niš': 'Niş', Trieste: 'Trieste',
+  'BY:Brest': 'Brest-Litovsk', 'Şanlıurfa': 'Urfa', Gelibolu: 'Gelibolu', 'Rostov-na-Donu': 'Rostov', 'Groznyy': 'Grozni', 'Orël': 'Orel', 'Ryazan’': 'Ryazan', Dalian: 'Port Arthur', Tabriz: 'Tebriz',
+  'Al Kūt': 'Kut', Beersheba: 'Birüssebi', Kermanshah: 'Kirmanşah (Batı)', 'Bandar Abbas': 'Bender Abbas', Astrakhan: 'Astrahan', Samara: 'Samara', Dunkerque: 'Dunkerque',
+  'Cebu City': 'Cebu', Naha: 'Okinava', 'Hamhŭng': 'Hamhung', 'Saarbrücken': 'Saarbrücken', Edinburgh: 'Edinburg', 'Wrocław': 'Wrocław', 'Vlorë': 'Avlonya', Brest: 'Brest',
+};
+
 const ulkeler = [...ulkeHam.values()].sort((a, b) => a.iso.localeCompare(b.iso));
+const kullanilanAd = new Set<string>(V1.map(([ad]) => ad));
+let v1No = 0;
+/** Tohum listesinden hücreler: Voronoi + ülke sınırına kırpma + antimeridyen düzeltmesi. */
+function hucreKur(u: Ulke, secilen: Sehir[]): MPoly[] {
+  const tohum = secilen.map((s) => proj(...s.loc.coordinates));
+  let hucreler: MPoly[];
+  if (tohum.length === 1) return [u.poligon];
+  const xs = u.poligon.flatMap((p) => p[0]!.map((q) => q[0])), ys = u.poligon.flatMap((p) => p[0]!.map((q) => q[1]));
+  const v = Delaunay.from(tohum).voronoi([Math.min(...xs) - 5, Math.min(...ys) - 5, Math.max(...xs) + 5, Math.max(...ys) + 5]);
+  hucreler = tohum.map((_, i) => {
+    const c = v.cellPolygon(i) as unknown as Ring;
+    if (!c) return [];
+    try { return polygonClipping.intersection([c] as never, u.poligon as never) as unknown as MPoly; } catch { return []; }
+  });
+  // antimeridyen ve uzak adalar: Voronoi düzlemde çalışır; haritanın öbür ucuna düşen parçalar (Wrangel, Çukotka,
+  // Aleutlar) büyük daire uzaklığında açıkça daha yakın bir tohuma verilir (yoksa Kaliningrad Bering'e uzanır)
+  const tasinan: MPoly[] = tohum.map(() => []);
+  const kaynak = secilen.map((t) => t.loc.coordinates as [number, number]);
+  hucreler = hucreler.map((hp, i) => hp.filter((poly) => {
+    const r = poly[0]!;
+    let sx = 0, sy = 0;
+    for (const q of r) { sx += q[0]; sy += q[1]; }
+    const ll = projeksiyon.invert!([sx / r.length, sy / r.length]);
+    if (!ll) return true;
+    const kendi = mesafeKm(ll as [number, number], kaynak[i]!);
+    let en = i, enD = kendi;
+    kaynak.forEach((t, j) => { const d = mesafeKm(ll as [number, number], t); if (d < enD) { enD = d; en = j; } });
+    if (en !== i && enD < kendi * 0.6) { tasinan[en]!.push(poly); return false; }
+    return true;
+  }));
+  return hucreler.map((hp, i) => [...hp, ...tasinan[i]!]);
+}
 for (const u of ulkeler) {
   const tumAday = (kentSehir.get(u.iso) ?? []).filter((s) => noktaIcinde(proj(...s.loc.coordinates), u.poligon));
   const zorunlu = ZORUNLU.filter(([, k]) => k === u.iso).map(([ad, , sk]) => SEHIRLER.filter((c) => c.country === (sk ?? u.iso) && (c.name === ad || c.altName.split(',').includes(ad))).sort((a, b) => b.population - a.population)[0]).filter((c): c is Sehir => !!c);
@@ -203,48 +291,63 @@ for (const u of ulkeler) {
     // şehir verisi yok: ülke ağırlık merkezi
     secilen.push({ name: u.ad, altName: '', country: u.iso, featureCode: 'PPLC', population: 50_000, loc: { coordinates: [u.lon, u.lat] } });
   }
+  // --- v1 hücreleri: eski bölge numaraları ve `ata` eşlemesi için ---
+  const n1 = secilen.length;
+  const hucre1 = hucreKur(u, secilen);
+  const v1Idx = hucre1.map((hp) => (hp.length ? v1No++ : -1));
+  // --- v2 ek tohumlar: cephe şehirleri, sonra nüfusa göre aralıklı ---
+  const zor2 = ZORUNLU2.filter(([, z]) => z === u.iso).map(([ad]) => {
+    const s = SEHIRLER.filter((c) => c.country === u.iso && (c.name === ad || c.altName.split(',').includes(ad))).sort((a, b) => b.population - a.population)[0];
+    if (!s) throw new Error(`v2 zorunlu şehir bulunamadı: ${u.iso}:${ad}`);
+    return s;
+  }).filter((s) => !secilen.includes(s)); // kıyı şehirleri sadeleştirilmiş sınırın dışında kalabilir: hücre yine en yakın karayı alır
+  const k2 = Math.max(n1 + zor2.length, Math.min((TAVAN[u.iso] ?? 9) * 2, hedefV2(u, n1)) + Math.min(zor2.length, 3));
+  const uzak = (s: Sehir, d: number) => { const p = proj(...s.loc.coordinates); return secilen.every((t) => { const q = proj(...t.loc.coordinates); return Math.hypot(p[0] - q[0], p[1] - q[1]) >= d; }); };
+  for (const z of zor2) if (uzak(z, 2.2)) secilen.push(z);
+  let dmin2 = 0.62 * Math.sqrt(alanPx / Math.max(1, k2));
+  for (let tur = 0; tur < 5 && secilen.length < k2; tur++) {
+    for (const s of adaylar) {
+      if (secilen.length >= k2) break;
+      if (secilen.includes(s)) continue;
+      // çok küçük hücre üretmemek için alt sınır: 3 piksel (~45 km)
+      if (uzak(s, Math.max(3, dmin2))) secilen.push(s);
+    }
+    dmin2 *= 0.7;
+  }
   const tohum = secilen.map((s) => proj(...s.loc.coordinates));
-  let hucreler: MPoly[];
-  if (tohum.length === 1) hucreler = [u.poligon];
-  else {
-    const xs = u.poligon.flatMap((p) => p[0]!.map((q) => q[0])), ys = u.poligon.flatMap((p) => p[0]!.map((q) => q[1]));
-    const v = Delaunay.from(tohum).voronoi([Math.min(...xs) - 5, Math.min(...ys) - 5, Math.max(...xs) + 5, Math.max(...ys) + 5]);
-    hucreler = tohum.map((_, i) => {
-      const c = v.cellPolygon(i) as unknown as Ring;
-      if (!c) return [];
-      try { return polygonClipping.intersection([c] as never, u.poligon as never) as unknown as MPoly; } catch { return []; }
-    });
-  }
-  // antimeridyen ve uzak adalar: Voronoi düzlemde çalışır; haritanın öbür ucuna düşen parçalar (Wrangel, Çukotka,
-  // Aleutlar) büyük daire uzaklığında açıkça daha yakın bir tohuma verilir (yoksa Kaliningrad Bering'e uzanır)
-  if (tohum.length > 1) {
-    const tasinan: MPoly[] = tohum.map(() => []);
-    const kaynak = secilen.map((t) => t.loc.coordinates as [number, number]);
-    hucreler = hucreler.map((hp, i) => hp.filter((poly) => {
-      const r = poly[0]!;
-      let sx = 0, sy = 0;
-      for (const q of r) { sx += q[0]; sy += q[1]; }
-      const ll = projeksiyon.invert!([sx / r.length, sy / r.length]);
-      if (!ll) return true;
-      const kendi = mesafeKm(ll as [number, number], kaynak[i]!);
-      let en = i, enD = kendi;
-      kaynak.forEach((t, j) => { const d = mesafeKm(ll as [number, number], t); if (d < enD) { enD = d; en = j; } });
-      if (en !== i && enD < kendi * 0.6) { tasinan[en]!.push(poly); return false; }
-      return true;
-    }));
-    hucreler = hucreler.map((hp, i) => [...hp, ...tasinan[i]!]);
-  }
+  const hucreler = hucreKur(u, secilen);
+  // ata: yeni tohumun içine düştüğü v1 hücresi (yoksa en yakın v1 tohumu)
+  const ataBul = (i: number): number => {
+    if (i < n1) return v1Idx[i]!;
+    for (let j = 0; j < n1; j++) if (v1Idx[j]! >= 0 && noktaIcinde(tohum[i]!, hucre1[j]!)) return v1Idx[j]!;
+    let en = -1, enD = Infinity;
+    for (let j = 0; j < n1; j++) { if (v1Idx[j]! < 0) continue; const d = mesafeKm(secilen[i]!.loc.coordinates, secilen[j]!.loc.coordinates); if (d < enD) { enD = d; en = j; } }
+    return v1Idx[en]!;
+  };
   hucreler.forEach((hp, i) => {
-    if (!hp.length) return;
+    if (!hp.length) { if (i < n1 && v1Idx[i]! >= 0) throw new Error(`v1 bölgesi v2'de kayboldu: ${u.iso}:${secilen[i]!.name}`); return; }
     const s = secilen[i]!;
     // kent nüfusu: hücredeki şehirler
     let kentP = 0;
     for (const c of adaylar) if (noktaIcinde(proj(...c.loc.coordinates), hp)) kentP += c.population;
     const alan = (u.alanKm2 * hp.reduce((t, p) => t + Math.abs(halkaAlan(p[0]!)) - p.slice(1).reduce((z, h) => z + Math.abs(halkaAlan(h)), 0), 0)) / Math.max(1, alanPx);
     const [x, yy] = tohum[i]!;
-    bolgeler.push({ ad: DUZELT[`${u.iso}:${TR_SEHIR[s.name] ?? s.name}`] ?? DUZELT[`${u.iso}:${s.name}`] ?? TR_SEHIR[s.name] ?? s.name, iso: u.iso, lon: s.loc.coordinates[0], lat: s.loc.coordinates[1], x, y: yy, poligon: hp, alanKm2: Math.round(alan), nufus: 0, kent: Math.max(kentP, s.population), arazi: 0, kiyi: false });
+    const eski = i < n1;
+    let ad: string;
+    if (eski) {
+      ad = DUZELT[`${u.iso}:${TR_SEHIR[s.name] ?? s.name}`] ?? DUZELT[`${u.iso}:${s.name}`] ?? TR_SEHIR[s.name] ?? s.name;
+      if (V1[v1Idx[i]!]?.[0] !== ad || V1[v1Idx[i]!]?.[1] !== u.iso) throw new Error(`v1 uyumu bozuldu: #${v1Idx[i]} ${u.iso}:${ad} ≠ ${V1[v1Idx[i]!]?.join(':')}`);
+    } else {
+      ad = TR2[`${u.iso}:${s.name}`] ?? TR2[s.name] ?? TR_SEHIR[s.name] ?? s.name;
+      // adlar tekildir: çakışan yeni ad ülke koduyla ayrılır (eski adlar öncelikli)
+      if (kullanilanAd.has(ad)) ad = `${ad} (${u.iso})`;
+      if (kullanilanAd.has(ad)) throw new Error(`bölge adı çakışıyor: ${ad}`);
+      kullanilanAd.add(ad);
+    }
+    bolgeler.push({ ad, iso: u.iso, lon: s.loc.coordinates[0], lat: s.loc.coordinates[1], x, y: yy, poligon: hp, alanKm2: Math.round(alan), nufus: 0, kent: Math.max(kentP, s.population), arazi: 0, kiyi: false, ata: ataBul(i), eski });
   });
 }
+if (v1No !== V1.length) throw new Error(`v1 bölge sayısı tutmuyor: ${v1No} ≠ ${V1.length}`);
 
 // ---------- Raster ve komşuluk ----------
 const RW = W * R_ERKEN, RH = H * R_ERKEN;
@@ -268,6 +371,35 @@ function doldur(mp: MPoly, id: number): void {
   }
 }
 bolgeler.forEach((b, i) => doldur(b.poligon, i));
+// Deniz: bölgesiz hücrelerin büyük bağlı bileşenleri (okyanus, iç denizler, büyük göller). Poligonlar arasındaki ince
+// boşluklar ve küçük göller deniz sayılmaz; yoksa iç bölgeler (Innsbruck, Berlin) kıyı görünür ve filo üssü olur.
+const DENIZ_ESIK = Number(process.env.DENIZ_ESIK ?? 200);
+const denizMi = new Uint8Array(RW * RH);
+{
+  const etiket = new Int32Array(RW * RH).fill(-1);
+  const boyut: number[] = [];
+  const yigin = new Int32Array(RW * RH);
+  for (let i0 = 0; i0 < RW * RH; i0++) {
+    if (izgara[i0]! >= 0 || etiket[i0]! >= 0) continue;
+    const id = boyut.length; let n = 0, ust = 0;
+    yigin[ust++] = i0; etiket[i0] = id;
+    while (ust > 0) {
+      const i = yigin[--ust]!; n++;
+      const x = i % RW, y = (i - x) / RW;
+      if (x > 0 && izgara[i - 1]! < 0 && etiket[i - 1]! < 0) { etiket[i - 1] = id; yigin[ust++] = i - 1; }
+      if (x + 1 < RW && izgara[i + 1]! < 0 && etiket[i + 1]! < 0) { etiket[i + 1] = id; yigin[ust++] = i + 1; }
+      if (y > 0 && izgara[i - RW]! < 0 && etiket[i - RW]! < 0) { etiket[i - RW] = id; yigin[ust++] = i - RW; }
+      if (y + 1 < RH && izgara[i + RW]! < 0 && etiket[i + RW]! < 0) { etiket[i + RW] = id; yigin[ust++] = i + RW; }
+    }
+    boyut.push(n);
+  }
+  for (let i = 0; i < RW * RH; i++) if (etiket[i]! >= 0 && boyut[etiket[i]!]! >= DENIZ_ESIK) denizMi[i] = 1;
+  if (process.env.HARITA_AYIKLA) {
+    const sirali = boyut.map((n, id) => ({ n, id })).sort((x, y) => y.n - x.n);
+    const dokunan = (id: number) => { const m = new Set<string>(); for (let i = 0; i < RW * RH && m.size < 4; i++) if (etiket[i] === id) for (const j of [i - 1, i + 1, i - RW, i + RW]) if (j >= 0 && j < RW * RH && izgara[j]! >= 0) m.add(bolgeler[izgara[j]!]!.ad); return [...m].join('/'); };
+    console.log('su bileşeni', boyut.length, sirali.slice(0, 60).map((x) => `${x.n}:${dokunan(x.id)}`).join(' | '));
+  }
+}
 const sinir = new Map<number, number>();
 const kiyiSay = new Int32Array(bolgeler.length);
 const pikselSay = new Int32Array(bolgeler.length);
@@ -279,12 +411,12 @@ for (let y = 0; y < RH; y++) for (let x = 0; x < RW; x++) {
     if (x + dx >= RW || y + dy >= RH) continue;
     const b = izgara[(y + dy) * RW + x + dx]!;
     if (b === a) continue;
-    if (b < 0) { kiyiSay[a]!++; continue; }
+    if (b < 0) { if (denizMi[(y + dy) * RW + x + dx]) kiyiSay[a]!++; continue; }
     const key = Math.min(a, b) * 4096 + Math.max(a, b);
     sinir.set(key, (sinir.get(key) ?? 0) + 1);
   }
-  if (x > 0 && izgara[y * RW + x - 1]! < 0) kiyiSay[a]!++;
-  if (y > 0 && izgara[(y - 1) * RW + x]! < 0) kiyiSay[a]!++;
+  if (x > 0 && denizMi[y * RW + x - 1]) kiyiSay[a]!++;
+  if (y > 0 && denizMi[(y - 1) * RW + x]) kiyiSay[a]!++;
 }
 bolgeler.forEach((b, i) => { b.kiyi = kiyiSay[i]! > 2; });
 
@@ -297,14 +429,20 @@ for (const [key, n] of sinir) {
 }
 
 // ---------- Deniz geçişleri ----------
+const LIMAN_KOORDINAT: Record<string, [number, number]> = {
+  Izmit: [29.92, 40.77], Izmir: [27.14, 38.42], Rhodes: [28.22, 36.43], Heraklion: [25.13, 35.34], Basra: [47.78, 30.51], 'Cádiz': [-6.29, 36.53],
+  'Hong Kong': [114.17, 22.32], Syracuse: [15.29, 37.08], Aarhus: [10.21, 56.16], Gothenburg: [11.97, 57.71],
+};
 function bolgeBul(sehir: string, ulke: string): number {
   const s = SEHIRLER.filter((c) => c.country === ulke && (c.name === sehir || c.altName.split(',').includes(sehir))).sort((a, b) => b.population - a.population)[0];
-  const lonlat: [number, number] | null = s ? s.loc.coordinates : null;
+  // şehir verisinde adı farklı yazılan limanlar: koordinat elle verilir (yoksa geçiş ülkenin ilk bölgesine, ör. Ankara'ya bağlanırdı)
+  const lonlat: [number, number] | null = s ? s.loc.coordinates : (LIMAN_KOORDINAT[sehir] ?? null);
   if (lonlat) {
     const [x, y] = proj(...lonlat);
     const r = izgara[Math.floor(y * R_ERKEN) * RW + Math.floor(x * R_ERKEN)]!;
     if (r >= 0 && bolgeler[r]!.iso === ulke) return r;
   }
+  if (!lonlat) throw new Error(`deniz geçişi: ${sehir} (${ulke}) bulunamadı; LIMAN_KOORDINAT'a ekleyin`);
   let best = -1, bd = Infinity;
   bolgeler.forEach((b, i) => {
     if (b.iso !== ulke) return;
@@ -413,9 +551,11 @@ for (const b of bolgeler) {
 // ---------- Çıktı ----------
 const yuv = (x: number) => Math.round(x * 10) / 10;
 const cikti = {
-  surum: 1, kaynak: 'Natural Earth 1:50m (kamu malı) · GeoNames (CC BY 4.0)', gen: W, yuk: H,
+  surum: 2, kaynak: 'Natural Earth 1:50m (kamu malı) · GeoNames (CC BY 4.0)', gen: W, yuk: H,
+  /** v1 (463 bölge) haritasındaki bölge sayısı; `ata` bu numaralandırmaya göredir */
+  v1: V1.length,
   bolgeler: bolgeler.map((b, i) => ({
-    ad: b.ad, iso: b.iso, lon: yuv(b.lon), lat: yuv(b.lat), x: yuv(b.x), y: yuv(b.y), alanKm2: b.alanKm2, nufus: b.nufus, kent: b.kent, arazi: b.arazi, kiyi: b.kiyi,
+    ad: b.ad, iso: b.iso, ata: b.ata, eski: b.eski || undefined, lon: yuv(b.lon), lat: yuv(b.lat), x: yuv(b.x), y: yuv(b.y), alanKm2: b.alanKm2, nufus: b.nufus, kent: b.kent, arazi: b.arazi, kiyi: b.kiyi,
     komsu: [...new Set(kenarlar.filter((k) => k.a === i || k.b === i).map((k) => (k.a === i ? k.b : k.a)))].sort((a, c) => a - c),
     poligon: b.poligon.flatMap((poly) => poly.filter((r) => r.length >= 4 && (Math.abs(halkaAlan(r)) > 0.25 || b.poligon.length === 1)).map((r) => r.flatMap(([x, y]) => [yuv(x), yuv(y)]))),
   })),
@@ -489,4 +629,4 @@ const cizgiler = sinirCizgileri(cikti.bolgeler.map((b) => b.poligon));
 writeFileSync(join(kok, 'data/derlenmis/dunya-geo.json'), JSON.stringify({ gen: W, yuk: H, poligon: cikti.bolgeler.map((b) => b.poligon), denizler, cizgiler }));
 console.log(`sınır çizgisi: ${cizgiler.length} (kıyı ${cizgiler.filter((c) => c.b < 0).length})`);
 const tur = [0, 0, 0]; for (const k of kenarlar) tur[k.tur]!++;
-console.log(`harita: ${bolgeler.length} bölge, ${ulkeler.length} ülke, kenar kara/boğaz/okyanus ${tur.join('/')}, ${W}×${H}`);
+console.log(`harita v2: ${bolgeler.length} bölge (v1: ${V1.length}, +%${Math.round((bolgeler.length / V1.length - 1) * 100)}), ${ulkeler.length} ülke, kenar kara/boğaz/okyanus ${tur.join('/')}, ${W}×${H}`);

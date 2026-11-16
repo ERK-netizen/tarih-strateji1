@@ -1,0 +1,21 @@
+﻿Bulgu / Sınıf / Öncelik,Kaynak kod kanıtı,Sorun / kök neden,Kapanma testi,Durum
+F-01 · A · P0,ui/istemci.ts hata akışında if (b && !b.akis),Akışlı advance hata mesajı geldiğinde Promise reddedilmeyebilir,"Akış error → Promise reject, bekleyen sayı sıfır",OPEN
+F-02 · A · P0,worker/sunucu.ts beklenenSurum? alınır ama kullanılmaz,Eski görünümden verilmiş emir kabul edilebilir,"Eski sürüm → sürüm çakışması, hiçbir mutasyon yok",OPEN
+F-03 · B · P0,"submit emirleri kuyrugaAl, P2 ertesi gün",Kullanıcının anlık karar talebiyle çelişir,teklifYanit/araştırma/görev aynı gün kanonikleşir,OPEN
+F-04 · A · P0,"ui/App.tsx olay seçiminden sonra zorunlu ilerlet('gun',1)",Karar 1 gün ilerlemeden etkili olamıyor,Olay aynı gün kapanır; gun değişmez,OPEN
+F-05 · A · P0,ui/eylem.ts onaydan sonra yalnız panelSurum++,Yeni durum sorgusu garanti değil,Emir sonrası query taze sürüm taşır,OPEN
+F-06 · A · P1,README yatay kilit iddiası / manifest sensorPortrait,Belgeler gerçek ayarla uyuşmuyor,README dikey ve APK portre testleri,OPEN
+F-07 · C · P1,"deniz.ts ülke sınıf toplamı ve donGorev, havaGorev",Gerçek filo/kanat kimliği yok,Aynı filo iki göreve atanamıyor,OPEN
+F-08 · B · P1,gelisim.ts insaYuvasi eyalet paralel proje eşiği,Kullanıcının şehir başına 4× seviye bina yuvasından farklı,Bina kapasitesi/aktif inşaat limiti ayrı,OPEN
+F-09 · C · P1,siyasiKisiler.ts dönemsel ad ve görev aralıkları,Kalıcı biyografi/atama/halef ilişkisi eksik,Kişi tarihçesi ve ölüm doğrulaması,OPEN
+F-10 · C · P1,toplum.ts 5-parti desteği ve sabit alanlar,Ülkeye özgü parti sayısı/data modeli yok,"3, 7, 12 partili ülkeler testleri",OPEN
+F-11 · C · P1,Bölge kimliği en çok 7 hücre,Küçük etnik unsurlar ayrı gözlenemiyor,"%0,01 küçük topluluk net görülür",OPEN
+F-12 · C · P1,harita.ts derlenmiş 463 bölge,Cephe/şehir ölçeği yetersiz,≥788 tutarlı bölge + göç/adjacency,OPEN
+F-13 · D · P1,"systems/kara.ts P9 muharebe, Canvas ayrı öneriliyor",Çifte kayıp/otorite riski,Render yalnız BattleEvent okur,OPEN
+F-14 · D · P1,Anlık mutasyon + devam eden advance beraber olabilir,Tek-yazar sıralama disiplini gerekir,Zaman atlama sırasında emir deterministik sırayla,OPEN
+F-15 · D · P2,Nüfus/ülke ekonomi toplamları dönemlere göre değişir,Düşük bellek/CPU mobil cihazda eşikler aşılabilir,"365 gün, 5/10/25 yıl, gerçek cihaz raporu",OPEN
+F-16 · C · P2,36×12 araştırma kademeleri var,"Üretime geçiş/prototip, uzman bilim insanı ayrı değil",Araştırma bitince stok kendiliğinden artmaz,OPEN
+F-17 · C · P2,decision/index.ts aylık kurallı planlar,"Plan hedefi, başarı/başarısızlık hafızası sınırlı",Hedef sonrası tekrar planlama gerekçesi,OPEN
+F-18 · C · P2,diplomasi.ts mevcut barış tipleri,"Çok maddeli, süreli, şartlı antlaşma kısıtlı",Aynı antlaşmada ilhak+tazminat+garanti,OPEN
+F-19 · D · P2,1914 senaryosu başkent ve tarihsel personel elle derlenmiş,Bazı tarihsel veri kontrolü eksik; 1914 Brezilya Brasília örneği,1914 Brezilya Rio de Janeiro; kaynak doğrulama,OPEN
+F-20 · C · P2,Gelişmiş komut ayrıştırıcı var,Kalıcı amaç/koşul/kişi ataması plan DSL'sine dönüşmüyor,Komut→Plan→günlük alt emirler→rapor,OPEN

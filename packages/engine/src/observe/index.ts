@@ -170,3 +170,36 @@ export function hazineKademe(w: World, c: number): string {
   if (h < aylik * 4) return 'orta';
   return 'güçlü';
 }
+
+// ---------- İstihbarat raporları (şema 9, v1.6 PR-12) ----------
+/** Rapor geçerlilik süresi (gün) ve ajan ağının istihbarat düzeyine katkısı. */
+export const RAPOR_OMUR = 180, AJAN_KATKI = 40_000;
+/**
+ * Ajan raporu: hedef devletin hazinesi, birlik sayısı, ordu mevcudu, huzuru ve meşruiyeti için gözlem günlü tahmin aralıkları
+ * yazar. Gerçek değer aralığın içindedir ama raporda yer almaz; aynı konudaki eski rapor yenisiyle değişir (V16-T46).
+ */
+export function istihbaratRaporu(w: World, c: number, d: number): number[] {
+  const I = Math.min(95_000, istihbaratDuzeyi(w, c, d) + AJAN_KATKI);
+  let birlik = 0, kisi = 0;
+  for (const u of w.U.rows()) if (w.U.c.ulke[u] === d) { birlik++; kisi += w.U.c.kisi[u]!; }
+  const gercek = [Math.max(0, w.C.c.hazine[d]!), birlik, kisi, w.C.c.huzur[d]!, w.C.c.mesru[d]!];
+  const yeni: number[] = [];
+  gercek.forEach((v, konu) => {
+    for (const s of w.IR.list()) if (w.IR.c.ulke[s] === c && w.IR.c.hedef[s] === d && w.IR.c.konu[s] === konu) w.IR.release(s);
+    const a = aralik(w, c, d, v, I, 20 + konu);
+    const s = w.IR.alloc();
+    const R = w.IR.c;
+    R.ulke[s] = c; R.hedef[s] = d; R.konu[s] = konu; R.gozlem[s] = w.gun; R.alt[s] = a.alt; R.ust[s] = a.ust;
+    R.guven[s] = 500_000 + I * 4; R.bitis[s] = w.gun + RAPOR_OMUR;
+    yeni.push(s);
+  });
+  return yeni;
+}
+/** Bir devletin bir hedef hakkındaki geçerli raporları (konu sırasıyla). */
+export function raporlar(w: World, c: number, d: number): number[] {
+  return w.IR.list().filter((s) => w.IR.c.ulke[s] === c && w.IR.c.hedef[s] === d && w.IR.c.bitis[s]! >= w.gun).sort((a, b) => w.IR.c.konu[a]! - w.IR.c.konu[b]!);
+}
+/** Aylık: süresi dolan raporlar silinir (eski bilgi kesinmiş gibi kalmaz). */
+export function istihbaratAy(w: World): void {
+  for (const s of w.IR.list()) if (w.IR.c.bitis[s]! < w.gun) w.IR.release(s);
+}

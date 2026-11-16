@@ -1,0 +1,519 @@
+{
+  "schema": "tarih-strateji.v17-r2.resource-facility-design-v1",
+  "status": "DESIGN_ONLY",
+  "resources": [
+    {
+      "id": "iron_ore",
+      "nameTr": "Demir cevheri",
+      "stage": "raw",
+      "unit": "kg",
+      "primaryUse": "steel_ingot",
+      "sourceStatus": "design_calibration"
+    },
+    {
+      "id": "coal",
+      "nameTr": "Kömür",
+      "stage": "raw",
+      "unit": "kg",
+      "primaryUse": "steam_energy",
+      "sourceStatus": "design_calibration"
+    },
+    {
+      "id": "copper_ore",
+      "nameTr": "Bakır cevheri",
+      "stage": "raw",
+      "unit": "kg",
+      "primaryUse": "copper",
+      "sourceStatus": "design_calibration"
+    },
+    {
+      "id": "crude_oil",
+      "nameTr": "Ham petrol",
+      "stage": "raw",
+      "unit": "kg",
+      "primaryUse": "refined_fuel",
+      "sourceStatus": "design_calibration"
+    },
+    {
+      "id": "timber",
+      "nameTr": "Kereste girdisi",
+      "stage": "raw",
+      "unit": "kg",
+      "primaryUse": "sawn_wood",
+      "sourceStatus": "design_calibration"
+    },
+    {
+      "id": "nitrate",
+      "nameTr": "Nitrat/kimyasal girdi",
+      "stage": "raw",
+      "unit": "kg",
+      "primaryUse": "chemicals",
+      "sourceStatus": "design_calibration"
+    },
+    {
+      "id": "steel",
+      "nameTr": "Çelik",
+      "stage": "processed",
+      "unit": "kg",
+      "primaryUse": "machine/weapon",
+      "sourceStatus": "design_calibration"
+    },
+    {
+      "id": "copper",
+      "nameTr": "Bakır",
+      "stage": "processed",
+      "unit": "kg",
+      "primaryUse": "machine/electric",
+      "sourceStatus": "design_calibration"
+    },
+    {
+      "id": "refined_fuel",
+      "nameTr": "Rafine yakıt",
+      "stage": "processed",
+      "unit": "kg",
+      "primaryUse": "engine/air/selected_navy",
+      "sourceStatus": "design_calibration"
+    },
+    {
+      "id": "steam_energy",
+      "nameTr": "Buhar enerjisi",
+      "stage": "processed",
+      "unit": "mj",
+      "primaryUse": "coal_plant",
+      "sourceStatus": "design_calibration"
+    },
+    {
+      "id": "chemicals",
+      "nameTr": "Kimyasallar",
+      "stage": "processed",
+      "unit": "kg",
+      "primaryUse": "ammunition",
+      "sourceStatus": "design_calibration"
+    },
+    {
+      "id": "machine_parts",
+      "nameTr": "Makine parçaları",
+      "stage": "processed",
+      "unit": "count",
+      "primaryUse": "facility/equipment",
+      "sourceStatus": "design_calibration"
+    }
+  ],
+  "facilityTypes": [
+    {
+      "id": "coal_mine",
+      "nameTr": "Kömür madeni",
+      "sector": "civil",
+      "outputFamilies": [
+        "coal"
+      ],
+      "slotCost": 1,
+      "allowedEras": [
+        "1914",
+        "1939",
+        "2026"
+      ],
+      "sourceStatus": "design_calibration",
+      "unitScale": "facility class (not 1 historical named factory)"
+    },
+    {
+      "id": "iron_mine",
+      "nameTr": "Demir cevheri madeni",
+      "sector": "civil",
+      "outputFamilies": [
+        "iron_ore"
+      ],
+      "slotCost": 1,
+      "allowedEras": [
+        "1914",
+        "1939",
+        "2026"
+      ],
+      "sourceStatus": "design_calibration",
+      "unitScale": "facility class (not 1 historical named factory)"
+    },
+    {
+      "id": "copper_mine",
+      "nameTr": "Bakır madeni",
+      "sector": "civil",
+      "outputFamilies": [
+        "copper_ore"
+      ],
+      "slotCost": 1,
+      "allowedEras": [
+        "1914",
+        "1939",
+        "2026"
+      ],
+      "sourceStatus": "design_calibration",
+      "unitScale": "facility class (not 1 historical named factory)"
+    },
+    {
+      "id": "oil_field",
+      "nameTr": "Petrol sahası",
+      "sector": "civil",
+      "outputFamilies": [
+        "crude_oil"
+      ],
+      "slotCost": 1,
+      "allowedEras": [
+        "1914",
+        "1939",
+        "2026"
+      ],
+      "sourceStatus": "design_calibration",
+      "unitScale": "facility class (not 1 historical named factory)"
+    },
+    {
+      "id": "steelworks",
+      "nameTr": "Demir çelik tesisi",
+      "sector": "civil",
+      "outputFamilies": [
+        "steel"
+      ],
+      "slotCost": 2,
+      "allowedEras": [
+        "1914",
+        "1939",
+        "2026"
+      ],
+      "sourceStatus": "design_calibration",
+      "unitScale": "facility class (not 1 historical named factory)"
+    },
+    {
+      "id": "refinery",
+      "nameTr": "Rafineri",
+      "sector": "civil",
+      "outputFamilies": [
+        "refined_fuel"
+      ],
+      "slotCost": 2,
+      "allowedEras": [
+        "1914",
+        "1939",
+        "2026"
+      ],
+      "sourceStatus": "design_calibration",
+      "unitScale": "facility class (not 1 historical named factory)"
+    },
+    {
+      "id": "chemical_plant",
+      "nameTr": "Kimya fabrikası",
+      "sector": "civil",
+      "outputFamilies": [
+        "chemicals"
+      ],
+      "slotCost": 2,
+      "allowedEras": [
+        "1914",
+        "1939",
+        "2026"
+      ],
+      "sourceStatus": "design_calibration",
+      "unitScale": "facility class (not 1 historical named factory)"
+    },
+    {
+      "id": "machine_shop",
+      "nameTr": "Makine ve takım tezgahı",
+      "sector": "civil",
+      "outputFamilies": [
+        "machine_parts"
+      ],
+      "slotCost": 2,
+      "allowedEras": [
+        "1914",
+        "1939",
+        "2026"
+      ],
+      "sourceStatus": "design_calibration",
+      "unitScale": "facility class (not 1 historical named factory)"
+    },
+    {
+      "id": "textile_mill",
+      "nameTr": "Tekstil fabrikası",
+      "sector": "civil",
+      "outputFamilies": [
+        "clothing"
+      ],
+      "slotCost": 1,
+      "allowedEras": [
+        "1914",
+        "1939",
+        "2026"
+      ],
+      "sourceStatus": "design_calibration",
+      "unitScale": "facility class (not 1 historical named factory)"
+    },
+    {
+      "id": "food_plant",
+      "nameTr": "Gıda işleme",
+      "sector": "civil",
+      "outputFamilies": [
+        "processed_food"
+      ],
+      "slotCost": 1,
+      "allowedEras": [
+        "1914",
+        "1939",
+        "2026"
+      ],
+      "sourceStatus": "design_calibration",
+      "unitScale": "facility class (not 1 historical named factory)"
+    },
+    {
+      "id": "rail_works",
+      "nameTr": "Demiryolu atölyesi",
+      "sector": "civil",
+      "outputFamilies": [
+        "rail_equipment"
+      ],
+      "slotCost": 2,
+      "allowedEras": [
+        "1914",
+        "1939",
+        "2026"
+      ],
+      "sourceStatus": "design_calibration",
+      "unitScale": "facility class (not 1 historical named factory)"
+    },
+    {
+      "id": "power_station",
+      "nameTr": "Enerji tesisi",
+      "sector": "civil",
+      "outputFamilies": [
+        "steam_energy"
+      ],
+      "slotCost": 1,
+      "allowedEras": [
+        "1914",
+        "1939",
+        "2026"
+      ],
+      "sourceStatus": "design_calibration",
+      "unitScale": "facility class (not 1 historical named factory)"
+    },
+    {
+      "id": "shipyard_civil",
+      "nameTr": "Sivil tersane",
+      "sector": "civil",
+      "outputFamilies": [
+        "cargo_vessel"
+      ],
+      "slotCost": 3,
+      "allowedEras": [
+        "1914",
+        "1939",
+        "2026"
+      ],
+      "sourceStatus": "design_calibration",
+      "unitScale": "facility class (not 1 historical named factory)"
+    },
+    {
+      "id": "warehouse",
+      "nameTr": "Depo",
+      "sector": "civil",
+      "outputFamilies": [],
+      "slotCost": 1,
+      "allowedEras": [
+        "1914",
+        "1939",
+        "2026"
+      ],
+      "sourceStatus": "design_calibration",
+      "unitScale": "facility class (not 1 historical named factory)"
+    },
+    {
+      "id": "rifle_factory",
+      "nameTr": "Hafif silah fabrikası",
+      "sector": "military",
+      "outputFamilies": [
+        "rifle"
+      ],
+      "slotCost": 2,
+      "allowedEras": [
+        "1914",
+        "1939",
+        "2026"
+      ],
+      "sourceStatus": "design_calibration",
+      "unitScale": "facility class (not 1 historical named factory)"
+    },
+    {
+      "id": "mg_factory",
+      "nameTr": "Makineli tüfek atölyesi",
+      "sector": "military",
+      "outputFamilies": [
+        "machine_gun"
+      ],
+      "slotCost": 2,
+      "allowedEras": [
+        "1914",
+        "1939",
+        "2026"
+      ],
+      "sourceStatus": "design_calibration",
+      "unitScale": "facility class (not 1 historical named factory)"
+    },
+    {
+      "id": "small_ammo",
+      "nameTr": "Fişek fabrikası",
+      "sector": "military",
+      "outputFamilies": [
+        "small_ammo"
+      ],
+      "slotCost": 2,
+      "allowedEras": [
+        "1914",
+        "1939",
+        "2026"
+      ],
+      "sourceStatus": "design_calibration",
+      "unitScale": "facility class (not 1 historical named factory)"
+    },
+    {
+      "id": "shell_plant",
+      "nameTr": "Top mermisi fabrikası",
+      "sector": "military",
+      "outputFamilies": [
+        "artillery_shell"
+      ],
+      "slotCost": 2,
+      "allowedEras": [
+        "1914",
+        "1939",
+        "2026"
+      ],
+      "sourceStatus": "design_calibration",
+      "unitScale": "facility class (not 1 historical named factory)"
+    },
+    {
+      "id": "field_artillery",
+      "nameTr": "Saha topu fabrikası",
+      "sector": "military",
+      "outputFamilies": [
+        "field_gun"
+      ],
+      "slotCost": 3,
+      "allowedEras": [
+        "1914",
+        "1939",
+        "2026"
+      ],
+      "sourceStatus": "design_calibration",
+      "unitScale": "facility class (not 1 historical named factory)"
+    },
+    {
+      "id": "heavy_artillery",
+      "nameTr": "Ağır topçu dökümhanesi",
+      "sector": "military",
+      "outputFamilies": [
+        "heavy_gun"
+      ],
+      "slotCost": 3,
+      "allowedEras": [
+        "1914",
+        "1939",
+        "2026"
+      ],
+      "sourceStatus": "design_calibration",
+      "unitScale": "facility class (not 1 historical named factory)"
+    },
+    {
+      "id": "airframe_factory",
+      "nameTr": "Uçak gövde atölyesi",
+      "sector": "military",
+      "outputFamilies": [
+        "airframe"
+      ],
+      "slotCost": 3,
+      "allowedEras": [
+        "1914",
+        "1939",
+        "2026"
+      ],
+      "sourceStatus": "design_calibration",
+      "unitScale": "facility class (not 1 historical named factory)"
+    },
+    {
+      "id": "engine_factory",
+      "nameTr": "Motor fabrikası",
+      "sector": "military",
+      "outputFamilies": [
+        "engine"
+      ],
+      "slotCost": 2,
+      "allowedEras": [
+        "1914",
+        "1939",
+        "2026"
+      ],
+      "sourceStatus": "design_calibration",
+      "unitScale": "facility class (not 1 historical named factory)"
+    },
+    {
+      "id": "military_shipyard",
+      "nameTr": "Askerî tersane",
+      "sector": "military",
+      "outputFamilies": [
+        "warship"
+      ],
+      "slotCost": 4,
+      "allowedEras": [
+        "1914",
+        "1939",
+        "2026"
+      ],
+      "sourceStatus": "design_calibration",
+      "unitScale": "facility class (not 1 historical named factory)"
+    },
+    {
+      "id": "submarine_yard",
+      "nameTr": "Denizaltı üretim kızağı",
+      "sector": "military",
+      "outputFamilies": [
+        "submarine"
+      ],
+      "slotCost": 4,
+      "allowedEras": [
+        "1914",
+        "1939",
+        "2026"
+      ],
+      "sourceStatus": "design_calibration",
+      "unitScale": "facility class (not 1 historical named factory)"
+    },
+    {
+      "id": "maintenance_depot",
+      "nameTr": "Askerî onarım deposu",
+      "sector": "military",
+      "outputFamilies": [
+        "repair"
+      ],
+      "slotCost": 1,
+      "allowedEras": [
+        "1914",
+        "1939",
+        "2026"
+      ],
+      "sourceStatus": "design_calibration",
+      "unitScale": "facility class (not 1 historical named factory)"
+    },
+    {
+      "id": "signals_works",
+      "nameTr": "Haberleşme teçhizatı",
+      "sector": "military",
+      "outputFamilies": [
+        "radio_wire"
+      ],
+      "slotCost": 1,
+      "allowedEras": [
+        "1914",
+        "1939",
+        "2026"
+      ],
+      "sourceStatus": "design_calibration",
+      "unitScale": "facility class (not 1 historical named factory)"
+    }
+  ],
+  "units": "stock in kg/items, production in machine/labor minutes; no historical extraction numbers asserted"
+}

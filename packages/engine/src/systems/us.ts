@@ -74,7 +74,10 @@ export function usTersaneKur(w: World): void {
     let gerek = Math.max(1, Math.ceil((ucakToplam(w, c) * 3) / (2 * UCAK_KAPASITE)) + 1);
     const bas = w.pkg.ulkeler[c]!.baskent;
     if (R.sahip[bas] === c) { R.havaUs[bas] = 1; gerek--; }
-    for (const r of sirali) {
+    // hava kuvveti metropolde toplanır: ana yurt bölgeleri üç kat öncelikli (sömürge kentleri üsleri yutmasın)
+    const puanH = (r: number) => puan(r) * (w.pkg.bolgeler[r]!.anaYurt.includes(c) ? 3 : 1);
+    const siraliH = [...bol].sort((a, b) => puanH(b) - puanH(a) || a - b);
+    for (const r of siraliH) {
       if (gerek <= 0) break;
       const ek = Math.min(US_MAX - R.havaUs[r]!, gerek);
       R.havaUs[r] = R.havaUs[r]! + ek; gerek -= ek;

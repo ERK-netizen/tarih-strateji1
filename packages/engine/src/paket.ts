@@ -64,6 +64,12 @@ export interface PaketSenaryoOlay {
   secenekler: { ad: string; etki: string; yz: number; e: PaketEylem[] }[];
 }
 
+/** v1.7: ulusal hedef (tasarım verisinden derlenir). metrik adı v17/hedef.ts'teki ölçütlerden biridir; eşik ve aşamalar S ölçeklidir. */
+export interface PaketHedef {
+  kod: string; ulke: number; ad: string; kat: string; agirlik: number;
+  metrik: string; esik: number; asamalar: number[]; yollar: string[];
+}
+
 export interface Paket {
   kimlik: string;
   surum: string;
@@ -71,6 +77,8 @@ export interface Paket {
   alt?: string;
   aciklama?: string;
   olaylar?: PaketSenaryoOlay[];
+  /** v1.7: bu senaryonun tasarlanmış ulusal hedefleri (yoksa oyun genel hedefleri üretir) */
+  hedefler?: PaketHedef[];
   oneCikan?: number[];
   senaryo: { ad: string; baslangic: { y: number; m: number; d: number }; bitis: { y: number; m: number; d: number } };
   tohum: number;
@@ -90,4 +98,6 @@ export interface Paket {
   birlikler: PaketBirlik[];
   harita: { gen: number; yuk: number; deniz: number[][]; cizgiler: { a: number; b: number; p: number[] }[]; denizAdlari: { ad: string; x: number; y: number }[]; gercek?: boolean };
   uyarilar: string[];
+  /** Harita göçü: eski paket sürümü, her bölgenin eski haritadaki atası ve atanın aynı adlı devamı (tohum) olup olmadığı. */
+  goc?: { surum: string; ata: number[]; tohum: number[] };
 }

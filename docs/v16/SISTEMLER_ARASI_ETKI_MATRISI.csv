@@ -1,0 +1,25 @@
+﻿Kaynak sistem,Hedef sistem,Doğrudan / dolaylı etki,Bütünlük kuralı
+Şehir,İnşaat,"1–10 seviye, dört slot/seviye, projelerin bedeli",Bina kapasitesi ile eşzamanlı inşaat ayrıdır
+Şehir,Ekonomi,"Konut/işçi/sanayi kapasitesi, vergi tabanı",İşçi ve kaynak olmadan çıktı yok
+Demografi,Ekonomi,"Çalışabilecek nüfus, meslek, üretim, talep",Asker alınca sivil işgücü eksilir
+Demografi,Siyaset,"Memnuniyet, temsil, göç ve eğitim",Kimlik tek başına siyasi sadakat belirlemez
+Demografi,Ordu,"Asker alımı, yaralı/esir, kayıp ve terhis",İnsan toplamı korunumlu
+Ekonomi,Araştırma,Laboratuvar/personel/gerçek finansman,Sınırsız para ile sınırsız teknoloji olmaz
+Araştırma,Ekipman,Prototip ve yeni model bilgisi,Bilgi doğrudan stok yaratmaz
+Ekipman,Ordu,"Saldırı/savunma, hız, bakım ve kayıplar",Gerçek stok ve eğitim gerekir
+Altyapı,Lojistik,Bağlantılı taşımacılık ağı kapasitesi,Kapasite sivil/askeri çift kullanılamaz
+Lojistik,Ordu,İkmal ve operasyon hazırlığı,Menzil ve kaynak yoksa görev yok
+Lojistik,Ticaret,"Nakliye ve fiyat, gıda ve mal erişimi",Kenar kapasitesi paylaşılır
+Hava kuvvetleri,Kara muharebesi,Menzil/üs/yakıt destek ve keşif,Aynı kanat iki görevde olmaz
+Deniz kuvvetleri,Kara muharebesi,"Çıkarma, kıyı bombardımanı ve abluka",Konum/yakıt/liman gerekir
+Komutan,Kara muharebesi,"Plan ve taarruz eşiği, organizasyon",Komuta bonusu bir kez uygulanır
+Kişiler,Siyaset,Lider/parti ve kariyer olayları,Gerçek kişi yaşam döngüsü
+Siyaset,Diplomasi,"Yönetim, ideoloji, güven, kriz",Karar maliyetleri ve hafıza
+İstihbarat,Yapay zekâ,Gözlenebilir aralık ve tahmin,Gizli kanonik bilgi sızmaz
+Diplomasi,Ekonomi,"Ambargo, ticaret ve yardım",Transfer gerçek stoktan
+Diplomasi,Toprak,"Barış şartları, ilhak ve kontrol",Atomik çok maddeli antlaşma
+Tarihsel olay,Siyaset,Şartlı alternatif tarih değişimleri,Ön koşul yoksa olay yok
+Yapay zekâ,Ordu,Hedef/plan ve günlük emir,Oyuncuyla aynı doğrulama
+Oyun emri,Worker,"Anlık kabul, günlük fiziksel etki",Idempotency + expectedVersion
+Worker,Kayıt,"Hash, kanonik sürüm ve anlık snapshot",Bekleyen Promise kalmaz
+Oyun motoru,Rapor,Neden-sonuç izi ve iki rapor sekmesi,Gizli bilgiye erişmez

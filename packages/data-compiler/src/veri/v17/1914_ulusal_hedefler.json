@@ -1,0 +1,6476 @@
+{
+  "schema": "tarih-strateji.v17-r2.goals-design-v1",
+  "scenario": "s1914",
+  "startDate": "1914-06-28",
+  "purpose": "Data compiler adaptörüne uygulanacak ulusal hedef taslakları; mevcut oyun paketi formatı değildir.",
+  "status": "DESIGN_ONLY_NOT_IMPLEMENTED",
+  "metricContract": "metric_threshold value fixedS=1000000; adapter required; fictional/calibration thresholds",
+  "countryCount": 16,
+  "goalCount": 64,
+  "goals": [
+    {
+      "id": "G1914_GER_01",
+      "country": "GER",
+      "countryNameTr": "Alman İmparatorluğu",
+      "titleTr": "İki cepheli savaşı yönet",
+      "category": "security",
+      "priorityWeight": 92,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "GER"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "fronts_supplied",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "GER"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "fronts_supplied",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "fronts_supplied",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "fronts_supplied",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Batı ve Doğu ikmalini dengede tut",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Doğuda savunma, Batıda diplomasi",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 500000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_GER_02",
+      "country": "GER",
+      "countryNameTr": "Alman İmparatorluğu",
+      "titleTr": "Britanya ile savaş riskini sınırla",
+      "category": "diplomacy",
+      "priorityWeight": 84,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "GER"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "peace_with_GBR_days",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "GER"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "peace_with_GBR_days",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "peace_with_GBR_days",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "peace_with_GBR_days",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Belçika tarafsızlığına güvence ver",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Kıta çatışmasında sınırlı tarafsızlık teklif et",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 520000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_GER_03",
+      "country": "GER",
+      "countryNameTr": "Alman İmparatorluğu",
+      "titleTr": "Ağır sanayi ve cephane darboğazını gider",
+      "category": "industry",
+      "priorityWeight": 76,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "GER"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "ammo_supply_days",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "GER"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "ammo_supply_days",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "ammo_supply_days",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "ammo_supply_days",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Çelik, kömür ve mermi üretimini artır",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Ticaret ve lisans anlaşmaları yap",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 540000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_GER_04",
+      "country": "GER",
+      "countryNameTr": "Alman İmparatorluğu",
+      "titleTr": "Savunma ve ayrı barış arasında seçim",
+      "category": "war",
+      "priorityWeight": 68,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "GER"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "war_goal_progress",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "GER"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "war_goal_progress",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "war_goal_progress",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "war_goal_progress",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Harekât planı uygula",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Karşılıklı taviz ve ateşkes müzakere et",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 560000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_FRA_01",
+      "country": "FRA",
+      "countryNameTr": "Fransa Cumhuriyeti",
+      "titleTr": "Almanya sınırına karşı güvenliği koru",
+      "category": "security",
+      "priorityWeight": 92,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "FRA"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "border_security",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "FRA"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "border_security",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "border_security",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "border_security",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Tahkimat kur",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "İttifak garantisi al",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 500000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_FRA_02",
+      "country": "FRA",
+      "countryNameTr": "Fransa Cumhuriyeti",
+      "titleTr": "Rus ittifakını sürdür",
+      "category": "diplomacy",
+      "priorityWeight": 84,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "FRA"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "alliance_trust",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "FRA"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "alliance_trust",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "alliance_trust",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "alliance_trust",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Askerî koordinasyon teklif et",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Tarafsızlık müzakeresi aç",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 520000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_FRA_03",
+      "country": "FRA",
+      "countryNameTr": "Fransa Cumhuriyeti",
+      "titleTr": "Topçu ve ikmal stokunu güvenceye al",
+      "category": "industry",
+      "priorityWeight": 76,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "FRA"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "artillery_ammo_days",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "FRA"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "artillery_ammo_days",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "artillery_ammo_days",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "artillery_ammo_days",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Topçu üretim hattını genişlet",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "İthal silah ve mühimmat anlaşması yap",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 540000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_FRA_04",
+      "country": "FRA",
+      "countryNameTr": "Fransa Cumhuriyeti",
+      "titleTr": "Alsas-Loren meselesinde stratejik yol seç",
+      "category": "war",
+      "priorityWeight": 68,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "FRA"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "territorial_claim_progress",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "FRA"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "territorial_claim_progress",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "territorial_claim_progress",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "territorial_claim_progress",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Diplomatik çözüm ara",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Savaş hedefi olarak takip et",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 560000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_GBR_01",
+      "country": "GBR",
+      "countryNameTr": "Britanya",
+      "titleTr": "Belçika ve kıta güç dengesini gözet",
+      "category": "diplomacy",
+      "priorityWeight": 92,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "GBR"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "belgian_security",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "GBR"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "belgian_security",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "belgian_security",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "belgian_security",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Belçika için güvence ver",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Tarafsızlık karşılığında garanti al",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 500000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_GBR_02",
+      "country": "GBR",
+      "countryNameTr": "Britanya",
+      "titleTr": "Deniz ticaret yollarını açık tut",
+      "category": "naval",
+      "priorityWeight": 84,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "GBR"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "convoy_security",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "GBR"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "convoy_security",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "convoy_security",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "convoy_security",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Eskort ve deniz hakimiyeti kur",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Ticaret antlaşması yap",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 520000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_GBR_03",
+      "country": "GBR",
+      "countryNameTr": "Britanya",
+      "titleTr": "Seferberlik ve mali yükü dengele",
+      "category": "industry",
+      "priorityWeight": 76,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "GBR"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "treasury_runway",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "GBR"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "treasury_runway",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "treasury_runway",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "treasury_runway",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Savaş bütçesi ayarla",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Kara müdahalesini sınırla",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 540000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_GBR_04",
+      "country": "GBR",
+      "countryNameTr": "Britanya",
+      "titleTr": "Kıta savaşındaki rolünü seç",
+      "category": "security",
+      "priorityWeight": 68,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "GBR"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "war_policy_stability",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "GBR"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "war_policy_stability",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "war_policy_stability",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "war_policy_stability",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Fransa ve Belçika yanında savaşa gir",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Arabuluculuk ve tarafsızlık sürdür",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 560000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_RUS_01",
+      "country": "RUS",
+      "countryNameTr": "Rus İmparatorluğu",
+      "titleTr": "Sırbistan krizinde nüfuzunu koru",
+      "category": "diplomacy",
+      "priorityWeight": 92,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "RUS"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "serbia_security",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "RUS"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "serbia_security",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "serbia_security",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "serbia_security",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Garanti ve uyarı sun",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Kısmi taviz ve konferans ara",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 500000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_RUS_02",
+      "country": "RUS",
+      "countryNameTr": "Rus İmparatorluğu",
+      "titleTr": "Batı demiryolu seferberliğini tamamla",
+      "category": "military",
+      "priorityWeight": 84,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "RUS"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "rail_mobilization_ready",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "RUS"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "rail_mobilization_ready",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "rail_mobilization_ready",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "rail_mobilization_ready",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Demiryolu kapasitesi ayır",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Kısmi seferberlik yap",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 520000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_RUS_03",
+      "country": "RUS",
+      "countryNameTr": "Rus İmparatorluğu",
+      "titleTr": "Hükümet ve iaşe istikrarını sağla",
+      "category": "politics",
+      "priorityWeight": 76,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "RUS"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "stability_and_food",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "RUS"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "stability_and_food",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "stability_and_food",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "stability_and_food",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Kabine reformu uygula",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Seferberlik maliyetini düşür",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 540000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_RUS_04",
+      "country": "RUS",
+      "countryNameTr": "Rus İmparatorluğu",
+      "titleTr": "Avrupa savaşında hedefini seç",
+      "category": "security",
+      "priorityWeight": 68,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "RUS"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "war_risk_management",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "RUS"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "war_risk_management",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "war_risk_management",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "war_risk_management",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Sınır savunması yap",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Ayrı barış olasılığını araştır",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 560000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_AUH_01",
+      "country": "AUH",
+      "countryNameTr": "Avusturya-Macaristan",
+      "titleTr": "Sırbistan krizi için sonuç al",
+      "category": "diplomacy",
+      "priorityWeight": 92,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "AUH"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "serbia_crisis_resolution",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "AUH"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "serbia_crisis_resolution",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "serbia_crisis_resolution",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "serbia_crisis_resolution",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Sınırlı ültimatom gönder",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Konferansa katıl",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 500000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_AUH_02",
+      "country": "AUH",
+      "countryNameTr": "Avusturya-Macaristan",
+      "titleTr": "Çok uluslu monarşinin istikrarı",
+      "category": "politics",
+      "priorityWeight": 84,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "AUH"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "political_stability",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "AUH"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "political_stability",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "political_stability",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "political_stability",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Bölgesel reform yap",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Kamu düzeni ve hizmete yatırım yap",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 520000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_AUH_03",
+      "country": "AUH",
+      "countryNameTr": "Avusturya-Macaristan",
+      "titleTr": "İki cephede askerî sürdürülebilirlik",
+      "category": "military",
+      "priorityWeight": 76,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "AUH"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "front_supply_days",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "AUH"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "front_supply_days",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "front_supply_days",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "front_supply_days",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Cephe ikmalini düzenle",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Müttefik yardımını müzakere et",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 540000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_AUH_04",
+      "country": "AUH",
+      "countryNameTr": "Avusturya-Macaristan",
+      "titleTr": "İmparatorluğun mali gücünü koru",
+      "category": "industry",
+      "priorityWeight": 68,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "AUH"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "treasury_runway",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "AUH"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "treasury_runway",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "treasury_runway",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "treasury_runway",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Sanayi kapasitesi geliştir",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Savaş maliyetini azaltan anlaşma yap",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 560000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_OSM_01",
+      "country": "OSM",
+      "countryNameTr": "Osmanlı İmparatorluğu",
+      "titleTr": "Boğazların ve başkentin güvenliği",
+      "category": "security",
+      "priorityWeight": 92,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "OSM"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "straits_security",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "OSM"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "straits_security",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "straits_security",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "straits_security",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Donanmayı ve garnizonu güçlendir",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Deniz geçişi garantisi teklif et",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 500000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_OSM_02",
+      "country": "OSM",
+      "countryNameTr": "Osmanlı İmparatorluğu",
+      "titleTr": "Savaş tarafını veya tarafsızlığı seç",
+      "category": "diplomacy",
+      "priorityWeight": 84,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "OSM"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "neutrality_commitment",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "OSM"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "neutrality_commitment",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "neutrality_commitment",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "neutrality_commitment",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Silahlı tarafsızlık kur",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Şartlı blok anlaşması müzakere et",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 520000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_OSM_03",
+      "country": "OSM",
+      "countryNameTr": "Osmanlı İmparatorluğu",
+      "titleTr": "Mali toparlanma ve demiryolu",
+      "category": "industry",
+      "priorityWeight": 76,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "OSM"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "treasury_and_rail",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "OSM"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "treasury_and_rail",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "treasury_and_rail",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "treasury_and_rail",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Demiryolu ve gelir geliştir",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Yabancı kredi/ticaret müzakeresi",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 540000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_OSM_04",
+      "country": "OSM",
+      "countryNameTr": "Osmanlı İmparatorluğu",
+      "titleTr": "Ordunun ikmalini ve modernleşmesini sürdür",
+      "category": "military",
+      "priorityWeight": 68,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "OSM"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "army_readiness",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "OSM"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "army_readiness",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "army_readiness",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "army_readiness",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Kurmay ve ekipman yatırımı",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Sınırlı seferberlik",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 560000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_SRB_01",
+      "country": "SRB",
+      "countryNameTr": "Sırbistan",
+      "titleTr": "Egemenlik ve bağımsızlığı sürdür",
+      "category": "security",
+      "priorityWeight": 92,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "SRB"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "national_sovereignty",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "SRB"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "national_sovereignty",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "national_sovereignty",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "national_sovereignty",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Sınırlı diplomatik kabul",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Askerî savunma ve müttefik garantisi",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 500000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_SRB_02",
+      "country": "SRB",
+      "countryNameTr": "Sırbistan",
+      "titleTr": "Avusturya krizinde diplomasi yürüt",
+      "category": "diplomacy",
+      "priorityWeight": 84,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "SRB"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "crisis_resolution",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "SRB"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "crisis_resolution",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "crisis_resolution",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "crisis_resolution",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Kısmi talep kabulü",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Uluslararası arabuluculuk talebi",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 520000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_SRB_03",
+      "country": "SRB",
+      "countryNameTr": "Sırbistan",
+      "titleTr": "Cephe mühimmat ve insan gücünü koru",
+      "category": "military",
+      "priorityWeight": 76,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "SRB"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "army_supply_days",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "SRB"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "army_supply_days",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "army_supply_days",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "army_supply_days",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Savunma tahkimatı",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Dış yardım anlaşması",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 540000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_SRB_04",
+      "country": "SRB",
+      "countryNameTr": "Sırbistan",
+      "titleTr": "İç istikrar ve ekonomi",
+      "category": "politics",
+      "priorityWeight": 68,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "SRB"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "stability_and_food",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "SRB"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "stability_and_food",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "stability_and_food",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "stability_and_food",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Gıda ve kamu hizmetleri",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Mali düzenleme",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 560000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_BEL_01",
+      "country": "BEL",
+      "countryNameTr": "Belçika",
+      "titleTr": "Tarafsızlık ve sınır güvenliği",
+      "category": "diplomacy",
+      "priorityWeight": 92,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "BEL"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "neutrality_security",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "BEL"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "neutrality_security",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "neutrality_security",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "neutrality_security",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Garanti talepleri",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Geçişi reddetme ve savunma",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 500000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_BEL_02",
+      "country": "BEL",
+      "countryNameTr": "Belçika",
+      "titleTr": "Ordu ve garnizon seferberliği",
+      "category": "military",
+      "priorityWeight": 84,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "BEL"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "defensive_readiness",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "BEL"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "defensive_readiness",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "defensive_readiness",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "defensive_readiness",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Sınır tahkimatı",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Müttefik askerî koordinasyon",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 520000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_BEL_03",
+      "country": "BEL",
+      "countryNameTr": "Belçika",
+      "titleTr": "Sanayiyi ve şehirleri koru",
+      "category": "industry",
+      "priorityWeight": 76,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "BEL"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "industrial_damage_inverse",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "BEL"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "industrial_damage_inverse",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "industrial_damage_inverse",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "industrial_damage_inverse",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Tesis onarımı",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Sanayi tahliyesi",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 540000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_BEL_04",
+      "country": "BEL",
+      "countryNameTr": "Belçika",
+      "titleTr": "Egemenlik için müzakere",
+      "category": "security",
+      "priorityWeight": 68,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "BEL"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "controlled_homeland",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "BEL"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "controlled_homeland",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "controlled_homeland",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "controlled_homeland",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Diplomatik protesto",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Ateşkes ve güvence",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 560000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_ITA_01",
+      "country": "ITA",
+      "countryNameTr": "İtalya Krallığı",
+      "titleTr": "Tarafsızlık ve savaş katılımı pazarlığı",
+      "category": "diplomacy",
+      "priorityWeight": 92,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "ITA"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "war_choice_fulfilled",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "ITA"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "war_choice_fulfilled",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "war_choice_fulfilled",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "war_choice_fulfilled",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Tarafsızlık anlaşması",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Koşullu ittifak ve toprak vaadi",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 500000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_ITA_02",
+      "country": "ITA",
+      "countryNameTr": "İtalya Krallığı",
+      "titleTr": "Kuzeyde sanayi ve ikmal",
+      "category": "industry",
+      "priorityWeight": 84,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "ITA"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "industry_supply",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "ITA"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "industry_supply",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "industry_supply",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "industry_supply",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Fabrika ve demiryolu kur",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Dış ticaret",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 520000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_ITA_03",
+      "country": "ITA",
+      "countryNameTr": "İtalya Krallığı",
+      "titleTr": "Toprak ve nüfuz hedeflerini değerlendir",
+      "category": "diplomacy",
+      "priorityWeight": 76,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "ITA"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "treaty_claim_progress",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "ITA"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "treaty_claim_progress",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "treaty_claim_progress",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "treaty_claim_progress",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Çok maddeli karşı teklif",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "İddialardan vazgeçerek güvence al",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 540000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_ITA_04",
+      "country": "ITA",
+      "countryNameTr": "İtalya Krallığı",
+      "titleTr": "İç siyasi meşruiyet",
+      "category": "politics",
+      "priorityWeight": 68,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "ITA"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "political_stability",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "ITA"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "political_stability",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "political_stability",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "political_stability",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Kabine uzlaşısı",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Seferberlik kararını ertele",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 560000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_BUL_01",
+      "country": "BUL",
+      "countryNameTr": "Bulgaristan",
+      "titleTr": "Balkan sınırlarını güvenceye al",
+      "category": "security",
+      "priorityWeight": 92,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "BUL"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "border_security",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "BUL"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "border_security",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "border_security",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "border_security",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Bölgesel garanti",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Askerî tahkimat",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 500000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_BUL_02",
+      "country": "BUL",
+      "countryNameTr": "Bulgaristan",
+      "titleTr": "Bloklar arasında tercih yap",
+      "category": "diplomacy",
+      "priorityWeight": 84,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "BUL"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "alliance_policy",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "BUL"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "alliance_policy",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "alliance_policy",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "alliance_policy",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Tarafsız kal",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Koşullu katılım teklifi",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 520000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_BUL_03",
+      "country": "BUL",
+      "countryNameTr": "Bulgaristan",
+      "titleTr": "Ordu ikmali",
+      "category": "military",
+      "priorityWeight": 76,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "BUL"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "army_supply_days",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "BUL"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "army_supply_days",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "army_supply_days",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "army_supply_days",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Demiryolu yatırımı",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Ticaret yoluyla mermi temini",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 540000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_BUL_04",
+      "country": "BUL",
+      "countryNameTr": "Bulgaristan",
+      "titleTr": "Savaş yorgunluğunu azalt",
+      "category": "politics",
+      "priorityWeight": 68,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "BUL"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "war_fatigue_inverse",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "BUL"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "war_fatigue_inverse",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "war_fatigue_inverse",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "war_fatigue_inverse",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Reform yap",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Savaş hedefini sınırlı tut",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 560000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_ROM_01",
+      "country": "ROM",
+      "countryNameTr": "Romanya Krallığı",
+      "titleTr": "Tarafsızlık veya katılımı koşullandır",
+      "category": "diplomacy",
+      "priorityWeight": 92,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "ROM"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "war_policy_stability",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "ROM"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "war_policy_stability",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "war_policy_stability",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "war_policy_stability",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Tarafsızlığı koru",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Koşullu güvence iste",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 500000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_ROM_02",
+      "country": "ROM",
+      "countryNameTr": "Romanya Krallığı",
+      "titleTr": "Petrol üretimi ve ticaretini koru",
+      "category": "industry",
+      "priorityWeight": 84,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "ROM"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "fuel_days_supply",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "ROM"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "fuel_days_supply",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "fuel_days_supply",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "fuel_days_supply",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Rafineri ve depo",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "İhracat anlaşması",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 520000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_ROM_03",
+      "country": "ROM",
+      "countryNameTr": "Romanya Krallığı",
+      "titleTr": "Bölgesel taleplerde güvenilir anlaşma",
+      "category": "diplomacy",
+      "priorityWeight": 76,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "ROM"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "treaty_claim_progress",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "ROM"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "treaty_claim_progress",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "treaty_claim_progress",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "treaty_claim_progress",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Gizli diplomasi",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Savaş dışı konferans",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 540000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_ROM_04",
+      "country": "ROM",
+      "countryNameTr": "Romanya Krallığı",
+      "titleTr": "Sınırda hareket ve mobilizasyon",
+      "category": "military",
+      "priorityWeight": 68,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "ROM"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "rail_mobilization_ready",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "ROM"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "rail_mobilization_ready",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "rail_mobilization_ready",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "rail_mobilization_ready",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Kısmi seferberlik",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Sınır tahkimatı",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 560000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_JAP_01",
+      "country": "JAP",
+      "countryNameTr": "Japonya İmparatorluğu",
+      "titleTr": "Pasifik ticaret ve deniz gücünü geliştir",
+      "category": "naval",
+      "priorityWeight": 92,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "JAP"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "naval_security",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "JAP"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "naval_security",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "naval_security",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "naval_security",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Donanma hazırla",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Ticaret anlaşması",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 500000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_JAP_02",
+      "country": "JAP",
+      "countryNameTr": "Japonya İmparatorluğu",
+      "titleTr": "Britanya ittifakıyla çıkarlarını tart",
+      "category": "diplomacy",
+      "priorityWeight": 84,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "JAP"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "alliance_trust",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "JAP"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "alliance_trust",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "alliance_trust",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "alliance_trust",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Sınırlı askerî yardım",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Tarafsızlık görüşmesi",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 520000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_JAP_03",
+      "country": "JAP",
+      "countryNameTr": "Japonya İmparatorluğu",
+      "titleTr": "Uzak harekât lojistiği",
+      "category": "military",
+      "priorityWeight": 76,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "JAP"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "overseas_supply_days",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "JAP"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "overseas_supply_days",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "overseas_supply_days",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "overseas_supply_days",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Liman ve konvoy geliştir",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Önce diplomat gönder",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 540000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_JAP_04",
+      "country": "JAP",
+      "countryNameTr": "Japonya İmparatorluğu",
+      "titleTr": "Sanayi kapasitesini yükselt",
+      "category": "industry",
+      "priorityWeight": 68,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "JAP"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "industry_supply",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "JAP"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "industry_supply",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "industry_supply",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "industry_supply",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Tersane kur",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Metal üretimini artır",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 560000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_USA_01",
+      "country": "USA",
+      "countryNameTr": "ABD",
+      "titleTr": "Tarafsızlık ve deniz güvenliği",
+      "category": "diplomacy",
+      "priorityWeight": 92,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "USA"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "neutrality_security",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "USA"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "neutrality_security",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "neutrality_security",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "neutrality_security",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Arabuluculuk yap",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Koşullu müdahale",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 500000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_USA_02",
+      "country": "USA",
+      "countryNameTr": "ABD",
+      "titleTr": "Ticaret ve sanayi sürdürülebilirliği",
+      "category": "industry",
+      "priorityWeight": 84,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "USA"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "industry_supply",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "USA"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "industry_supply",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "industry_supply",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "industry_supply",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Sanayiyi büyüt",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Müttefik/savaş dışı ticaret",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 520000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_USA_03",
+      "country": "USA",
+      "countryNameTr": "ABD",
+      "titleTr": "Kamuoyunu ve hükümet desteğini dengede tut",
+      "category": "politics",
+      "priorityWeight": 76,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "USA"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "political_stability",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "USA"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "political_stability",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "political_stability",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "political_stability",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Dış politika açıklaması",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Savaş bütçesini düşür",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 540000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_USA_04",
+      "country": "USA",
+      "countryNameTr": "ABD",
+      "titleTr": "Denizaşırı güvenlik ve konvoy",
+      "category": "naval",
+      "priorityWeight": 68,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "USA"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "convoy_security",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "USA"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "convoy_security",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "convoy_security",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "convoy_security",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Deniz eskortu",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Diplomatik deniz garantisi",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 560000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_GRE_01",
+      "country": "GRE",
+      "countryNameTr": "Yunanistan Krallığı",
+      "titleTr": "Balkan güvenliğini koru",
+      "category": "security",
+      "priorityWeight": 92,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "GRE"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "border_security",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "GRE"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "border_security",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "border_security",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "border_security",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Bölgesel güvence",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Ordu hazırlığı",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 500000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_GRE_02",
+      "country": "GRE",
+      "countryNameTr": "Yunanistan Krallığı",
+      "titleTr": "Kabine ve dış politika dengesini sağla",
+      "category": "politics",
+      "priorityWeight": 84,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "GRE"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "political_stability",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "GRE"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "political_stability",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "political_stability",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "political_stability",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Kabine uzlaşısı",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Tarafsızlık",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 520000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_GRE_03",
+      "country": "GRE",
+      "countryNameTr": "Yunanistan Krallığı",
+      "titleTr": "Liman ve ticaret kapasitesi",
+      "category": "industry",
+      "priorityWeight": 76,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "GRE"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "trade_throughput",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "GRE"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "trade_throughput",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "trade_throughput",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "trade_throughput",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Liman geliştir",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Ticaret imtiyazı",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 540000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_GRE_04",
+      "country": "GRE",
+      "countryNameTr": "Yunanistan Krallığı",
+      "titleTr": "Bloklar arasında seçenek tut",
+      "category": "diplomacy",
+      "priorityWeight": 68,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "GRE"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "war_policy_stability",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "GRE"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "war_policy_stability",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "war_policy_stability",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "war_policy_stability",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Tarafsızlık garantisi",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Koşullu katılım",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 560000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_NLD_01",
+      "country": "NLD",
+      "countryNameTr": "Hollanda Krallığı",
+      "titleTr": "Tarafsızlığını koru",
+      "category": "diplomacy",
+      "priorityWeight": 92,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "NLD"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "neutrality_security",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "NLD"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "neutrality_security",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "neutrality_security",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "neutrality_security",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Tarafsızlık güvencesi",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Sınır savunması",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 500000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_NLD_02",
+      "country": "NLD",
+      "countryNameTr": "Hollanda Krallığı",
+      "titleTr": "Deniz ticaretini sürdür",
+      "category": "naval",
+      "priorityWeight": 84,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "NLD"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "convoy_security",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "NLD"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "convoy_security",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "convoy_security",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "convoy_security",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Konvoy koru",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Ticaret anlaşması",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 520000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_NLD_03",
+      "country": "NLD",
+      "countryNameTr": "Hollanda Krallığı",
+      "titleTr": "Sanayi ve ithalatı güvenceye al",
+      "category": "industry",
+      "priorityWeight": 76,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "NLD"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "industry_supply",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "NLD"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "industry_supply",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "industry_supply",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "industry_supply",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Depo/yakıt artır",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "İthal kaynak anlaşması",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 540000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_NLD_04",
+      "country": "NLD",
+      "countryNameTr": "Hollanda Krallığı",
+      "titleTr": "Savaşın sivil etkilerini azalt",
+      "category": "politics",
+      "priorityWeight": 68,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "NLD"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "stability_and_food",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "NLD"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "stability_and_food",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "stability_and_food",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "stability_and_food",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Gıda stokları",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Mülteci hizmetleri",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 560000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_SWE_01",
+      "country": "SWE",
+      "countryNameTr": "İsveç Krallığı",
+      "titleTr": "Baltık tarafsızlığını gözet",
+      "category": "diplomacy",
+      "priorityWeight": 92,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "SWE"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "neutrality_security",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "SWE"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "neutrality_security",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "neutrality_security",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "neutrality_security",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Garanti anlaşması",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Savunma tahkimatı",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 500000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_SWE_02",
+      "country": "SWE",
+      "countryNameTr": "İsveç Krallığı",
+      "titleTr": "Demir cevheri ve ticaret",
+      "category": "industry",
+      "priorityWeight": 84,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "SWE"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "resource_exports",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "SWE"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "resource_exports",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "resource_exports",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "resource_exports",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Maden geliştir",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Uzun vadeli ticaret",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 520000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_SWE_03",
+      "country": "SWE",
+      "countryNameTr": "İsveç Krallığı",
+      "titleTr": "Deniz ulaşımını koru",
+      "category": "naval",
+      "priorityWeight": 76,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "SWE"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "convoy_security",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "SWE"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "convoy_security",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "convoy_security",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "convoy_security",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Konvoy koru",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Ticaret diplomasi",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 540000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    },
+    {
+      "id": "G1914_SWE_04",
+      "country": "SWE",
+      "countryNameTr": "İsveç Krallığı",
+      "titleTr": "Kamu istikrarı",
+      "category": "politics",
+      "priorityWeight": 68,
+      "earliestDay": "1914-06-28",
+      "expirationDay": null,
+      "activation": [
+        {
+          "type": "country_active",
+          "country": "SWE"
+        }
+      ],
+      "success": [
+        {
+          "type": "metric_threshold",
+          "metric": "political_stability",
+          "operator": ">=",
+          "value": 700000,
+          "unit": "fixedS_or_scenario_adapter"
+        }
+      ],
+      "fail": [
+        {
+          "type": "country_eliminated",
+          "country": "SWE"
+        }
+      ],
+      "stages": [
+        {
+          "id": "hazirlik",
+          "metric": "political_stability",
+          "completionThreshold": 250000
+        },
+        {
+          "id": "ilerleme",
+          "metric": "political_stability",
+          "completionThreshold": 550000
+        },
+        {
+          "id": "sonuc",
+          "metric": "political_stability",
+          "completionThreshold": 700000
+        }
+      ],
+      "alternatePaths": [
+        {
+          "id": "a",
+          "titleTr": "Bütçe reformu",
+          "actionTags": [
+            "diplomacy",
+            "budget",
+            "orders"
+          ],
+          "costs": [
+            "kaynak",
+            "zaman",
+            "firsat"
+          ]
+        },
+        {
+          "id": "b",
+          "titleTr": "Gıda güvenliği",
+          "actionTags": [
+            "diplomacy",
+            "military",
+            "politics"
+          ],
+          "costs": [
+            "siyasi_risk",
+            "ikmal",
+            "zaman"
+          ]
+        }
+      ],
+      "rewardTags": [
+        "hedef_puani",
+        "kronik"
+      ],
+      "tradeoffTags": [
+        "firsat_maliyeti",
+        "reputasyon",
+        "lojistik"
+      ],
+      "aiHints": {
+        "historicAffinityFixed": 540000,
+        "riskToleranceFixed": 560000,
+        "minPlanCommitmentDays": 15
+      },
+      "sourceStatus": "design_proposal",
+      "provenance": {
+        "sourceIds": [
+          "s1914.ts",
+          "v17-r2-spec"
+        ],
+        "historicalAssertionsVerified": false
+      },
+      "notes": "Örnek puan ve metric, gerçek veri derleyicide mevcut fonksiyonlara bağlanmadan çalışmaz."
+    }
+  ]
+}

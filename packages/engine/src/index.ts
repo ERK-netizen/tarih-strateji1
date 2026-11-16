@@ -27,3 +27,8 @@ export { DONEMLER, TEK_DAL, TEK_KOD, type DonemKod, type Donem } from './donem.t
 export * from './katalogEk.ts';
 export * as gelisim from './systems/gelisim.ts';
 export * as us from './systems/us.ts';
+export * as komutan from './systems/komutan.ts';
+export * as kuvvet from './systems/kuvvet.ts';
+// v1.7 integration R3: additive engine entrypoints
+export {v17Preview,v17Apply,v17View,v17P2,v17P3,v17P11,initialiseV17,v17IndustryBonus} from './v17/bridge.ts';
+export {assertV17,emptyV17,type V17State} from './v17/state.ts';

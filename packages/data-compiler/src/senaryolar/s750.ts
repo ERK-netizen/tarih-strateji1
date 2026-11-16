@@ -114,8 +114,8 @@ export const S750: SenaryoTanim = {
   adlar: {
     'Anchorage': 'Alaska', 'Honolulu': 'Hawaii', 'Cayenne': 'Guyana kıyısı', 'Petropavlovsk-Kamchatsky': 'Kamçatka', 
     'Bağdat': 'Kûfe', 'İstanbul': 'Konstantinopolis', 'İzmir': 'Smirni', 'Ankara': 'Ankyra', 'Konya': 'İkonion', 'Antalya': 'Attaleia', 'Eskişehir': 'Dorylaion', 'Samsun': 'Amisos', 'Kayseri': 'Kaisareia',
-    'Adana': 'Massisa (Sugur)', 'Antep': 'Harran (Cezire)', 'Diyarbakır': 'Amid', 'Malatya': 'Melitene', 'Erzurum': 'Kalikala', 'Van': 'Vaspurakan', 'Musul': 'Musul', 'Şam': 'Dımaşk', 'Tel Aviv': 'Kudüs',
-    'Gaza': 'Gazze', 'Amman': 'Belka', 'Beyrut': 'Beyrut', 'Halep': 'Halep', 'Deir ez-Zor': 'Rakka', 'Kahire': 'Fustat', 'Luxor': 'Said', 'Asyut': 'Asyut', 'Mersa Matruh': 'İskenderiye', 'Dahab': 'Kulzüm',
+    'Adana': 'Massisa (Sugur)', 'Antep': 'Harran (Cezire)', 'Diyarbakır': 'Amid', 'Malatya': 'Melitene', 'Erzurum': 'Kalikala', 'Van': 'Vaspurakan', 'Musul': 'Musul', 'Şam': 'Dımaşk', 'Tel Aviv': 'Yafa',
+    'Gaza': 'Gazze', 'Amman': 'Belka', 'Beyrut': 'Beyrut', 'Halep': 'Halep', 'Deir ez-Zor': 'Rakka', 'Kahire': 'Fustat', 'Luxor': 'Said', 'Asyut': 'Asyut', 'Mersa Matruh': 'Paraitonion', 'Dahab': 'Kulzüm',
     'Benghazi': 'Berka', 'Trablusgarp': 'Trablus', 'Tunus': 'Kayrevan', 'Tébessa': 'Zab', 'Rabat': 'Temesna', 'Fas': 'Fes ovası', 'Sevilla': 'Kurtuba', 'Madrid': 'Tuleytula', 'Barcelona': 'Barşilune',
     'Zaragoza': 'Sarakusta', 'Lizbon': 'Lişbune', 'Porto': 'Galiçya', 'Asturias': 'Cangas de Onís', 'Paris': 'Paris', 'Köln': 'Austrasya', 'Frankfurt am Main': 'Mainz', 'Stuttgart': 'Alamanya', 'Freiburg': 'Breisgau',
     'Nürnberg': 'Frankonya', 'Bordeaux': 'Bordeaux', 'Toulouse': 'Tuluz', 'Münih': 'Regensburg', 'Milano': 'Pavia', 'Torino': 'Torino', 'Floransa': 'Tuskiya', 'Venedik': 'Friuli', 'Napoli': 'Benevento',
@@ -127,7 +127,7 @@ export const S750: SenaryoTanim = {
     'Tirunelveli': 'Madurai', 'Indore': 'Ujjain', 'Ahmedabad': 'Bhinmal', 'Islamabad': 'Parihasapura (Keşmir)', 'Yeni Delhi': 'Kannauj', 'Karaçi': 'Mansura (Sind)', 'Multan': 'Multan', 'Kâbil': 'Kâbil',
     'Kandahār': 'Zabul', 'Tahran': 'Taberistan', 'Mashhad': 'Tus (Horasan)', 'Semerkant': 'Semerkant', 'Türkmenabat': 'Buhara', 'Ashgabat': 'Nesa', 'Dushanbe': 'Huttal', 'İsfahan': 'İsfahan',
     'Shiraz': 'İstahr', 'Tebriz': 'Azerbaycan', 'Erivan': 'Dvin', 'Tiflis': 'Tiflis', 'Bakü': 'Arran', 'Palembang': 'Srivijaya', 'Semarang': 'Medang', 'Hue': 'Simhapura', 'Hartum': 'Dongola', 'Mek\'ele': 'Aksum',
-    'Nouakchott': 'Kumbi Salih', 'Colombo': 'Anuradhapura', 'Tegucigalpa': 'Copán', 'Cidde': 'Mekke', 'Tabuk': 'Medine', 'Maskat': 'Suhar', 'Guatemala City': 'Tikal',
+    'Nouakchott': 'Kumbi Salih', 'Colombo': 'Anuradhapura', 'Tegucigalpa': 'Copán', 'Cidde': 'Cidde', 'Tabuk': 'Tebük', 'Maskat': 'Suhar', 'Guatemala City': 'Tikal',
   },
   halk: 'TR:Rum/rum GR:Rum/rum CY:Rum/rum KK:Rum/rum SY:Süryani/dogu LB:Süryani/dogu IL:Süryani/dogu PS:Süryani/dogu JO:Arap/dogu IQ:Süryani/dogu EG:Kıpti/dogu IR:Fars/zerdust AF:Afgan/budist '
     + 'TM:Horasanlı/zerdust UZ:Soğd/zerdust TJ:Soğd/zerdust AZ:Arran/dogu AM:Ermeni/dogu GE:Gürcü/rum SA:Arap/islam YE:Arap/islam OM:Arap/ibazi LY:Berberi/islam TN:Berberi/islam DZ:Berberi/yerel '

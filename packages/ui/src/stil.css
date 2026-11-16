@@ -434,3 +434,24 @@ details summary { cursor: pointer; min-height: var(--dokun); display: flex; alig
   .cekmeceli .orta { bottom: min(66vh, calc(100% - var(--ust) - 40px)); }
   .orta { bottom: 8px; }
 }
+
+/* Komutanlar ve muharebe görüntüleyicisi (v1.6) */
+.komutan-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.komutan-liste li { border: 1px solid var(--cizgi); border-radius: 8px; padding: 6px 8px; display: flex; flex-direction: column; gap: 3px; }
+.komutan-liste li.asim { border-color: color-mix(in srgb, var(--kotu) 60%, var(--cizgi)); }
+.km-bas { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.km-bas .kucuk-dugme { margin-left: auto; }
+.km-ad { min-height: 36px; text-align: left; }
+.km-rozet { font-size: 11px; border: 1px solid var(--pirinc-koyu); color: var(--pirinc); border-radius: 9px; padding: 0 7px; line-height: 17px; }
+.km-nitelik { display: flex; gap: 10px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
+.km-emir { border-top: 1px solid var(--cizgi); margin-top: 4px; padding-top: 6px; display: flex; flex-direction: column; gap: 6px; }
+.km-emir .dugmeler button.acik { border-color: var(--pirinc); color: var(--pirinc); }
+.muharebe { width: min(520px, 100%); max-height: 100%; box-sizing: border-box; overflow-y: auto; background: var(--murekkep-2); color: var(--yazi); border: 1px solid var(--cizgi); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.muharebe header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.muharebe header h2 { margin: 0; font: 600 19px/1.2 var(--f-baslik); }
+.muharebe-tuval { width: 100%; height: min(52vh, 440px); min-height: 260px; display: block; border-radius: 8px; border: 1px solid var(--cizgi); touch-action: manipulation; }
+.muharebe-denetim { display: flex; align-items: center; gap: 8px; }
+.muharebe-denetim button { min-width: 48px; min-height: 44px; }
+.muharebe-neden { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 0; font-size: 14px; }
+.muharebe-neden dt { color: var(--yazi-2); }
+.muharebe-neden dd { margin: 0; }

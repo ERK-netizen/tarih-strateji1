@@ -26,9 +26,9 @@ describe('T300–T302 donanma ve hava kuvvetleri (1914)', () => {
   test('T301 filo muharebesi iki tarafa kayıp verdirir; üstün taraf abluka kurar', () => {
     const w = senaryoBaslat(p, GER, 0);
     diplomasi.savasIlan(w, GER, GBR);
-    w.C.c.donGorev[GER] = 1; w.C.c.donGorev[GBR] = 2;
+    emir(w, { tur: 'donanmaGorev', ulke: GER, gorev: 1 }); emir(w, { tur: 'donanmaGorev', ulke: GBR, gorev: 2 });
     const g0 = toplamGemi(w, GER), b0 = toplamGemi(w, GBR);
-    for (let i = 0; i < 120; i++) { w.gun += 7; w.C.c.gHasar[GER] = 0; w.C.c.gHasar[GBR] = 0; deniz.denizHaftasi(w); }
+    for (let i = 0; i < 120; i++) { w.gun += 7; for (const f of w.FL.rows()) w.FL.c.hasar[f] = 0; deniz.denizHaftasi(w); }
     expect(toplamGemi(w, GER)).toBeLessThan(g0);
     expect(toplamGemi(w, GBR)).toBeLessThan(b0);
     expect(w.anlati.some((a) => a.metin.startsWith('Deniz muharebesi'))).toBe(true);
@@ -211,7 +211,7 @@ describe('T311 ekonomi ayarları, petrol ve şehirler', () => {
     expect(w.C.c.petrol[GBR]).toBeGreaterThan(w.C.c.petrolIht[GBR]! * 60);
     expect(ekonomi.malStok(w, GBR, 4)).toBeGreaterThanOrEqual(0);
   });
-  test('şehir imarı şehir düzeyini ve fabrika sayısını artırır', () => {
+  test('şehir imarı şehir düzeyini artırır; bedelsiz fabrika vermez (K-45)', () => {
     const w = dunya(0, 0);
     const r = w.pkg.ulkeler[0]!.baskent;
     const k0 = w.R.c.kent[r]!, f0 = w.R.c.sivilF[r]!;
@@ -221,7 +221,7 @@ describe('T311 ekonomi ayarları, petrol ve şehirler', () => {
     w.PR.c.spKul[s] = w.PR.c.spTop[s]!; w.PR.c.nakitKul[s] = w.PR.c.nakitTop[s]!;
     for (let i = 0; i < 3 && w.PR.list().includes(s); i++) gunIlerle(w, false);
     expect(w.R.c.kent[r]).toBe(k0 + 1);
-    expect(w.R.c.sivilF[r]).toBeGreaterThan(f0);
+    expect(w.R.c.sivilF[r]).toBe(f0);
   });
 });
 

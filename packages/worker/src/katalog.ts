@@ -1,5 +1,5 @@
 // Oyuncunun gördüğü varlıklardan komut kataloğu (yalnız görünür adlar).
-import { type World, TEKNOLOJI, EKIPMAN, MAL, PROJE, SABLON, ASKERLIK, EKONOMI, TABUR, AKTIF, GEMI, HAVA, DENIZ_GOREV, HAVA_GOREV, REJIM_AD, PARTI, EKO_MODEL, TARIM_ODAK, NKIMLIK, ortak, diplomasi, toplum } from '@ts/engine';
+import { type World, TEKNOLOJI, EKIPMAN, MAL, PROJE, SABLON, ASKERLIK, EKONOMI, TABUR, AKTIF, GEMI, HAVA, DENIZ_GOREV, HAVA_GOREV, REJIM_AD, PARTI, EKO_MODEL, TARIM_ODAK, NKIMLIK, ortak, diplomasi, toplum, komutan, kuvvet, v17View } from '@ts/engine';
 import type { Katalog } from '@ts/command';
 
 export function katalogKur(w: World, secili: number[] = []): Katalog {
@@ -29,6 +29,19 @@ export function katalogKur(w: World, secili: number[] = []): Katalog {
     vergi: w.C.c.vergi[P]!,
     butce: [w.C.c.b0[P]!, w.C.c.b1[P]!, w.C.c.b2[P]!, w.C.c.b3[P]!],
     askerlikMevcut: w.C.c.askerlik[P]!,
+    v17: (() => {
+      const v = v17View(w);
+      return {
+        kisiler: v.availablePoliticians.map((x) => ({ ad: x.ad, rol: x.rol })),
+        aglar: v.networks.map((n) => ({ id: n.id, hedef: n.target })),
+        teklifler: v.proposals.filter((x) => x.status === 'pending' && x.to === P).map((x) => ({ id: x.id, kimden: x.from })),
+        tesisler: v.sites.map((x) => ({ id: x.id, bolge: x.region, tur: x.kind })),
+        modeller: v.namedModels.map((m) => ({ id: m.id, ad: m.ad, ucak: m.aile.endsWith('uçağı') })),
+      };
+    })(),
+    komutanlar: komutan.ulkeKomutanlari(w, P).map((k) => ({ id: w.KM.id(k), ad: komutan.komutanAdi(w, k) })),
+    filolar: kuvvet.ulkeFilolari(w, P).map((f) => ({ id: w.FL.id(f), ad: kuvvet.filoAdi(w, f), gorev: w.FL.c.gorev[f]! })),
+    kanatlar: kuvvet.ulkeKanatlari(w, P).map((x) => ({ id: w.KN.id(x), ad: kuvvet.kanatAdi(w, x) })),
     gemiler: GEMI[AKTIF.donem].map((g) => ({ ad: g.ad, kisa: g.kisa })),
     ucaklar: HAVA[AKTIF.donem].map((h) => ({ ad: h.ad, kisa: h.kisa })),
     denizGorev: [...DENIZ_GOREV],

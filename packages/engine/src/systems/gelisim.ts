@@ -1,7 +1,7 @@
 // Gelişime bağlı kapasiteler: şehir inşa yuvası, ülke birlik sınırı ve teknolojinin kara muharebesine etkisi.
-// Hepsi kanonik durumdan türetilir (yeni sütun yok): kayıt şeması ve hash değişmez.
+// Hepsi kanonik durumdan türetilir (yeni sütun yok): kayıt şeması değişmez.
 import type { World } from '../state/world.ts';
-import { TEKNOLOJI, NTEK, AKTIF, tekVar, tekSeviye } from '../catalog.ts';
+import { TEKNOLOJI, NTEK, AKTIF, PROJE, tekVar, tekSeviye } from '../catalog.ts';
 import { tarih } from '../calendar/index.ts';
 import { siyasiKisiler, type SiyasiKisi } from '../siyasiKisiler.ts';
 import { S, mulDiv } from '../num/index.ts';
@@ -38,6 +38,38 @@ export function insaSurenSayi(w: World, eyalet: number, ozel: (tur: number) => b
   let n = 0;
   for (const s of w.PR.rows()) if (eyBolge.includes(w.PR.c.bolge[s]!) && !ozel(w.PR.c.tur[s]!)) n++;
   return n;
+}
+
+// ---------- Şehir yapı kapasitesi (v1.6, T40) ----------
+/** Her şehir düzeyi dört yapı yuvası açar (düzey 10 = 40). */
+export const YUVA_DUZEY = 4;
+/**
+ * Yapı yuvası tüketen projeler. Ağ ve imar yatırımları (demiryolu, sulama, altyapı, şehir imarı)
+ * yuva tüketmez; yine de süre, iş gücü ve bütçe ister. Bu kapasite, eyaletin eşzamanlı inşaat
+ * sınırından (`insaYuvasi`) ayrıdır.
+ */
+export const YUVALI_PROJE: ReadonlySet<string> = new Set(['sivil', 'askeri', 'havaus', 'tersane', 'maden', 'valilik']);
+
+/** Bölgedeki yapı yuvası durumu: kapasite, mevcut yapılar, inşaattakiler ve boş yuva. */
+export function yapiYuvasi(w: World, r: number): { kapasite: number; kullanilan: number; insada: number; bos: number } {
+  const R = w.R.c;
+  const kapasite = YUVA_DUZEY * R.kent[r]!;
+  const kullanilan = R.sivilF[r]! + R.askeriF[r]! + R.havaUs[r]! + R.tersane[r]! + R.maden[r]! + (R.valilik[r] ? 1 : 0);
+  let insada = 0;
+  for (const s of w.PR.rows()) if (w.PR.c.bolge[s] === r && YUVALI_PROJE.has(PROJE[w.PR.c.tur[s]!]?.kod ?? '')) insada++;
+  return { kapasite, kullanilan, insada, bos: Math.max(0, kapasite - kullanilan - insada) };
+}
+
+/**
+ * Yeni oyun başlangıcı: tarihî sanayisi kalabalık bölgelerin şehir düzeyi, mevcut yapılarını
+ * taşıyacak kadar yükseltilir (en çok 10). Yapı silinmez; aşım yalnız yeni inşaatı engeller.
+ */
+export function kentYuvaUyumla(w: World): void {
+  const R = w.R.c;
+  for (let r = 0; r < w.nR; r++) {
+    const y = yapiYuvasi(w, r);
+    if (y.kullanilan > y.kapasite) R.kent[r] = Math.min(10, Math.floor((y.kullanilan + YUVA_DUZEY - 1) / YUVA_DUZEY));
+  }
 }
 
 // ---------- Birlik sınırı ----------

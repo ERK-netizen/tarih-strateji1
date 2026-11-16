@@ -1,5 +1,6 @@
 // 28 Haziran 1914: Saraybosna suikastı günü. Devletler, hükümdarlar ve bağlaşmalar 1914 yazındaki durumdur.
 import type { SenaryoTanim } from '../senaryo.ts';
+import { v17Olaylar } from '../v17olay.ts';
 
 export const S1914: SenaryoTanim = {
   kimlik: 's1914', ad: 'Büyük Savaş', alt: '1914 · Birinci Dünya Savaşı', donem: 'buyuk', nufusDonem: '1914',
@@ -84,8 +85,8 @@ export const S1914: SenaryoTanim = {
     'Timişoara': 'Temeşvar', 'Bratislava': 'Pozsony', 'Ljubljana': 'Laibach', 'Brno': 'Brünn', 'St. Petersburg': 'Sankt Peterburg', 'Volgograd': 'Tsaritsyn', 'Dnipro': 'Yekaterinoslav',
     'Donetsk': 'Yuzovka', 'Almaty': 'Verniy', 'Astana': 'Akmolinsk', 'Bishkek': 'Pişpek', 'Dushanbe': 'Hisar', 'Ashgabat': 'Aşkabat', 'Helsinki': 'Helsingfors', 'Tallinn': 'Reval', 'Vilnius': 'Vilna',
     'Khmelnytskyi': 'Proskurov', 'Novosibirsk': 'Novonikolayevsk', 'Kyzylorda': 'Perovsk', 'Shymkent': 'Çimkent', 'Syktyvkar': 'Ust-Sysolsk', 'Murmansk': 'Kola', 'Makhachkala': 'Petrovsk',
-    'Krasnodar': 'Yekaterinodar', 'Oulu': 'Uleåborg', 'Tel Aviv': 'Kudüs', 'Gaza': 'Gazze', 'Amman': 'Kerek', 'Deir ez-Zor': 'Deyrizor', 'As Sulaymānīyah': 'Süleymaniye', 'Al ‘Amārah': 'Amara',
-    'As Samawah': 'Divaniye', 'Antep': 'Ayıntab', 'Diyarbakır': 'Diyarbekir', 'Tabuk': 'Medine', 'Abu Dabi': 'Trucial Kıyısı', 'Nay Pyi Taw': 'Mandalay', 'Islamabad': 'Ravalpindi', 'Yeni Delhi': 'Delhi',
+    'Krasnodar': 'Yekaterinodar', 'Oulu': 'Uleåborg', 'Tel Aviv': 'Yafa', 'Gaza': 'Gazze', 'Amman': 'Kerek', 'Deir ez-Zor': 'Deyrizor', 'As Sulaymānīyah': 'Süleymaniye', 'Al ‘Amārah': 'Amara',
+    'As Samawah': 'Divaniye', 'Antep': 'Ayıntab', 'Diyarbakır': 'Diyarbekir', 'Tabuk': 'Tebük', 'Abu Dabi': 'Trucial Kıyısı', 'Nay Pyi Taw': 'Pyinmana', 'Islamabad': 'Ravalpindi', 'Yeni Delhi': 'Delhi',
     'Ulan Bator': 'Urga', 'Kinshasa': 'Léopoldville', 'Harare': 'Salisbury', 'Lusaka': 'Broken Hill', 'Lilongwe': 'Zomba', 'Gaborone': 'Mafeking', 'Maputo': 'Lourenço Marques',
     'Dodoma': 'Tabora', 'Dar es Salaam': 'Darüsselam', 'Gitega': 'Usumbura', 'Windhoek': 'Windhuk', 'Yaoundé': 'Jaunde', 'Abuja': 'Lokoja', 'Ouagadougou': 'Vagadugu', 'Nouakchott': 'Saint-Louis',
     'Yamoussoukro': 'Bingerville', 'Kampala': 'Entebbe', 'Cakarta': 'Batavia', 'Brasília': 'Rio de Janeiro', 'Canberra': 'Melbourne',
@@ -108,7 +109,9 @@ export const S1914: SenaryoTanim = {
     ['gorus', 'BUL', 'GER', 62], ['gorus', 'GRE', 'GBR', 70], ['gorus', 'ROM', 'FRA', 72], ['gorus', 'USA', 'GBR', 66], ['gorus', 'GBR', 'USA', 70], ['gorus', 'ITA', 'FRA', 58],
     ['gorus', 'BEL', 'GER', 45], ['gorus', 'SRB', 'RUS', 85], ['gorus', 'RUS', 'SRB', 80], ['gorus', 'POR', 'GBR', 80], ['gorus', 'GBR', 'POR', 70],
   ],
-  iddia: { 'Ljubljana': ['ITA'] },
+  iddia: { 'Ljubljana': ['ITA'], 'Trieste': ['ITA'], 'Nancy': [], 'Kars': ['OSM'] },
+  // harita v2: 1914 sınırlarının inceltilmesi (Yukarı Silezya, Memel, Kiautschou; Galiçya, Trieste, Transilvanya, Voyvodina, Bukovina; Kongre Polonyası, Kars; Lorraine; Kwantung)
+  ek: { GER: ['Katowice', 'Klaipėda', 'Qingdao'], AUH: ['Przemyśl', 'Trieste', 'Braşov', 'Novi Sad', 'Chernivtsi'], RUS: ['Kielce', 'Kars'], FRA: ['Nancy'], JAP: ['Port Arthur'] },
   kaynak: ['Köln', 'Leipzig', 'Lille', 'Strasbourg', 'Birmingham', 'Leeds', 'Glasgow', 'Sunderland', 'Brüksel', 'Donetsk', 'Dnipro', 'Yekaterinburg', 'Krakov', 'Brno', 'Prag',
     'Chicago', 'Washington', 'Fukuoka', 'Shenyang', 'Şandong', 'Novosibirsk', 'Asturias', 'Hannover', 'Torino', 'Kalküta'],
   olaylar: [
@@ -267,3 +270,7 @@ export const S1914: SenaryoTanim = {
       ] },
   ],
 };
+
+// v1.7 R2: tasarlanmış 36 koşullu olay (stratejik tutum kararları) ve 64 ulusal hedef
+S1914.olaylar!.push(...v17Olaylar(new Set(S1914.devletler.map((d) => d.k))));
+S1914.v17Hedef = true;
