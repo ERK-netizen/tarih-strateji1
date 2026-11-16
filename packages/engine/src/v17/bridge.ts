@@ -16,6 +16,7 @@ import { MODELLER_TASARIM, KAYNAKLAR_TASARIM, TESISLER_TASARIM, modelKullanilabi
 import { EKIPMAN, AKTIF as AKT, NTEK, TEKNOLOJI } from '../catalog.ts';
 import { HAVA } from '../katalogEk.ts';
 import { hatEkle, toplamAskeriFabrika } from '../state/world.ts';
+import { defterOku } from './defter.ts';
 import { addSite, factoryPolicyBonus } from './industry.ts';
 import { offerV17, replyV17, expireV17, proposalVisible } from './diplomacy.ts';
 import { networkV17, planOperationV17, resolveV17 } from './intelligence.ts';
@@ -472,6 +473,27 @@ export function v17View(w: World, viewer = w.oyuncu) {
     modelLines: s.modelLines
       .filter((x) => x.country === viewer)
       .map((x) => ({ ...x, modelName: MODELLER_TASARIM.find((m) => m.id === x.modelId)?.ad ?? x.modelId })),
+    /** Üretim defteri: son günün çelik/kömür girişi, hat başına tüketim ve darboğaz (Neden?) */
+    ledger: (() => {
+      const d = defterOku(w, viewer);
+      return d
+        ? {
+            day: d.gun,
+            steel: { before: d.celikOnce, income: d.celikGelir, use: d.celikTuketim, clipped: d.celikKirpma, after: d.celikSonra },
+            coal: { before: d.komurOnce, income: d.komurGelir, use: d.komurTuketim, clipped: d.komurKirpma, after: d.komurSonra },
+            lines: d.hatlar.map((h) => ({
+              product: h.urun,
+              productName: h.urun === 100 ? 'Mühimmat' : (EKIPMAN[h.urun]?.ad ?? String(h.urun)),
+              assigned: h.atanan,
+              produced: h.uretilen,
+              steelUse: h.celikTuketim,
+              coalUse: h.komurTuketim,
+              fill: h.karsilama,
+              bottleneck: h.darbogaz,
+            })),
+          }
+        : null;
+    })(),
     namedModels:
       w.pkg.donem === 'buyuk'
         ? MODELLER_TASARIM.filter((m) => modelKullanilabilir(m, w.pkg.ulkeler[viewer]!.kod, currentYear(w))).map((m) => ({

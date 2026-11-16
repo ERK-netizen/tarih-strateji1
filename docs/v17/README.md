@@ -17,6 +17,7 @@ Bu dizin `V17_TAM_PAKET.zip` paketinin oyuna işlenme durumunu ve paketin kendi 
 | **G02 olay ağı** | 36 tasarım olayı paket olayı olarak derlenir (`v17_*`): "stratejik tutum" kararları; bedeller tasarımın `tradeoffs` etiketlerinden (bütçe→siyasi güç, itibar→meşruiyet, savaş riski→gerginlik ve karşı taraf ilişkisi), kazanımlar süreli değiştiricilerdir. Hiçbir seçenek savaş ilan etmez, toprak devretmez |
 | Katalog | 16 adlı ekipman modeli (ülke ve yıl kapısıyla), 12 kaynak, 26 tesis türü panelde/görünümde |
 | **Adlı model üretimi (1.7.1)** | `v17SanayiGorevi` gerçek emir: model kapısı (ülke, yıl, aile) → **mevcut** fabrika hattı (tüfek, makineli tüfek, sahra/ağır top) ya da uçak siparişi (keşif, avcı) açılır; çıktı eski üretim/teslimat kancasından adlı modele yazılır. İkinci hat ve ek hammadde tüketimi yoktur (aynı emirle eski `uretim` emri birebir aynı stok ve hat tablosunu üretir). Panel, Türkçe komut ("Gewehr 98 modelini 2 fabrikayla üret") ve testler var. Tank ailesinin 1914 oyun karşılığı yok |
+| **Üretim defteri (1.7.2)** | Ortak stok defteri: her gün çelik/kömür girişi, hat başına tüketim ve darboğaz (çelik, kömür, teknoloji, fabrika) kaydedilir; panelde "Üretim nedeni". Kanonik değil (hash'e girmez), üretim hesabı eski tek yolda kalır; simülasyon hash'i değişmedi. Makine/işçi/enerji darboğazı ve maden rezervi yok: rezerv tükenmesi beş senaryonun ekonomisini değiştireceğinden ayrı denge çalışması ister |
 | **Danışman (1.7.1)** | Panelde "Önerilen 3 hareket": en büyük açıklı (ağırlık × eksik ilerleme) üç hedef için ölçüte özel öneri metni |
 | **Polonya direnci (1.7.1)** | Karar modülü: ezici üstün olunan düşmanın payı geride tutulacak güçten tamamen düşülür; 8 tohumda Polonya 8/8 sonbaharda teslim, 1914 etkilenmedi |
 | **R2 doğrulama testleri (1.7.1)** | `v17dogrulama.test.ts` (17 test): şema 10→11 ve 9→11 göçü, bayt eşitliği, iki kenarlı hareket/kısmi ilerleme/savaş engeli/ETA eşitliği, sabotaj hasarı, karşı teklif revizyonu, kabine kuralları, donanma yakıt, 62 ülke hedefi, Android izinleri |
@@ -31,7 +32,7 @@ Bu dizin `V17_TAM_PAKET.zip` paketinin oyuna işlenme durumunu ve paketin kendi 
 
 ## Doğrulama
 
-- `npm run tip`, `npm run lint`, `npm test` (24 dosya, 419 test) yeşil.
+- `npm run tip`, `npm run lint`, `npm test` (25 dosya, 422 test) yeşil.
 - `npm run lab -- 365` iki koşuda aynı hash (`907e9c763c58f35f`).
 - Beş senaryo, 365 gün, gözlemci, kayıt-yükleme hash'i eşit:
 

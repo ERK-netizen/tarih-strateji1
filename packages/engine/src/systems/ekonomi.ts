@@ -1,4 +1,5 @@
 import {v17IndustryBonus,v17Uretildi} from '../v17/bridge.ts';
+import { defterAc, defterHat, defterKapat } from '../v17/defter.ts';
 import { US_MAX } from './us.ts';
 // Bölüm 11–13: tarım, gıda, sanayi, üretim hatları, projeler, araştırma, vergi, harcama, borç, pazar.
 import type { World } from '../state/world.ts';
@@ -256,6 +257,7 @@ export function etkinFabrika(w: World, c: number): { sivil: number; askeri: numb
 }
 
 /** P5 sanayi: tüketim malı, inşaat, üretim hatları. */
+const H0 = (w: World, s: number): number => w.HT.c.fabrika[s]!;
 export function sanayiGunu(w: World): void {
   const C = w.C.c;
   const yil = tarih(w.gun).y;
@@ -298,6 +300,7 @@ export function sanayiGunu(w: World): void {
     C.petrol[c] = clamp(C.petrol[c]! + petrol - ih, 0, Math.max(20_000, (petrol + ih) * 180));
     C.celikDun[c] = celik; C.komurDun[c] = komur;
     C.celik[c] = C.celik[c]! + celik; C.komur[c] = C.komur[c]! + komur;
+    const defter = defterAc(w, c, C.celik[c]! - celik, C.komur[c]! - komur, celik, komur);
     // hatlar
     const hatlar = (hatGrup[c] ?? []).sort((a, b) => w.HT.c.oncelik[a]! - w.HT.c.oncelik[b]! || a - b);
     let atanan = 0;
@@ -319,11 +322,17 @@ export function sanayiGunu(w: World): void {
       if (ihCelik > 0) q = Math.min(q, mulDiv(C.celik[c]!, S, ihCelik).q);
       if (ihKomur > 0) q = Math.min(q, mulDiv(C.komur[c]!, S, ihKomur).q);
       q = clamp(q, 0, S);
+      const celikSinir = ihCelik > 0 && mulDiv(C.celik[c]!, S, ihCelik).q <= (ihKomur > 0 ? mulDiv(C.komur[c]!, S, ihKomur).q : S);
       // teknoloji kilidi
-      if (urun !== URUN_MUH && EKIPMAN[urun]!.tek && !tek(w, c, EKIPMAN[urun]!.tek!)) q = 0;
+      const teknolojiKilit = urun !== URUN_MUH && !!EKIPMAN[urun]!.tek && !tek(w, c, EKIPMAN[urun]!.tek!);
+      if (teknolojiKilit) q = 0;
       const uretilen = mulRatio(Cg, q).q;
       C.celik[c] = C.celik[c]! - mulRatio(ihCelik, q).q;
       C.komur[c] = C.komur[c]! - mulRatio(ihKomur, q).q;
+      defterHat(defter, {
+        urun, atanan: H0(w, s), uretilen, celikTuketim: mulRatio(ihCelik, q).q, komurTuketim: mulRatio(ihKomur, q).q, karsilama: q,
+        darbogaz: teknolojiKilit ? 'teknoloji' : q < S ? (celikSinir ? 'celik' : 'komur') : olcek < S ? 'fabrika' : 'yok',
+      });
       spAsk += uretilen;
       H.wip[s] = H.wip[s]! + uretilen;
       if (urun === URUN_MUH) {
@@ -343,6 +352,7 @@ export function sanayiGunu(w: World): void {
     // aylık olmayan kaynak kaybı: stok tavanı 30 günlük akış (akış soyutlaması)
     C.celik[c] = Math.min(C.celik[c]!, Math.max(20_000, celik * 30));
     C.komur[c] = Math.min(C.komur[c]!, Math.max(20_000, komur * 30));
+    defterKapat(defter, C.celik[c]!, C.komur[c]!);
     projeGunu(w, c, insaat);
   }
 }

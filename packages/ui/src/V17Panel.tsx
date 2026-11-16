@@ -261,6 +261,27 @@ export function V17Panel() {
           )}
         </>
       )}
+      {v.ledger && v.ledger.lines.length > 0 && (
+        <>
+          <h4>Üretim nedeni (son gün)</h4>
+          <p class="soluk kucuk">
+            Çelik {v.ledger.steel.before}+{v.ledger.steel.income}−{v.ledger.steel.use} · Kömür {v.ledger.coal.before}+{v.ledger.coal.income}
+            −{v.ledger.coal.use}
+          </p>
+          <ul class="liste">
+            {v.ledger.lines.map((l: any) => (
+              <li key={l.product} class="kucuk">
+                {l.productName}: karşılama %{Math.floor(l.fill / 10000)} · darboğaz:{' '}
+                {
+                  ({ yok: 'yok', celik: 'çelik', komur: 'kömür', teknoloji: 'teknoloji araştırması', fabrika: 'fabrika sayısı' } as any)[
+                    l.bottleneck
+                  ]
+                }
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
       <h4>Harekât planı</h4>
       <p class="soluk kucuk">{seciliBirlik.value.size} seçili birlik için kalıcı emir. Önce haritadan birlik seçin.</p>
       <div class="satir-ayar">
