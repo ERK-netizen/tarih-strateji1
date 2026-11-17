@@ -261,6 +261,23 @@ export function V17Panel() {
           )}
         </>
       )}
+      {(v.resources ?? []).length > 0 && (
+        <>
+          <h4>Maden rezervleri</h4>
+          <p class="soluk kucuk">Yataklar sonludur; kalan rezerv %25'in altına inince verim düşer, tükenince çıkarma durur.</p>
+          <ul class="liste">
+            {[...v.resources]
+              .sort((x: any, y: any) => x.remaining - y.remaining || x.id - y.id)
+              .slice(0, 5)
+              .map((r: any) => (
+                <li key={r.id} class="kucuk">
+                  {r.regionName} · {({ celik: 'çelik', komur: 'kömür', petrol: 'petrol' } as any)[r.kind]}: kalan %
+                  {Math.floor(r.remaining / 10000)}
+                </li>
+              ))}
+          </ul>
+        </>
+      )}
       {v.ledger && v.ledger.lines.length > 0 && (
         <>
           <h4>Üretim nedeni (son gün)</h4>

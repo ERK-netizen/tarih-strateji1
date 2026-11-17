@@ -17,6 +17,7 @@ import { EKIPMAN, AKTIF as AKT, NTEK, TEKNOLOJI } from '../catalog.ts';
 import { HAVA } from '../katalogEk.ts';
 import { hatEkle, toplamAskeriFabrika } from '../state/world.ts';
 import { defterOku } from './defter.ts';
+import { baslangicRezervi, rezervOrani } from './rezerv.ts';
 import { addSite, factoryPolicyBonus } from './industry.ts';
 import { offerV17, replyV17, expireV17, proposalVisible } from './diplomacy.ts';
 import { networkV17, planOperationV17, resolveV17 } from './intelligence.ts';
@@ -67,7 +68,7 @@ export function initialiseV17(w: World): V17State {
       ['komur', b.komur],
       ['petrol', b.petrol?.[0] ?? 0],
     ] as const) {
-      if (capacity > 0) s.resources.push({ id: nextV17Id(s), region: r, kind, capacity, reserve: -1 });
+      if (capacity > 0) s.resources.push({ id: nextV17Id(s), region: r, kind, capacity, reserve: baslangicRezervi(capacity) });
     }
   }
   if (w.pkg.donem === 'buyuk') s.models = MODELS_1914.map((x) => ({ ...x }));
@@ -441,7 +442,7 @@ export function v17View(w: World, viewer = w.oyuncu) {
     flags: { ...s.flags },
     ministers: s.ministers.filter((x) => x.country === viewer).map((x) => ({ ...x })),
     sites: s.sites.filter((x) => x.country === viewer).map((x) => ({ ...x, regionName: w.pkg.bolgeler[x.region]!.ad })),
-    resources: s.resources.filter((x) => w.R.c.sahip[x.region] === viewer).map((x) => ({ ...x })),
+    resources: s.resources.filter((x) => w.R.c.sahip[x.region] === viewer).map((x) => ({ ...x, remaining: rezervOrani(x), regionName: w.pkg.bolgeler[x.region]!.ad })),
     networks: s.networks.filter((x) => x.owner === viewer).map((x) => ({ ...x, targetName: w.pkg.ulkeler[x.target]!.kisa })),
     operations: s.operations.filter((x) => x.owner === viewer).map((x) => ({ ...x })),
     proposals: s.proposals

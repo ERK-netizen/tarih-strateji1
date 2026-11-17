@@ -24,6 +24,7 @@ Harita Natural Earth sınırları ve GeoNames şehirleriyle derlenir (**813 böl
 | Hareket | Çok kenarlı kesintisiz günlük ilerleme ve aynı kurala dayanan ETA |
 | Komut | Yeni emirler Türkçe yazılabilir: “Fransa'da istihbarat ağı kur”, “3 numaralı müzakere teklifini kabul et” |
 | Adlı ekipman | 16 adlı model (ülke ve yıl kapılı); “Gewehr 98 modelini 2 fabrikayla üret” mevcut üretim hattından çalışır, çıktı modele yazılır (çifte üretim yok) |
+| Maden rezervi | Çelik, kömür ve petrol yatakları sonlu (45 yıllık nominal çıkarma); %25'in altında verim düşer, tükenince durur. 10 yıllık oyunda etkisizdir, uzun oyunda kıtlık yaratır |
 | Danışman | Devlet panelinde hedeflere göre “Önerilen 3 hareket” |
 
 Ayrıntı, bilerek yapılmayanlar ve kabul matrisi: [`docs/v17/README.md`](docs/v17/README.md).

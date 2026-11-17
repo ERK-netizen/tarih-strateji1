@@ -1,5 +1,6 @@
 import {v17IndustryBonus,v17Uretildi} from '../v17/bridge.ts';
 import { defterAc, defterHat, defterKapat } from '../v17/defter.ts';
+import { rezervdenCikar } from '../v17/rezerv.ts';
 import { US_MAX } from './us.ts';
 // Bölüm 11–13: tarım, gıda, sanayi, üretim hatları, projeler, araştırma, vergi, harcama, borç, pazar.
 import type { World } from '../state/world.ts';
@@ -283,8 +284,8 @@ export function sanayiGunu(w: World): void {
       const erisim = w.R.c.sahip[r] === c ? S : isgalErisim(w, r);
       // maden ocağı düzeyi her kademede çıkarmayı %25 artırır
       const h = mulRatio(mulRatio(S - w.R.c.hasar[r]!, erisim).q, S + 250_000 * w.R.c.maden[r]!).q;
-      celik += mulRatio(b.celik, h).q; komur += mulRatio(b.komur, h).q;
-      if (b.petrol && yil >= b.petrol[1]) petrol += mulRatio(b.petrol[0], h).q;
+      celik += rezervdenCikar(w, r, 'celik', mulRatio(b.celik, h).q); komur += rezervdenCikar(w, r, 'komur', mulRatio(b.komur, h).q);
+      if (b.petrol && yil >= b.petrol[1]) petrol += rezervdenCikar(w, r, 'petrol', mulRatio(b.petrol[0], h).q);
       fabSay += w.R.c.sivilF[r]! + w.R.c.askeriF[r]!;
     }
     const mk = Math.min(2 * S, tekKat(w, c, 'maden1', 200_000));
